@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcworkspacedata
+
+# Xcode build output
+build/
+DerivedData/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Test / coverage output
+coverage/
+*.gcno
+*.gcda
+*.profdata
+*.profraw
+
+# Secrets and local configuration
+.env
+.env.*
+Config/Secrets.xcconfig
+Config/Local.xcconfig
+
+# Optional: generated configuration files
+GoogleService-Info.plist
