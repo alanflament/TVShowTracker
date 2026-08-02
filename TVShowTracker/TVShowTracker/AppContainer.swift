@@ -7,13 +7,12 @@
 
 @MainActor
 final class AppContainer {
-    
     init(
         // TODO: dependencies ...
     ) {
         // TODO: dependencies ...
     }
-    
+
     func makeAppCoordinator() -> AppCoordinator {
         AppCoordinator(container: self)
     }

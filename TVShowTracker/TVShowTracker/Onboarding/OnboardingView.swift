@@ -15,7 +15,7 @@ struct OnboardingView: View {
     ) {
         self.onFinished = onFinished
     }
-    
+
     var body: some View {
         Button(action: onFinished) {
             Text("Hello World!")

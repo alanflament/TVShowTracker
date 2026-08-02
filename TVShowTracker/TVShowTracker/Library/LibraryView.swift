@@ -8,12 +8,11 @@
 import SwiftUI
 
 struct LibraryView: View {
-    
     @State private var viewModel: LibraryViewModel
-    
+
     let onAddTapped: () -> Void
     let onItemTapped: (String) -> Void
-    
+
     init(
         viewModel: LibraryViewModel,
         onAddTapped: @escaping () -> Void,
@@ -23,7 +22,7 @@ struct LibraryView: View {
         self.onAddTapped = onAddTapped
         self.onItemTapped = onItemTapped
     }
-    
+
     var body: some View {
         Color.orange
             .navigationTitle("Library")

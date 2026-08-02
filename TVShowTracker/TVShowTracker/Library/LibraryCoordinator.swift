@@ -12,26 +12,28 @@ final class LibraryCoordinator {
     enum Route: Hashable {
         case detail(itemID: String)
     }
-    
+
     enum Sheet: String, Identifiable {
         case create
-        
-        var id: String { rawValue }
+
+        var id: String {
+            rawValue
+        }
     }
-    
+
     var path: [Route] = []
     var sheet: Sheet?
-    
+
     init() {}
-    
+
     func showItem(id: String) {
         path.append(.detail(itemID: id))
     }
-    
+
     func createItem() {
         sheet = .create
     }
-    
+
     func makeLibraryViewModel() -> LibraryViewModel {
         LibraryViewModel()
     }

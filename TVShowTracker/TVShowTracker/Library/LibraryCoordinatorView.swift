@@ -8,9 +8,8 @@
 import SwiftUI
 
 struct LibraryCoordinatorView: View {
-    
     @Bindable var coordinator: LibraryCoordinator
-    
+
     var body: some View {
         NavigationStack(path: $coordinator.path) {
             LibraryView(
@@ -20,7 +19,7 @@ struct LibraryCoordinatorView: View {
             )
             .navigationDestination(for: LibraryCoordinator.Route.self) { route in
                 switch route {
-                case .detail(_):
+                case .detail:
                     Color.green
                 }
             }

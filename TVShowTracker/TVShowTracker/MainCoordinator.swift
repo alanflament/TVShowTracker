@@ -14,15 +14,15 @@ final class MainCoordinator {
         case search
         case settings
     }
-    
+
     var selectedTab: Tab = .library
-    
+
     let libraryCoordinator: LibraryCoordinator
-    
-    init(container: AppContainer) {
-        self.libraryCoordinator = LibraryCoordinator()
+
+    init(container _: AppContainer) {
+        libraryCoordinator = LibraryCoordinator()
     }
-    
+
     func showItem(id: String) {
         selectedTab = .library
         libraryCoordinator.showItem(id: id)

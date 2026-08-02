@@ -8,9 +8,8 @@
 import SwiftUI
 
 struct MainCoordinatorView: View {
-    
     @Bindable var coordinator: MainCoordinator
-    
+
     var body: some View {
         TabView(selection: $coordinator.selectedTab) {
             LibraryCoordinatorView(coordinator: coordinator.libraryCoordinator)
@@ -18,13 +17,13 @@ struct MainCoordinatorView: View {
                     Label("Library", systemImage: "books.vertical")
                 }
                 .tag(MainCoordinator.Tab.library)
-            
+
             Color.red
                 .tabItem {
                     Label("Search", systemImage: "magnifyingglass")
                 }
                 .tag(MainCoordinator.Tab.search)
-            
+
             Color.blue
                 .tabItem {
                     Label("Settings", systemImage: "gear")

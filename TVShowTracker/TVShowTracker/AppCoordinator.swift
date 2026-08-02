@@ -13,15 +13,15 @@ final class AppCoordinator {
         case onboarding
         case main
     }
-    
+
     var root: Root = .main
-    
+
     let mainCoordinator: MainCoordinator
-    
+
     init(container: AppContainer) {
-        self.mainCoordinator = MainCoordinator(container: container)
+        mainCoordinator = MainCoordinator(container: container)
     }
-    
+
     func finishOnboarding() {
         root = .main
     }
