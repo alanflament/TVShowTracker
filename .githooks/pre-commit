@@ -1,0 +1,23 @@
+#!/bin/sh
+# Format the Swift files included in this commit, then re-stage the results.
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+formatter="$repo_root/.tools/swiftformat"
+
+if [ ! -x "$formatter" ]; then
+  formatter=$(command -v swiftformat || true)
+fi
+
+if [ -z "${formatter:-}" ]; then
+  echo "SwiftFormat is required for commits. Install it with: brew install swiftformat" >&2
+  exit 1
+fi
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.swift')
+[ -z "$files" ] && exit 0
+
+echo "$files" | while IFS= read -r file; do
+  "$formatter" "$file"
+  git add -- "$file"
+done

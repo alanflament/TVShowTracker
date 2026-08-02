@@ -44,3 +44,6 @@ Config/Local.xcconfig
 
 # Optional: generated configuration files
 GoogleService-Info.plist
+
+# Locally installed developer tools
+/.tools/
