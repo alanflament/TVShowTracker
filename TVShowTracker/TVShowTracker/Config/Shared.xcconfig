@@ -1,0 +1,4 @@
+// Shared local configuration. Values in Secrets.xcconfig override these defaults.
+TMDB_ACCESS_TOKEN =
+
+#include? "Secrets.xcconfig"

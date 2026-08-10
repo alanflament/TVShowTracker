@@ -27,11 +27,25 @@
 		28ED88A5301A8B88001DDC8A /* TVShowTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TVShowTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		28ED88B4301A8B89001DDC8A /* TVShowTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TVShowTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		28ED88BE301A8B89001DDC8A /* TVShowTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TVShowTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0D3A11A7E1A4B0D9E5F0002 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Shared.xcconfig; path = TVShowTracker/Config/Shared.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C0D3A11A7E1A4B0D9E5F0004 /* Exceptions for "TVShowTracker" folder in "TVShowTracker" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Config/Info.plist,
+			);
+			target = 28ED88A4301A8B88001DDC8A /* TVShowTracker */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		28ED88A7301A8B88001DDC8A /* TVShowTracker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0D3A11A7E1A4B0D9E5F0004 /* Exceptions for "TVShowTracker" folder in "TVShowTracker" target */,
+			);
 			path = TVShowTracker;
 			sourceTree = "<group>";
 		};
@@ -72,6 +86,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		28461E89302A5F8200A9878B /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				C0D3A11A7E1A4B0D9E5F0002 /* Shared.xcconfig */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		28ED889C301A8B88001DDC8A = {
 			isa = PBXGroup;
 			children = (
@@ -79,6 +101,7 @@
 				28ED88B7301A8B89001DDC8A /* TVShowTrackerTests */,
 				28ED88C1301A8B89001DDC8A /* TVShowTrackerUITests */,
 				28ED88A6301A8B88001DDC8A /* Products */,
+				28461E89302A5F8200A9878B /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -411,6 +434,7 @@
 		};
 		28ED88C9301A8B89001DDC8A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0D3A11A7E1A4B0D9E5F0002 /* Shared.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -419,7 +443,8 @@
 				DEVELOPMENT_TEAM = X99J4NTQF9;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TVShowTracker/Config/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -443,6 +468,7 @@
 		};
 		28ED88CA301A8B89001DDC8A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0D3A11A7E1A4B0D9E5F0002 /* Shared.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -451,7 +477,8 @@
 				DEVELOPMENT_TEAM = X99J4NTQF9;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TVShowTracker/Config/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -39,8 +39,8 @@ coverage/
 # Secrets and local configuration
 .env
 .env.*
-Config/Secrets.xcconfig
-Config/Local.xcconfig
+TVShowTracker/TVShowTracker/Config/Secrets.xcconfig
+TVShowTracker/TVShowTracker/Config/Local.xcconfig
 
 # Optional: generated configuration files
 GoogleService-Info.plist
