@@ -18,7 +18,7 @@ struct MainCoordinatorView: View {
                 }
                 .tag(MainCoordinator.Tab.library)
 
-            Color.red
+            SearchView(viewModel: coordinator.searchCoordinator.makeSearchViewModel())
                 .tabItem {
                     Label("Search", systemImage: "magnifyingglass")
                 }

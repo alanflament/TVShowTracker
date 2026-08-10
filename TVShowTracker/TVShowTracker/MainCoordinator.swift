@@ -18,9 +18,11 @@ final class MainCoordinator {
     var selectedTab: Tab = .library
 
     let libraryCoordinator: LibraryCoordinator
+    let searchCoordinator: SearchCoordinator
 
-    init(container _: AppContainer) {
+    init(container: AppContainer) {
         libraryCoordinator = LibraryCoordinator()
+        searchCoordinator = container.makeSearchCoordinator()
     }
 
     func showItem(id: String) {
