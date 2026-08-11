@@ -56,14 +56,26 @@ Details features:
 - `FollowedMedia/Presentation/FollowedMediaStore.swift` is the shared
   main-actor source of truth. Coordinators inject it into feature view models;
   views must not access it through `@Environment`.
-- `FollowedMedia` also owns persisted episode-watch records and
-  `EpisodeWatchStore`. Episode rows are rendered by Details, but their watched
-  state is shared product state rather than a Details implementation detail.
+- `FollowedMedia` also owns persisted episode-watch records and episode
+  schedules. `EpisodeWatchStore` and `EpisodeScheduleStore` are shared product
+  state; Details and Calendar render them without owning their persistence.
+- `FollowedMediaRefreshStore` refreshes followed-media episode schedules in the
+  background at app start. Its progress must be non-blocking; Calendar resolves
+  the next episode only from the persisted schedule cache.
+- Skip launch schedule refreshes only for terminal `finished` or `cancelled`
+  media. `airing`, `upcoming`, `hiatus`, and unknown statuses remain eligible;
+  TMDB search initially has an unknown status, which the first refresh resolves
+  and persists from TV details.
 - `Library` is the presentation feature that renders followed content through
   `LibraryViewModel`.
 
 The saved list is available offline. Details and episode contents still require
 their provider APIs unless a later iteration adds a separate details cache.
+
+`Calendar` is a presentation feature that resolves a single next unwatched
+episode from persisted followed-media schedules. Its view model owns the
+interaction with `EpisodeWatchStore`; it never fetches provider data after a
+watch action.
 
 `TVTimeImport` is a standalone migration feature. It parses a user-selected
 TV Time `gdpr-data` directory locally, never copies it into the app container,

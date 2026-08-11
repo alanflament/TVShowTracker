@@ -93,6 +93,7 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
                 title: "Episode \(number)",
                 overview: nil,
                 airDate: airingDates[number],
+                releaseDatePrecision: airingDates[number] == nil ? .day : .time,
                 stillURL: nil,
                 runtimeMinutes: nil
             )

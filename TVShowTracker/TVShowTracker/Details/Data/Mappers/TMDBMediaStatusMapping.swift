@@ -10,8 +10,10 @@ extension SearchMediaStatus {
         switch tmdbStatus {
         case "Returning Series", "In Production":
             self = .airing
-        case "Ended", "Canceled":
+        case "Ended":
             self = .finished
+        case "Canceled":
+            self = .cancelled
         case "Planned", "Pilot":
             self = .upcoming
         default:
