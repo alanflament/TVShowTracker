@@ -7,45 +7,6 @@
 
 import Foundation
 
-enum SearchProvider: String, Hashable, Sendable {
-    case tmdb
-    case aniList
-    case jikan
-
-    var displayName: String {
-        switch self {
-        case .tmdb:
-            "TMDB"
-        case .aniList:
-            "AniList"
-        case .jikan:
-            "MyAnimeList (via Jikan)"
-        }
-    }
-}
-
-enum SearchMediaKind: String, Hashable, Sendable {
-    case tvShow
-    case anime
-
-    var displayName: String {
-        switch self {
-        case .tvShow:
-            "TV series"
-        case .anime:
-            "Anime"
-        }
-    }
-}
-
-enum SearchMediaStatus: String, Hashable, Sendable {
-    case airing
-    case finished
-    case upcoming
-    case cancelled
-    case hiatus
-}
-
 struct SearchCandidate: Identifiable, Hashable, Sendable {
     let provider: SearchProvider
     let providerID: Int
@@ -105,14 +66,4 @@ struct SearchCandidate: Identifiable, Hashable, Sendable {
 
         return values.joined(separator: " · ")
     }
-}
-
-struct AnimeInstallmentReference: Hashable, Sendable {
-    let providerID: Int
-    let title: String
-    let releaseYear: Int?
-    let releaseMonth: Int?
-    let releaseDay: Int?
-    let episodeCount: Int?
-    let status: SearchMediaStatus?
 }

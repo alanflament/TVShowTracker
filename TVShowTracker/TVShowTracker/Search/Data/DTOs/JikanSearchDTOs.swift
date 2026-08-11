@@ -1,5 +1,5 @@
 //
-//  JikanAnimeDTOs.swift
+//  JikanSearchDTOs.swift
 //  TVShowTracker
 //
 //  Created by Alan Flament on 10/08/2026.

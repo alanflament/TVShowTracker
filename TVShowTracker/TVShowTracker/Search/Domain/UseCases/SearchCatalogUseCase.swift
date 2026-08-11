@@ -66,22 +66,6 @@ struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
     }
 }
 
-private struct SearchProviderResult: Sendable {
-    let candidates: [SearchCandidate]
-    let unavailableProviders: Set<SearchProvider>
-    let providerErrors: [SearchProvider: String]
-
-    init(
-        candidates: [SearchCandidate] = [],
-        unavailableProviders: Set<SearchProvider> = [],
-        providerErrors: [SearchProvider: String] = [:]
-    ) {
-        self.candidates = candidates
-        self.unavailableProviders = unavailableProviders
-        self.providerErrors = providerErrors
-    }
-}
-
 private extension Error {
     var searchFailureMessage: String {
         (self as? LocalizedError)?.errorDescription ?? "This source could not be reached."

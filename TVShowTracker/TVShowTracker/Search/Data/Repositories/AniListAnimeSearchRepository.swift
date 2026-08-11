@@ -15,7 +15,7 @@ struct AniListAnimeSearchRepository: AnimeSearchRepository {
     }
 
     func searchAnime(matching query: String) async throws -> [SearchCandidate] {
-        let requestBody = GraphQLRequest(
+        let requestBody = AniListSearchRequest(
             query: Self.searchQuery,
             variables: ["search": query]
         )
@@ -28,7 +28,7 @@ struct AniListAnimeSearchRepository: AnimeSearchRepository {
 
         let (data, response) = try await httpClient.data(for: request)
 
-        if let graphQLResponse = try? JSONDecoder().decode(AniListGraphQLResponse.self, from: data),
+        if let graphQLResponse = try? JSONDecoder().decode(AniListSearchResponse.self, from: data),
            let message = graphQLResponse.errors?.first?.message
         {
             throw AniListAPIError.queryFailed(message)
@@ -36,7 +36,7 @@ struct AniListAnimeSearchRepository: AnimeSearchRepository {
 
         try response.validateSuccessfulStatusCode()
 
-        let graphQLResponse = try JSONDecoder().decode(AniListGraphQLResponse.self, from: data)
+        let graphQLResponse = try JSONDecoder().decode(AniListSearchResponse.self, from: data)
 
         guard let page = graphQLResponse.data?.page else {
             throw AniListAPIError.queryFailed(graphQLResponse.errors?.first?.message ?? "Unknown error")
@@ -201,20 +201,4 @@ private extension AniListAnimeSearchRepository {
         }
         return lhs.id < rhs.id
     }
-}
-
-private struct AniListRelationGraph {
-    let nodes: [Int: AniListAnime]
-    let adjacency: [Int: Set<Int>]
-    let predecessors: [Int: Set<Int>]
-}
-
-private struct GraphQLRequest: Encodable {
-    let query: String
-    let variables: [String: String]
-}
-
-private struct AniListGraphQLResponse: Decodable {
-    let data: AniListData?
-    let errors: [AniListGraphQLError]?
 }
