@@ -12,6 +12,8 @@ struct LibraryView: View {
     let makeDetailsView: (SearchCandidate) -> ShowDetailsView
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         Group {
             if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView(
@@ -19,11 +21,17 @@ struct LibraryView: View {
                     systemImage: "externaldrive.badge.xmark",
                     description: Text(errorMessage)
                 )
-            } else if viewModel.items.isEmpty {
+            } else if viewModel.isLibraryEmpty {
                 ContentUnavailableView(
                     "Your library is empty",
                     systemImage: "books.vertical",
                     description: Text("Add TV shows and anime from Search to follow them here.")
+                )
+            } else if viewModel.items.isEmpty {
+                ContentUnavailableView(
+                    "No matching media",
+                    systemImage: "magnifyingglass",
+                    description: Text("Try another title.")
                 )
             } else {
                 List {
@@ -45,6 +53,7 @@ struct LibraryView: View {
             }
         }
         .navigationTitle("Library")
+        .searchable(text: $viewModel.query, prompt: "Search your library")
     }
 }
 
