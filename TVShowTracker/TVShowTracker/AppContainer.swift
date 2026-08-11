@@ -6,13 +6,27 @@
 //
 
 import Foundation
+import SwiftData
 
 @MainActor
 final class AppContainer {
+    let modelContainer: ModelContainer
+
     private let searchCatalogUseCase: any SearchCatalogUseCase
     private let showDetailsUseCase: any ShowDetailsUseCase
+    private let followedMediaStore: FollowedMediaStore
 
     init() {
+        do {
+            modelContainer = try ModelContainer(for: LibraryItemModel.self)
+        } catch {
+            fatalError("Unable to create the SwiftData container: \(error)")
+        }
+
+        followedMediaStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext)
+        )
+
         let tvShowRepository: any TVShowSearchRepository
 
         if let tmdbAccessToken = Self.tmdbAccessToken {
@@ -58,7 +72,22 @@ final class AppContainer {
     func makeSearchCoordinator() -> SearchCoordinator {
         SearchCoordinator(
             searchCatalogUseCase: searchCatalogUseCase,
-            detailsCoordinator: DetailsCoordinator(useCase: showDetailsUseCase)
+            followedMediaStore: followedMediaStore,
+            detailsCoordinator: makeDetailsCoordinator()
+        )
+    }
+
+    func makeDetailsCoordinator() -> DetailsCoordinator {
+        DetailsCoordinator(
+            useCase: showDetailsUseCase,
+            followedMediaStore: followedMediaStore
+        )
+    }
+
+    func makeLibraryCoordinator() -> LibraryCoordinator {
+        LibraryCoordinator(
+            followedMediaStore: followedMediaStore,
+            detailsCoordinator: makeDetailsCoordinator()
         )
     }
 

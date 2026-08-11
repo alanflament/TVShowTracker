@@ -5,7 +5,7 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-enum SearchMediaKind: String, Hashable, Sendable {
+enum SearchMediaKind: String, Codable, Hashable, Sendable {
     case tvShow
     case anime
 

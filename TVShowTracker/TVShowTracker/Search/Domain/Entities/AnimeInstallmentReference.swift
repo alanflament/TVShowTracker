@@ -5,7 +5,7 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-struct AnimeInstallmentReference: Hashable, Sendable {
+struct AnimeInstallmentReference: Codable, Hashable, Sendable {
     let providerID: Int
     let title: String
     let releaseYear: Int?

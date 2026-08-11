@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct ShowDetailsView: View {
-    @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ShowDetailsViewModel
     private let makeEpisodesViewModel: () -> EpisodesViewModel
 
@@ -21,33 +20,24 @@ struct ShowDetailsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .idle, .loading:
-                    ProgressView("Loading details…")
-                case let .loaded(details):
-                    detailsContent(details)
-                case let .failed(message):
-                    ContentUnavailableView(
-                        "Details unavailable",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(message)
-                    )
-                }
+        Group {
+            switch viewModel.state {
+            case .idle, .loading:
+                ProgressView("Loading details…")
+            case let .loaded(details):
+                detailsContent(details)
+            case let .failed(message):
+                ContentUnavailableView(
+                    "Details unavailable",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(message)
+                )
             }
-            .navigationTitle(viewModel.candidate.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-            .task {
-                await viewModel.load()
-            }
+        }
+        .navigationTitle(viewModel.candidate.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.load()
         }
     }
 
@@ -78,6 +68,21 @@ struct ShowDetailsView: View {
                         }
                     }
                 }
+
+                Button {
+                    viewModel.toggleFollowed()
+                } label: {
+                    Label(
+                        viewModel.isFollowed
+                            ? "Remove from Library"
+                            : "Add to Library",
+                        systemImage: viewModel.isFollowed
+                            ? "checkmark.circle.fill"
+                            : "plus.circle"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
 
                 NavigationLink {
                     EpisodesView(viewModel: makeEpisodesViewModel())

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import TVShowTracker
 
@@ -99,6 +100,53 @@ struct TVShowTrackerTests {
         #expect(candidates.first?.title == "Dandadan")
         #expect(candidates.first?.totalEpisodeCount == 24)
         #expect(candidates.first?.animeInstallments.map(\.providerID) == [171_018, 185_660, 198_966])
+    }
+
+    @Test func swiftDataLibraryRepositoryPersistsAndDeletesItems() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let repository = SwiftDataLibraryRepository(modelContext: container.mainContext)
+        let candidate = SearchCandidate.tvShow(id: 42, title: "The Bear")
+
+        try repository.save(LibraryItem(candidate: candidate))
+        let savedItems = try repository.loadItems()
+
+        #expect(savedItems.map(\.id) == [candidate.id])
+        #expect(savedItems.first?.candidate == candidate)
+
+        try repository.delete(id: candidate.id)
+
+        #expect(try repository.loadItems().isEmpty)
+    }
+
+    @Test func followedMediaStateIsSharedThroughFeatureViewModels() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let store = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let searchViewModel = SearchViewModel(
+            searchCatalogUseCase: DefaultSearchCatalogUseCase(
+                tvShowRepository: TVShowRepositoryStub(),
+                animeRepository: AnimeRepositoryStub()
+            ),
+            followedMediaStore: store
+        )
+        let libraryViewModel = LibraryViewModel(followedMediaStore: store)
+        let candidate = SearchCandidate.tvShow(id: 42, title: "The Bear")
+
+        #expect(!searchViewModel.isFollowed(candidate))
+
+        searchViewModel.toggleFollowed(candidate)
+
+        #expect(searchViewModel.isFollowed(candidate))
+        #expect(libraryViewModel.items.map(\.id) == [candidate.id])
     }
 }
 
@@ -194,6 +242,10 @@ private struct HTTPClientStub: HTTPClient {
 private struct TVShowRepositoryStub: TVShowSearchRepository {
     let candidates: [SearchCandidate]
 
+    init(candidates: [SearchCandidate] = []) {
+        self.candidates = candidates
+    }
+
     func searchTVShows(matching _: String) async throws -> [SearchCandidate] {
         candidates
     }
@@ -201,6 +253,10 @@ private struct TVShowRepositoryStub: TVShowSearchRepository {
 
 private struct AnimeRepositoryStub: AnimeSearchRepository {
     let candidates: [SearchCandidate]
+
+    init(candidates: [SearchCandidate] = []) {
+        self.candidates = candidates
+    }
 
     func searchAnime(matching _: String) async throws -> [SearchCandidate] {
         candidates

@@ -51,7 +51,7 @@ struct SearchView: View {
                 await viewModel.search()
             }
             .sheet(item: $selectedCandidate) { candidate in
-                detailsCoordinator.makeDetailsView(for: candidate)
+                detailsCoordinator.makeDetailsSheet(for: candidate)
             }
         }
     }
@@ -63,6 +63,10 @@ struct SearchView: View {
                     ForEach(catalog.tvShows) { candidate in
                         SearchCandidateRow(candidate: candidate) {
                             selectedCandidate = candidate
+                        } onToggleLibrary: {
+                            viewModel.toggleFollowed(candidate)
+                        } isFollowed: {
+                            viewModel.isFollowed(candidate)
                         }
                     }
                 }
@@ -73,6 +77,10 @@ struct SearchView: View {
                     ForEach(catalog.anime) { candidate in
                         SearchCandidateRow(candidate: candidate) {
                             selectedCandidate = candidate
+                        } onToggleLibrary: {
+                            viewModel.toggleFollowed(candidate)
+                        } isFollowed: {
+                            viewModel.isFollowed(candidate)
                         }
                     }
                 }
@@ -104,42 +112,58 @@ struct SearchView: View {
 private struct SearchCandidateRow: View {
     let candidate: SearchCandidate
     let onSelect: () -> Void
+    let onToggleLibrary: () -> Void
+    let isFollowed: () -> Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            AsyncImage(url: candidate.posterURL) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay {
-                        Image(systemName: "tv")
+            Button(action: onSelect) {
+                HStack(alignment: .top, spacing: 12) {
+                    AsyncImage(url: candidate.posterURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(.quaternary)
+                            .overlay {
+                                Image(systemName: candidate.kind == .anime ? "sparkles.tv" : "tv")
+                                    .foregroundStyle(.secondary)
+                            }
+                    }
+                    .frame(width: 56, height: 84)
+                    .clipShape(.rect(cornerRadius: 8))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(candidate.title)
+                            .font(.headline)
+
+                        if let alternateTitle, alternateTitle != candidate.title {
+                            Text(alternateTitle)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(candidate.metadata)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-            }
-            .frame(width: 56, height: 84)
-            .clipShape(.rect(cornerRadius: 8))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(candidate.title)
-                    .font(.headline)
-
-                if let alternateTitle, alternateTitle != candidate.title {
-                    Text(alternateTitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
                 }
-
-                Text(candidate.metadata)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .buttonStyle(.plain)
+
+            Button(action: onToggleLibrary) {
+                Image(systemName: isFollowed() ? "checkmark.circle.fill" : "plus.circle")
+                    .font(.title3)
+                    .foregroundStyle(
+                        isFollowed() ? Color.green : Color.accentColor
+                    )
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(isFollowed() ? "Remove from library" : "Add to library")
         }
         .accessibilityElement(children: .combine)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
     }
 
     private var alternateTitle: String? {

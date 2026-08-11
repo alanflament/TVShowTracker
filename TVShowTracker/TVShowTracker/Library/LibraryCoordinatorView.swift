@@ -8,28 +8,20 @@
 import SwiftUI
 
 struct LibraryCoordinatorView: View {
-    @Bindable var coordinator: LibraryCoordinator
+    let coordinator: LibraryCoordinator
+    @State private var viewModel: LibraryViewModel
+
+    init(coordinator: LibraryCoordinator) {
+        self.coordinator = coordinator
+        _viewModel = State(initialValue: coordinator.makeLibraryViewModel())
+    }
 
     var body: some View {
-        NavigationStack(path: $coordinator.path) {
+        NavigationStack {
             LibraryView(
-                viewModel: coordinator.makeLibraryViewModel(),
-                onAddTapped: coordinator.createItem,
-                onItemTapped: coordinator.showItem(id:)
+                viewModel: viewModel,
+                makeDetailsView: coordinator.makeDetailsView(for:)
             )
-            .navigationDestination(for: LibraryCoordinator.Route.self) { route in
-                switch route {
-                case .detail:
-                    Color.green
-                }
-            }
-            .sheet(item: $coordinator.sheet) { sheet in
-                switch sheet {
-                case .create:
-                    Color.yellow
-                    // TODO: action: coordinator.sheet = nil
-                }
-            }
         }
     }
 }

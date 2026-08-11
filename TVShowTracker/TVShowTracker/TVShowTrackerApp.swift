@@ -11,9 +11,11 @@ import SwiftUI
 @main
 struct TVShowTrackerApp: App {
     @State private var coordinator: AppCoordinator
+    private let modelContainer: ModelContainer
 
     init() {
         let container = AppContainer()
+        modelContainer = container.modelContainer
         _coordinator = State(initialValue: container.makeAppCoordinator())
     }
 
@@ -22,5 +24,6 @@ struct TVShowTrackerApp: App {
             AppRootView()
                 .environment(coordinator)
         }
+        .modelContainer(modelContainer)
     }
 }

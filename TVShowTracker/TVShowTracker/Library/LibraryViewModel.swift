@@ -2,12 +2,26 @@
 //  LibraryViewModel.swift
 //  TVShowTracker
 //
-//  Created by Alan Flament on 30/07/2026.
-//
 
-import SwiftUI
+import Observation
 
 @MainActor @Observable
 final class LibraryViewModel {
-    func load() async {}
+    private let followedMediaStore: FollowedMediaStore
+
+    init(followedMediaStore: FollowedMediaStore) {
+        self.followedMediaStore = followedMediaStore
+    }
+
+    var items: [LibraryItem] {
+        followedMediaStore.items
+    }
+
+    var errorMessage: String? {
+        followedMediaStore.errorMessage
+    }
+
+    func remove(_ item: LibraryItem) {
+        followedMediaStore.remove(item)
+    }
 }

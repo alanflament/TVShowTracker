@@ -9,32 +9,22 @@ import SwiftUI
 
 @MainActor @Observable
 final class LibraryCoordinator {
-    enum Route: Hashable {
-        case detail(itemID: String)
-    }
+    private let followedMediaStore: FollowedMediaStore
+    private let detailsCoordinator: DetailsCoordinator
 
-    enum Sheet: String, Identifiable {
-        case create
-
-        var id: String {
-            rawValue
-        }
-    }
-
-    var path: [Route] = []
-    var sheet: Sheet?
-
-    init() {}
-
-    func showItem(id: String) {
-        path.append(.detail(itemID: id))
-    }
-
-    func createItem() {
-        sheet = .create
+    init(
+        followedMediaStore: FollowedMediaStore,
+        detailsCoordinator: DetailsCoordinator
+    ) {
+        self.followedMediaStore = followedMediaStore
+        self.detailsCoordinator = detailsCoordinator
     }
 
     func makeLibraryViewModel() -> LibraryViewModel {
-        LibraryViewModel()
+        LibraryViewModel(followedMediaStore: followedMediaStore)
+    }
+
+    func makeDetailsView(for candidate: SearchCandidate) -> ShowDetailsView {
+        detailsCoordinator.makeDetailsView(for: candidate)
     }
 }

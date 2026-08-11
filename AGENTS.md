@@ -31,7 +31,7 @@ Feature/
   Presentation/    # views, view models, coordinators
 ```
 
-Shared code belongs under `Core`, for example:
+Technical shared code belongs under `Core`, for example:
 
 ```text
 Core/
@@ -42,6 +42,25 @@ Core/
 `Infrastructure` is not used as a feature folder name. Prefer a specific role
 such as `Data/Repositories`, `Data/DTOs`, `Data/Mappers`, `Core/Networking`, or
 `Core/Formatting`.
+
+`FollowedMedia` is a shared product-domain slice, not a Library implementation
+detail. It owns the persistence and state used by the Library, Search, and
+Details features:
+
+- `FollowedMedia/Domain/LibraryItem.swift` is the persisted domain snapshot rebuilt
+  into a `SearchCandidate` when details are opened.
+- `FollowedMedia/Data/LibraryItemModel.swift` is the SwiftData record. Provider IDs,
+  kind, display metadata, and AniList installment references are stored locally.
+- `FollowedMedia/Data/SwiftDataLibraryRepository.swift` is the only SwiftData access
+  point.
+- `FollowedMedia/Presentation/FollowedMediaStore.swift` is the shared
+  main-actor source of truth. Coordinators inject it into feature view models;
+  views must not access it through `@Environment`.
+- `Library` is the presentation feature that renders followed content through
+  `LibraryViewModel`.
+
+The saved list is available offline. Details and episode contents still require
+their provider APIs unless a later iteration adds a separate details cache.
 
 ## Declaration and file rules
 
@@ -90,8 +109,9 @@ such as `Data/Repositories`, `Data/DTOs`, `Data/Mappers`, `Core/Networking`, or
   be published.
 - Keep networking behind `HTTPClient` so repositories can be tested with a
   deterministic fake.
-- Search results present the details flow with a sheet. Details owns a
-  `NavigationStack`; episode lists are pushed inside that modal flow.
+- Search presents details with a sheet. `DetailsSheetView` owns that modal
+  `NavigationStack`; `ShowDetailsView` is reusable inside the Library's
+  navigation stack, and episode lists push in either context.
 - Keep provider-specific behavior out of SwiftUI views and view models.
 
 ## Required checks

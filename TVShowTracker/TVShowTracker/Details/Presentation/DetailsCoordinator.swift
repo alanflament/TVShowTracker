@@ -10,14 +10,24 @@ import SwiftUI
 @MainActor
 final class DetailsCoordinator {
     private let useCase: any ShowDetailsUseCase
+    private let followedMediaStore: FollowedMediaStore
 
-    init(useCase: any ShowDetailsUseCase) {
+    init(useCase: any ShowDetailsUseCase, followedMediaStore: FollowedMediaStore) {
         self.useCase = useCase
+        self.followedMediaStore = followedMediaStore
+    }
+
+    func makeDetailsSheet(for candidate: SearchCandidate) -> DetailsSheetView {
+        DetailsSheetView(detailsView: makeDetailsView(for: candidate))
     }
 
     func makeDetailsView(for candidate: SearchCandidate) -> ShowDetailsView {
         ShowDetailsView(
-            viewModel: ShowDetailsViewModel(candidate: candidate, useCase: useCase),
+            viewModel: ShowDetailsViewModel(
+                candidate: candidate,
+                useCase: useCase,
+                followedMediaStore: followedMediaStore
+            ),
             makeEpisodesViewModel: {
                 EpisodesViewModel(candidate: candidate, useCase: self.useCase)
             }

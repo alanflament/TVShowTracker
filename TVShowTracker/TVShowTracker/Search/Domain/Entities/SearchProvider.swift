@@ -5,7 +5,7 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-enum SearchProvider: String, Hashable, Sendable {
+enum SearchProvider: String, Codable, Hashable, Sendable {
     case tmdb
     case aniList
     case jikan

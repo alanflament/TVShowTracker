@@ -19,10 +19,24 @@ final class ShowDetailsViewModel {
     let candidate: SearchCandidate
     private(set) var state: State = .idle
     private let useCase: any ShowDetailsUseCase
+    private let followedMediaStore: FollowedMediaStore
 
-    init(candidate: SearchCandidate, useCase: any ShowDetailsUseCase) {
+    init(
+        candidate: SearchCandidate,
+        useCase: any ShowDetailsUseCase,
+        followedMediaStore: FollowedMediaStore
+    ) {
         self.candidate = candidate
         self.useCase = useCase
+        self.followedMediaStore = followedMediaStore
+    }
+
+    var isFollowed: Bool {
+        followedMediaStore.contains(candidate)
+    }
+
+    func toggleFollowed() {
+        followedMediaStore.toggle(candidate)
     }
 
     func load() async {

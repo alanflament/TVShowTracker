@@ -42,3 +42,9 @@ The search feature reads a TMDB v4 read-access token from the generated app `Inf
 2. Set `TMDB_ACCESS_TOKEN` to your own TMDB **API Read Access Token**.
 
 `TVShowTracker/TVShowTracker/Config/Secrets.xcconfig` is ignored by Git; the token is not stored in the project file or committed. Do not use the legacy TMDB API key here. AniList public search does not require a token.
+
+### Library storage
+
+The Library stores followed TV shows and anime locally with SwiftData, so the
+saved list is available when the app is offline. Opening details or episodes
+still fetches the latest provider data when a network connection is available.
