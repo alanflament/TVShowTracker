@@ -11,6 +11,7 @@ import SwiftUI
 final class MainCoordinator {
     enum Tab: Hashable {
         case library
+        case calendar
         case search
         case settings
     }
@@ -18,11 +19,13 @@ final class MainCoordinator {
     var selectedTab: Tab = .library
 
     let libraryCoordinator: LibraryCoordinator
+    let calendarCoordinator: CalendarCoordinator
     let searchCoordinator: SearchCoordinator
     let settingsCoordinator: SettingsCoordinator
 
     init(container: AppContainer) {
         libraryCoordinator = container.makeLibraryCoordinator()
+        calendarCoordinator = container.makeCalendarCoordinator()
         searchCoordinator = container.makeSearchCoordinator()
         settingsCoordinator = container.makeSettingsCoordinator()
     }

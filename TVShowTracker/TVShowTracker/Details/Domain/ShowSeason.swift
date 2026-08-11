@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ShowSeason: Identifiable, Hashable, Sendable {
+struct ShowSeason: Codable, Identifiable, Hashable, Sendable {
     let provider: SearchProvider
     let showID: Int
     let number: Int

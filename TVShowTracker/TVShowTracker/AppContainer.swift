@@ -16,22 +16,20 @@ final class AppContainer {
     private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
+    private let episodeScheduleStore: EpisodeScheduleStore
+    private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     init() {
-        do {
-            modelContainer = try ModelContainer(
-                for: LibraryItemModel.self,
-                WatchedEpisodeModel.self
-            )
-        } catch {
-            fatalError("Unable to create the SwiftData container: \(error)")
-        }
+        modelContainer = Self.makeModelContainer()
 
         followedMediaStore = FollowedMediaStore(
             repository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext)
         )
         episodeWatchStore = EpisodeWatchStore(
             repository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext)
+        )
+        episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: modelContainer.mainContext)
         )
 
         let tvShowRepository: any TVShowSearchRepository
@@ -70,10 +68,32 @@ final class AppContainer {
             tvShowRepository: detailsTVRepository,
             animeRepository: AniListAnimeDetailsRepository()
         )
+        followedMediaRefreshStore = FollowedMediaRefreshStore(
+            refreshUseCase: DefaultEpisodeScheduleRefreshUseCase(
+                showDetailsUseCase: showDetailsUseCase
+            ),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore
+        )
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        do {
+            return try ModelContainer(
+                for: LibraryItemModel.self,
+                WatchedEpisodeModel.self,
+                EpisodeScheduleModel.self
+            )
+        } catch {
+            fatalError("Unable to create the SwiftData container: \(error)")
+        }
     }
 
     func makeAppCoordinator() -> AppCoordinator {
-        AppCoordinator(container: self)
+        AppCoordinator(
+            container: self,
+            followedMediaRefreshStore: followedMediaRefreshStore
+        )
     }
 
     func makeSearchCoordinator() -> SearchCoordinator {
@@ -96,6 +116,18 @@ final class AppContainer {
         LibraryCoordinator(
             followedMediaStore: followedMediaStore,
             detailsCoordinator: makeDetailsCoordinator()
+        )
+    }
+
+    func makeCalendarCoordinator() -> CalendarCoordinator {
+        CalendarCoordinator(
+            nextEpisodeUseCase: DefaultNextEpisodeUseCase(
+                episodeScheduleStore: episodeScheduleStore
+            ),
+            followedMediaStore: followedMediaStore,
+            episodeWatchStore: episodeWatchStore,
+            episodeScheduleStore: episodeScheduleStore,
+            followedMediaRefreshStore: followedMediaRefreshStore
         )
     }
 

@@ -92,4 +92,26 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
     var metadata: String {
         candidate.metadata
     }
+
+    var requiresEpisodeScheduleRefresh: Bool {
+        status?.requiresEpisodeScheduleRefresh ?? true
+    }
+
+    func updating(status: SearchMediaStatus) -> LibraryItem {
+        LibraryItem(
+            provider: provider,
+            providerID: providerID,
+            kind: kind,
+            title: title,
+            alternateTitle: alternateTitle,
+            posterURL: posterURL,
+            releaseYear: releaseYear,
+            totalEpisodeCount: totalEpisodeCount,
+            status: status,
+            nextEpisodeNumber: nextEpisodeNumber,
+            nextEpisodeAirDate: nextEpisodeAirDate,
+            animeInstallments: animeInstallments,
+            addedAt: addedAt
+        )
+    }
 }

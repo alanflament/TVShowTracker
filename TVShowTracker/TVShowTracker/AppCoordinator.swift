@@ -17,12 +17,30 @@ final class AppCoordinator {
     var root: Root = .main
 
     let mainCoordinator: MainCoordinator
+    private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
-    init(container: AppContainer) {
+    init(container: AppContainer, followedMediaRefreshStore: FollowedMediaRefreshStore) {
         mainCoordinator = MainCoordinator(container: container)
+        self.followedMediaRefreshStore = followedMediaRefreshStore
     }
 
     func finishOnboarding() {
         root = .main
+    }
+
+    var isRefreshingFollowedMedia: Bool {
+        followedMediaRefreshStore.isRefreshing
+    }
+
+    var followedMediaRefreshMessage: String {
+        let total = followedMediaRefreshStore.totalMediaCount
+        if total == 0 {
+            return "Refreshing your library…"
+        }
+        return "Refreshing \(total) followed \(total == 1 ? "show" : "shows")…"
+    }
+
+    func refreshFollowedMedia() async {
+        await followedMediaRefreshStore.refresh()
     }
 }

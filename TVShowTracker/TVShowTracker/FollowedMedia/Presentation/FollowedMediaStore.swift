@@ -57,6 +57,13 @@ final class FollowedMediaStore {
         items.first { $0.id == id }
     }
 
+    func updateStatus(_ status: SearchMediaStatus, for item: LibraryItem) {
+        guard item.status != status else {
+            return
+        }
+        save(item.updating(status: status))
+    }
+
     private func save(_ item: LibraryItem) {
         do {
             try repository.save(item)

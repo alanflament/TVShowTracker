@@ -18,6 +18,12 @@ struct MainCoordinatorView: View {
                 }
                 .tag(MainCoordinator.Tab.library)
 
+            CalendarCoordinatorView(coordinator: coordinator.calendarCoordinator)
+                .tabItem {
+                    Label("Calendar", systemImage: "calendar")
+                }
+                .tag(MainCoordinator.Tab.calendar)
+
             coordinator.searchCoordinator.makeSearchView()
                 .tabItem {
                     Label("Search", systemImage: "magnifyingglass")
