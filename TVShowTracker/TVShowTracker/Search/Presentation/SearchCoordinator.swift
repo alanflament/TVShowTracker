@@ -10,12 +10,20 @@ import SwiftUI
 @MainActor @Observable
 final class SearchCoordinator {
     private let searchCatalogUseCase: any SearchCatalogUseCase
+    private let detailsCoordinator: DetailsCoordinator
 
-    init(searchCatalogUseCase: any SearchCatalogUseCase) {
+    init(
+        searchCatalogUseCase: any SearchCatalogUseCase,
+        detailsCoordinator: DetailsCoordinator
+    ) {
         self.searchCatalogUseCase = searchCatalogUseCase
+        self.detailsCoordinator = detailsCoordinator
     }
 
-    func makeSearchViewModel() -> SearchViewModel {
-        SearchViewModel(searchCatalogUseCase: searchCatalogUseCase)
+    func makeSearchView() -> SearchView {
+        SearchView(
+            viewModel: SearchViewModel(searchCatalogUseCase: searchCatalogUseCase),
+            detailsCoordinator: detailsCoordinator
+        )
     }
 }

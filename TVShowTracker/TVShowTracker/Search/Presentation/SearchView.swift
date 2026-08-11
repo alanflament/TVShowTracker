@@ -9,9 +9,12 @@ import SwiftUI
 
 struct SearchView: View {
     @State private var viewModel: SearchViewModel
+    @State private var selectedCandidate: SearchCandidate?
+    private let detailsCoordinator: DetailsCoordinator
 
-    init(viewModel: SearchViewModel) {
+    init(viewModel: SearchViewModel, detailsCoordinator: DetailsCoordinator) {
         _viewModel = State(initialValue: viewModel)
+        self.detailsCoordinator = detailsCoordinator
     }
 
     var body: some View {
@@ -47,6 +50,9 @@ struct SearchView: View {
             .task(id: viewModel.query) {
                 await viewModel.search()
             }
+            .sheet(item: $selectedCandidate) { candidate in
+                detailsCoordinator.makeDetailsView(for: candidate)
+            }
         }
     }
 
@@ -55,7 +61,9 @@ struct SearchView: View {
             if !catalog.tvShows.isEmpty {
                 Section("TV Shows") {
                     ForEach(catalog.tvShows) { candidate in
-                        SearchCandidateRow(candidate: candidate)
+                        SearchCandidateRow(candidate: candidate) {
+                            selectedCandidate = candidate
+                        }
                     }
                 }
             }
@@ -63,7 +71,9 @@ struct SearchView: View {
             if !catalog.anime.isEmpty {
                 Section("Anime") {
                     ForEach(catalog.anime) { candidate in
-                        SearchCandidateRow(candidate: candidate)
+                        SearchCandidateRow(candidate: candidate) {
+                            selectedCandidate = candidate
+                        }
                     }
                 }
             }
@@ -93,6 +103,7 @@ struct SearchView: View {
 
 private struct SearchCandidateRow: View {
     let candidate: SearchCandidate
+    let onSelect: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -127,6 +138,8 @@ private struct SearchCandidateRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
     }
 
     private var alternateTitle: String? {

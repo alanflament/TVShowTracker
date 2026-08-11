@@ -10,6 +10,7 @@ import Foundation
 @MainActor
 final class AppContainer {
     private let searchCatalogUseCase: any SearchCatalogUseCase
+    private let showDetailsUseCase: any ShowDetailsUseCase
 
     init() {
         let tvShowRepository: any TVShowSearchRepository
@@ -23,12 +24,30 @@ final class AppContainer {
             tvShowRepository = UnconfiguredTVShowSearchRepository()
         }
 
+        let animeSearchRepository = FallbackAnimeSearchRepository(
+            primary: AniListAnimeSearchRepository(),
+            fallback: JikanAnimeSearchRepository()
+        )
+
         searchCatalogUseCase = DefaultSearchCatalogUseCase(
             tvShowRepository: tvShowRepository,
-            animeRepository: FallbackAnimeSearchRepository(
-                primary: AniListAnimeSearchRepository(),
-                fallback: JikanAnimeSearchRepository()
+            animeRepository: animeSearchRepository
+        )
+
+        let language = Locale.current.language.languageCode?.identifier ?? "en-US"
+        let detailsTVRepository: any TVShowDetailsRepository
+        if let tmdbAccessToken = Self.tmdbAccessToken {
+            detailsTVRepository = TMDBShowDetailsRepository(
+                accessToken: tmdbAccessToken,
+                language: language
             )
+        } else {
+            detailsTVRepository = UnconfiguredTVShowDetailsRepository()
+        }
+
+        showDetailsUseCase = DefaultShowDetailsUseCase(
+            tvShowRepository: detailsTVRepository,
+            animeRepository: AniListAnimeDetailsRepository()
         )
     }
 
@@ -37,7 +56,10 @@ final class AppContainer {
     }
 
     func makeSearchCoordinator() -> SearchCoordinator {
-        SearchCoordinator(searchCatalogUseCase: searchCatalogUseCase)
+        SearchCoordinator(
+            searchCatalogUseCase: searchCatalogUseCase,
+            detailsCoordinator: DetailsCoordinator(useCase: showDetailsUseCase)
+        )
     }
 
     private static var tmdbAccessToken: String? {
