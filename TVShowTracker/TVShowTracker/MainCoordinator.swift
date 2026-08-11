@@ -19,9 +19,11 @@ final class MainCoordinator {
 
     let libraryCoordinator: LibraryCoordinator
     let searchCoordinator: SearchCoordinator
+    let settingsCoordinator: SettingsCoordinator
 
     init(container: AppContainer) {
         libraryCoordinator = container.makeLibraryCoordinator()
         searchCoordinator = container.makeSearchCoordinator()
+        settingsCoordinator = container.makeSettingsCoordinator()
     }
 }

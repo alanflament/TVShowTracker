@@ -19,10 +19,16 @@ final class EpisodesViewModel {
     let candidate: SearchCandidate
     private(set) var state: State = .idle
     private let useCase: any ShowDetailsUseCase
+    private let episodeWatchStore: EpisodeWatchStore
 
-    init(candidate: SearchCandidate, useCase: any ShowDetailsUseCase) {
+    init(
+        candidate: SearchCandidate,
+        useCase: any ShowDetailsUseCase,
+        episodeWatchStore: EpisodeWatchStore
+    ) {
         self.candidate = candidate
         self.useCase = useCase
+        self.episodeWatchStore = episodeWatchStore
     }
 
     func load() async {
@@ -36,5 +42,16 @@ final class EpisodesViewModel {
         } catch {
             state = .failed((error as? LocalizedError)?.errorDescription ?? "Episodes could not be loaded.")
         }
+    }
+
+    func isWatched(_ episode: ShowEpisode) -> Bool {
+        episodeWatchStore.isWatched(episode)
+    }
+
+    func toggleWatched(_ episode: ShowEpisode) {
+        guard episode.isReleased else {
+            return
+        }
+        episodeWatchStore.toggle(episode)
     }
 }

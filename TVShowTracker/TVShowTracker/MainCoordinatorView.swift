@@ -24,7 +24,7 @@ struct MainCoordinatorView: View {
                 }
                 .tag(MainCoordinator.Tab.search)
 
-            Color.blue
+            coordinator.settingsCoordinator.makeSettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }

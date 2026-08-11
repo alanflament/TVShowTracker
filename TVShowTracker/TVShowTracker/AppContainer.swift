@@ -15,16 +15,23 @@ final class AppContainer {
     private let searchCatalogUseCase: any SearchCatalogUseCase
     private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
+    private let episodeWatchStore: EpisodeWatchStore
 
     init() {
         do {
-            modelContainer = try ModelContainer(for: LibraryItemModel.self)
+            modelContainer = try ModelContainer(
+                for: LibraryItemModel.self,
+                WatchedEpisodeModel.self
+            )
         } catch {
             fatalError("Unable to create the SwiftData container: \(error)")
         }
 
         followedMediaStore = FollowedMediaStore(
             repository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext)
+        )
+        episodeWatchStore = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext)
         )
 
         let tvShowRepository: any TVShowSearchRepository
@@ -80,7 +87,8 @@ final class AppContainer {
     func makeDetailsCoordinator() -> DetailsCoordinator {
         DetailsCoordinator(
             useCase: showDetailsUseCase,
-            followedMediaStore: followedMediaStore
+            followedMediaStore: followedMediaStore,
+            episodeWatchStore: episodeWatchStore
         )
     }
 
@@ -88,6 +96,19 @@ final class AppContainer {
         LibraryCoordinator(
             followedMediaStore: followedMediaStore,
             detailsCoordinator: makeDetailsCoordinator()
+        )
+    }
+
+    func makeSettingsCoordinator() -> SettingsCoordinator {
+        SettingsCoordinator(
+            tvTimeImportUseCase: DefaultTVTimeImportUseCase(
+                exportParser: TVTimeCSVExportParser(),
+                searchCatalogUseCase: searchCatalogUseCase,
+                showDetailsUseCase: showDetailsUseCase,
+                followedMediaStore: followedMediaStore,
+                episodeWatchStore: episodeWatchStore,
+                candidateMatcher: TVTimeSearchCandidateMatcher()
+            )
         )
     }
 

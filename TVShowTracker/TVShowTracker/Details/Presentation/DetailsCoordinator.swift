@@ -11,10 +11,16 @@ import SwiftUI
 final class DetailsCoordinator {
     private let useCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
+    private let episodeWatchStore: EpisodeWatchStore
 
-    init(useCase: any ShowDetailsUseCase, followedMediaStore: FollowedMediaStore) {
+    init(
+        useCase: any ShowDetailsUseCase,
+        followedMediaStore: FollowedMediaStore,
+        episodeWatchStore: EpisodeWatchStore
+    ) {
         self.useCase = useCase
         self.followedMediaStore = followedMediaStore
+        self.episodeWatchStore = episodeWatchStore
     }
 
     func makeDetailsSheet(for candidate: SearchCandidate) -> DetailsSheetView {
@@ -29,7 +35,11 @@ final class DetailsCoordinator {
                 followedMediaStore: followedMediaStore
             ),
             makeEpisodesViewModel: {
-                EpisodesViewModel(candidate: candidate, useCase: self.useCase)
+                EpisodesViewModel(
+                    candidate: candidate,
+                    useCase: self.useCase,
+                    episodeWatchStore: self.episodeWatchStore
+                )
             }
         )
     }

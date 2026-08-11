@@ -56,11 +56,20 @@ Details features:
 - `FollowedMedia/Presentation/FollowedMediaStore.swift` is the shared
   main-actor source of truth. Coordinators inject it into feature view models;
   views must not access it through `@Environment`.
+- `FollowedMedia` also owns persisted episode-watch records and
+  `EpisodeWatchStore`. Episode rows are rendered by Details, but their watched
+  state is shared product state rather than a Details implementation detail.
 - `Library` is the presentation feature that renders followed content through
   `LibraryViewModel`.
 
 The saved list is available offline. Details and episode contents still require
 their provider APIs unless a later iteration adds a separate details cache.
+
+`TVTimeImport` is a standalone migration feature. It parses a user-selected
+TV Time `gdpr-data` directory locally, never copies it into the app container,
+and resolves titles through the normal search and details use cases. Import only
+accepts an exact, unambiguous provider title match; uncertain shows and episode
+rows are reported rather than guessed.
 
 ## Declaration and file rules
 

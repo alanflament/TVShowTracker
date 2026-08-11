@@ -38,8 +38,15 @@ final class FollowedMediaStore {
         if contains(candidate) {
             remove(id: candidate.id)
         } else {
-            save(LibraryItem(candidate: candidate))
+            addIfMissing(candidate)
         }
+    }
+
+    func addIfMissing(_ candidate: SearchCandidate) {
+        guard !contains(candidate) else {
+            return
+        }
+        save(LibraryItem(candidate: candidate))
     }
 
     func remove(_ item: LibraryItem) {
