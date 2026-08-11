@@ -19,7 +19,7 @@ struct JikanAnimeSearchRepository: AnimeSearchRepository {
         components?.queryItems = [
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "limit", value: "20"),
-            URLQueryItem(name: "sfw", value: "true"),
+            URLQueryItem(name: "sfw", value: "true")
         ]
 
         guard let url = components?.url else {

@@ -73,7 +73,7 @@ private extension TVTimeCSVExportParser {
             "rewatched_episode.csv",
             "seen_episode.csv",
             "seen_episode_unitarian.csv",
-            "seen_episode_latest.csv",
+            "seen_episode_latest.csv"
         ]
     }
 

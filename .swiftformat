@@ -1,0 +1,4 @@
+--trailing-commas never
+--allman false
+--disable wrapMultilineStatementBraces
+--swift-version 5.0

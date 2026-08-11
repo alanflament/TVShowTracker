@@ -67,7 +67,7 @@ private extension JikanAnimeDetailsRepository {
         components?.queryItems = [
             URLQueryItem(name: "q", value: candidate.title),
             URLQueryItem(name: "limit", value: "10"),
-            URLQueryItem(name: "sfw", value: "true"),
+            URLQueryItem(name: "sfw", value: "true")
         ]
 
         guard let url = components?.url else {

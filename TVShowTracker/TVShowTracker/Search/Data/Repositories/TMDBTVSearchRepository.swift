@@ -27,7 +27,7 @@ struct TMDBTVSearchRepository: TVShowSearchRepository {
         components?.queryItems = [
             URLQueryItem(name: "query", value: query),
             URLQueryItem(name: "language", value: language),
-            URLQueryItem(name: "include_adult", value: "false"),
+            URLQueryItem(name: "include_adult", value: "false")
         ]
 
         guard let url = components?.url else {

@@ -149,8 +149,7 @@ private extension AniListAnimeDetailsRepository {
 
         let (data, response) = try await httpClient.data(for: request)
         if let graphQLResponse = try? JSONDecoder().decode(AniListDetailsResponse.self, from: data),
-           let message = graphQLResponse.errors?.first?.message
-        {
+           let message = graphQLResponse.errors?.first?.message {
             throw AniListAPIError.queryFailed(message)
         }
         try response.validateSuccessfulStatusCode()

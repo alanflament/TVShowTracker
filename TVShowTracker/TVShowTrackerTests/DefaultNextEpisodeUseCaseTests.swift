@@ -31,7 +31,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 number: 1,
                 name: "Season 1",
                 episodes: [futureEpisode]
-            )]),
+            )])
         ]))
         let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
 
@@ -57,7 +57,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 number: 1,
                 name: "Season 1",
                 episodes: [watchedEpisode, nextEpisode]
-            )]),
+            )])
         ]))
         let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
 

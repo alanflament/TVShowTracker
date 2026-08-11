@@ -31,7 +31,7 @@ struct FallbackAnimeSearchRepository: AnimeSearchRepository {
                 throw FallbackAnimeSearchError(
                     providerErrors: [
                         .aniList: primaryError,
-                        .jikan: error.searchFailureMessage,
+                        .jikan: error.searchFailureMessage
                     ]
                 )
             }

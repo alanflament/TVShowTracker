@@ -16,11 +16,11 @@ struct TVShowTrackerTests {
         let useCase = DefaultSearchCatalogUseCase(
             tvShowRepository: TVShowRepositoryStub(candidates: [
                 .tvShow(id: 2, title: "The Bear"),
-                .tvShow(id: 1, title: "Abbott Elementary"),
+                .tvShow(id: 1, title: "Abbott Elementary")
             ]),
             animeRepository: AnimeRepositoryStub(candidates: [
                 .anime(id: 2, title: "Zom 100"),
-                .anime(id: 1, title: "Attack on Titan"),
+                .anime(id: 1, title: "Attack on Titan")
             ])
         )
 
