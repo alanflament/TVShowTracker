@@ -9,6 +9,16 @@ import Foundation
 
 extension SearchCandidate {
     init(_ anime: AniListAnime) {
+        self.init(anime, installments: [anime])
+    }
+
+    init(_ anime: AniListAnime, installments: [AniListAnime]) {
+        let knownEpisodeCounts = installments.compactMap(\.episodes)
+        let latestInstallment = installments.last ?? anime
+        let nextEpisode = installments
+            .compactMap(\.nextAiringEpisode)
+            .min { $0.airingAt < $1.airingAt }
+
         self = .init(
             provider: .aniList,
             providerID: anime.id,
@@ -17,10 +27,11 @@ extension SearchCandidate {
             alternateTitle: anime.title.alternateTitle,
             posterURL: anime.coverImage.large ?? anime.coverImage.medium,
             releaseYear: anime.startDate.year,
-            totalEpisodeCount: anime.episodes,
-            status: SearchMediaStatus(anilistStatus: anime.status),
-            nextEpisodeNumber: anime.nextAiringEpisode?.episode,
-            nextEpisodeAirDate: anime.nextAiringEpisode.map { Date(timeIntervalSince1970: TimeInterval($0.airingAt)) }
+            totalEpisodeCount: knownEpisodeCounts.isEmpty ? nil : knownEpisodeCounts.reduce(0, +),
+            status: SearchMediaStatus(anilistStatus: latestInstallment.status),
+            nextEpisodeNumber: nextEpisode?.episode,
+            nextEpisodeAirDate: nextEpisode.map { Date(timeIntervalSince1970: TimeInterval($0.airingAt)) },
+            animeInstallments: installments.map(\.installmentReference)
         )
     }
 

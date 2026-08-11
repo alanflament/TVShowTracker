@@ -19,13 +19,26 @@ struct URLSessionHTTPClient: HTTPClient {
     }
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw HTTPClientError.nonHTTPResponse
+        var request = request
+        if request.value(forHTTPHeaderField: "User-Agent") == nil {
+            request.setValue("TVShowTracker/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
         }
 
-        return (data, httpResponse)
+        for attempt in 0 ..< 3 {
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw HTTPClientError.nonHTTPResponse
+            }
+
+            if !(500 ... 599).contains(httpResponse.statusCode) || attempt == 2 {
+                return (data, httpResponse)
+            }
+
+            try await Task.sleep(nanoseconds: 250_000_000)
+        }
+
+        throw HTTPClientError.nonHTTPResponse
     }
 }
 

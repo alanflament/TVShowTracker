@@ -23,10 +23,41 @@ struct AniListAnime: Decodable {
     let id: Int
     let title: AniListTitle
     let coverImage: AniListCoverImage
+    let format: String?
     let status: String?
     let episodes: Int?
     let startDate: AniListFuzzyDate
     let nextAiringEpisode: AniListAiringEpisode?
+    let relations: AniListRelations?
+
+    var installmentReference: AnimeInstallmentReference {
+        AnimeInstallmentReference(
+            providerID: id,
+            title: title.preferredTitle,
+            releaseYear: startDate.year,
+            releaseMonth: startDate.month,
+            releaseDay: startDate.day,
+            episodeCount: episodes,
+            status: SearchMediaStatus(anilistStatus: status)
+        )
+    }
+
+    var isSeasonInstallment: Bool {
+        ["TV", "TV_SHORT", "ONA"].contains(format)
+    }
+}
+
+struct AniListRelations: Decodable {
+    let edges: [AniListRelationEdge]
+}
+
+struct AniListRelationEdge: Decodable {
+    let relationType: String
+    let node: AniListAnime
+
+    var connectsSeasons: Bool {
+        ["PREQUEL", "SEQUEL"].contains(relationType) && node.isSeasonInstallment
+    }
 }
 
 struct AniListTitle: Decodable {
@@ -53,6 +84,8 @@ struct AniListCoverImage: Decodable {
 
 struct AniListFuzzyDate: Decodable {
     let year: Int?
+    let month: Int?
+    let day: Int?
 }
 
 struct AniListAiringEpisode: Decodable {

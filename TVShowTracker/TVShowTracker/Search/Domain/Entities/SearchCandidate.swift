@@ -58,6 +58,35 @@ struct SearchCandidate: Identifiable, Hashable, Sendable {
     let status: SearchMediaStatus?
     let nextEpisodeNumber: Int?
     let nextEpisodeAirDate: Date?
+    let animeInstallments: [AnimeInstallmentReference]
+
+    init(
+        provider: SearchProvider,
+        providerID: Int,
+        kind: SearchMediaKind,
+        title: String,
+        alternateTitle: String?,
+        posterURL: URL?,
+        releaseYear: Int?,
+        totalEpisodeCount: Int?,
+        status: SearchMediaStatus?,
+        nextEpisodeNumber: Int?,
+        nextEpisodeAirDate: Date?,
+        animeInstallments: [AnimeInstallmentReference] = []
+    ) {
+        self.provider = provider
+        self.providerID = providerID
+        self.kind = kind
+        self.title = title
+        self.alternateTitle = alternateTitle
+        self.posterURL = posterURL
+        self.releaseYear = releaseYear
+        self.totalEpisodeCount = totalEpisodeCount
+        self.status = status
+        self.nextEpisodeNumber = nextEpisodeNumber
+        self.nextEpisodeAirDate = nextEpisodeAirDate
+        self.animeInstallments = animeInstallments
+    }
 
     var id: String {
         "\(provider.rawValue):\(providerID)"
@@ -76,4 +105,14 @@ struct SearchCandidate: Identifiable, Hashable, Sendable {
 
         return values.joined(separator: " · ")
     }
+}
+
+struct AnimeInstallmentReference: Hashable, Sendable {
+    let providerID: Int
+    let title: String
+    let releaseYear: Int?
+    let releaseMonth: Int?
+    let releaseDay: Int?
+    let episodeCount: Int?
+    let status: SearchMediaStatus?
 }
