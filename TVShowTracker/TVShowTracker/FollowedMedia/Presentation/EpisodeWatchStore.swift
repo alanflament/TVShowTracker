@@ -50,6 +50,26 @@ final class EpisodeWatchStore {
         saveWatchedEpisode(WatchedEpisode(episode: episode, watchedAt: watchedAt ?? .now))
     }
 
+    func markWatched(_ episodes: [ShowEpisode]) {
+        let episodesToMark = episodes.filter { !isWatched($0) }
+        guard !episodesToMark.isEmpty else {
+            return
+        }
+
+        let watchedAt = Date.now
+        let watchedEpisodes = episodesToMark.map {
+            WatchedEpisode(episode: $0, watchedAt: watchedAt)
+        }
+
+        do {
+            try repository.save(watchedEpisodes)
+            watchedEpisodeIDs.formUnion(watchedEpisodes.map(\.id))
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func markWatched(_ episode: ShowEpisode) {
         saveWatchedEpisode(WatchedEpisode(episode: episode))
     }

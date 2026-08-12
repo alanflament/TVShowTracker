@@ -9,6 +9,7 @@ import SwiftUI
 
 struct EpisodesView: View {
     @State private var viewModel: EpisodesViewModel
+    @State private var expandedSeasonIDs = Set<String>()
 
     init(viewModel: EpisodesViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -39,28 +40,96 @@ struct EpisodesView: View {
         List {
             if seasons.isEmpty {
                 ContentUnavailableView("No episodes", systemImage: "list.number")
+            } else if viewModel.releasedUnwatchedEpisodeCount(in: seasons.flatMap(\.episodes)) > 0 {
+                Section {
+                    Button {
+                        viewModel.markAllWatched(seasons)
+                    } label: {
+                        Label(
+                            "Mark all released episodes as watched",
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
 
             ForEach(seasons) { season in
                 Section {
-                    ForEach(season.episodes) { episode in
-                        EpisodeRow(
-                            episode: episode,
-                            isWatched: viewModel.isWatched(episode),
-                            onToggleWatched: {
-                                viewModel.toggleWatched(episode)
-                            }
-                        )
+                    if expandedSeasonIDs.contains(season.id) {
+                        ForEach(season.episodes) { episode in
+                            EpisodeRow(
+                                episode: episode,
+                                isWatched: viewModel.isWatched(episode),
+                                onToggleWatched: {
+                                    viewModel.toggleWatched(episode)
+                                }
+                            )
+                        }
                     }
                 } header: {
-                    HStack {
-                        Text(season.displayName)
-                        Spacer()
-                        Text("\(season.episodes.count) episodes")
-                            .foregroundStyle(.secondary)
-                    }
+                    SeasonHeader(
+                        season: season,
+                        isExpanded: expandedSeasonIDs.contains(season.id),
+                        isFullyWatched: viewModel.areAllWatched(in: season.episodes),
+                        unwatchedReleasedEpisodeCount: viewModel.releasedUnwatchedEpisodeCount(
+                            in: season.episodes
+                        ),
+                        onToggle: {
+                            toggleExpansion(for: season)
+                        },
+                        onMarkWatched: {
+                            viewModel.markSeasonWatched(season)
+                        }
+                    )
                 }
             }
+        }
+    }
+
+    private func toggleExpansion(for season: ShowSeason) {
+        if expandedSeasonIDs.contains(season.id) {
+            expandedSeasonIDs.remove(season.id)
+        } else {
+            expandedSeasonIDs.insert(season.id)
+        }
+    }
+}
+
+private struct SeasonHeader: View {
+    let season: ShowSeason
+    let isExpanded: Bool
+    let isFullyWatched: Bool
+    let unwatchedReleasedEpisodeCount: Int
+    let onToggle: () -> Void
+    let onMarkWatched: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onToggle) {
+                HStack(spacing: 8) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 12)
+                    Text(season.displayName)
+                    Spacer()
+                    Text("\(season.episodes.count) episodes")
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(season.displayName), \(season.episodes.count) episodes")
+            .accessibilityHint(isExpanded ? "Collapse season" : "Expand season")
+
+            Button(action: onMarkWatched) {
+                Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                    .foregroundStyle(isFullyWatched ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(unwatchedReleasedEpisodeCount == 0)
+            .accessibilityLabel("Mark all released episodes in \(season.displayName) as watched")
         }
     }
 }

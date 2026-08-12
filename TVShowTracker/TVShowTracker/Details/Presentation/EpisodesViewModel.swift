@@ -54,4 +54,24 @@ final class EpisodesViewModel {
         }
         episodeWatchStore.toggle(episode)
     }
+
+    func markSeasonWatched(_ season: ShowSeason) {
+        markWatched(season.episodes)
+    }
+
+    func markAllWatched(_ seasons: [ShowSeason]) {
+        markWatched(seasons.flatMap(\.episodes))
+    }
+
+    func releasedUnwatchedEpisodeCount(in episodes: [ShowEpisode]) -> Int {
+        episodes.count { $0.isReleased && !isWatched($0) }
+    }
+
+    func areAllWatched(in episodes: [ShowEpisode]) -> Bool {
+        episodes.allSatisfy(isWatched)
+    }
+
+    private func markWatched(_ episodes: [ShowEpisode]) {
+        episodeWatchStore.markWatched(episodes.filter(\.isReleased))
+    }
 }
