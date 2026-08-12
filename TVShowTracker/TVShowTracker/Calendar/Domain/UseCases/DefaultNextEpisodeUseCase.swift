@@ -26,9 +26,18 @@ struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
             alphabeticalShowOrder(lhs, rhs)
         }
         let episodeMediaIDs = Set(episodes.map(\.candidate.id))
+        let availableEpisodeCount = items.reduce(into: 0) { count, item in
+            count += (episodeScheduleStore.schedule(for: item)?.seasons ?? [])
+                .filter { !$0.isSpecial }
+                .flatMap(\.episodes)
+                .count { episode in
+                    !watchedEpisodeIDs.contains(episode.id) && episode.isReleased(at: now)
+                }
+        }
 
         return NextEpisodeResult(
             episodes: episodes,
+            availableEpisodeCount: availableEpisodeCount,
             undatedMedia: items
                 .filter { item in
                     item.requiresEpisodeScheduleRefresh

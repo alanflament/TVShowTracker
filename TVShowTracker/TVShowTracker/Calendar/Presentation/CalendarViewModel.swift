@@ -13,7 +13,11 @@ final class CalendarViewModel {
     enum State {
         case idle
         case loading
-        case loaded([CalendarEpisode], undatedMedia: [CalendarUndatedMedia])
+        case loaded(
+            [CalendarEpisode],
+            availableEpisodeCount: Int,
+            undatedMedia: [CalendarUndatedMedia]
+        )
     }
 
     private let nextEpisodeUseCase: any NextEpisodeUseCase
@@ -54,7 +58,7 @@ final class CalendarViewModel {
     func refresh() async {
         let items = followedMediaStore.items
         guard !items.isEmpty else {
-            state = .loaded([], undatedMedia: [])
+            state = .loaded([], availableEpisodeCount: 0, undatedMedia: [])
             return
         }
 
@@ -64,7 +68,11 @@ final class CalendarViewModel {
             watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs,
             now: .now
         )
-        state = .loaded(result.episodes, undatedMedia: result.undatedMedia)
+        state = .loaded(
+            result.episodes,
+            availableEpisodeCount: result.availableEpisodeCount,
+            undatedMedia: result.undatedMedia
+        )
     }
 
     func markEpisodeWatched(_ episode: CalendarEpisode) async {

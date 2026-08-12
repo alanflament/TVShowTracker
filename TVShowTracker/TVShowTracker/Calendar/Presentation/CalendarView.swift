@@ -25,8 +25,12 @@ struct CalendarView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case let .loaded(episodes, undatedMedia):
-                calendarContent(episodes: episodes, undatedMedia: undatedMedia)
+            case let .loaded(episodes, availableEpisodeCount, undatedMedia):
+                calendarContent(
+                    episodes: episodes,
+                    availableEpisodeCount: availableEpisodeCount,
+                    undatedMedia: undatedMedia
+                )
             }
         }
         .navigationTitle("Up Next")
@@ -43,6 +47,7 @@ struct CalendarView: View {
 
     private func calendarContent(
         episodes: [CalendarEpisode],
+        availableEpisodeCount: Int,
         undatedMedia: [CalendarUndatedMedia]
     ) -> some View {
         let availableEpisodes = episodes.filter(\.episode.isReleased)
@@ -56,7 +61,7 @@ struct CalendarView: View {
                     emptyContent()
                 } else {
                     UpNextSummary(
-                        availableEpisodeCount: availableEpisodes.count,
+                        availableEpisodeCount: availableEpisodeCount,
                         undatedMediaCount: undatedMedia.count
                     )
 

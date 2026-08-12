@@ -7,5 +7,6 @@
 
 struct NextEpisodeResult: Sendable {
     let episodes: [CalendarEpisode]
+    let availableEpisodeCount: Int
     let undatedMedia: [CalendarUndatedMedia]
 }
