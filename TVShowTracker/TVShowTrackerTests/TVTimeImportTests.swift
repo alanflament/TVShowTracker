@@ -42,6 +42,7 @@ struct TVTimeImportTests {
         let report = try await useCase.importExport(at: URL(filePath: "/unused")) { _ in }
 
         #expect(report.addedShowCount == 1)
+        #expect(report.parsedWatchedEpisodeCount == 1)
         #expect(report.restoredEpisodeCount == 1)
         #expect(followedMediaStore.contains(candidate))
         #expect(episodeWatchStore.isWatched(episode))
@@ -85,7 +86,54 @@ struct TVTimeImportTests {
         let report = try await useCase.importExport(at: URL(filePath: "/unused")) { _ in }
 
         #expect(report.addedShowCount == 1)
+        #expect(report.parsedWatchedEpisodeCount == 0)
         #expect(episodeScheduleStore.schedule(for: LibraryItem(candidate: candidate)) != nil)
+    }
+
+    @Test func restoresWatchedEpisodesFromPersistedScheduleWithoutRefetching() async throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
+            configurations: configuration
+        )
+        let followedMediaStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let episodeWatchStore = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+        )
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
+        let candidate = makeCandidate()
+        let episode = makeEpisode()
+        followedMediaStore.addIfMissing(candidate)
+        episodeScheduleStore.save(
+            item: LibraryItem(candidate: candidate),
+            seasons: [ShowSeason(
+                provider: episode.provider,
+                showID: episode.showID,
+                number: episode.seasonNumber,
+                name: "Season 1",
+                episodes: [episode]
+            )]
+        )
+        let useCase = makeUseCase(
+            candidate: candidate,
+            episode: episode,
+            followedMediaStore: followedMediaStore,
+            episodeWatchStore: episodeWatchStore,
+            episodeScheduleStore: episodeScheduleStore,
+            detailsShouldFail: true
+        )
+
+        let report = try await useCase.importExport(at: URL(filePath: "/unused")) { _ in }
+
+        #expect(report.restoredEpisodeCount == 1)
+        #expect(report.parsedWatchedEpisodeCount == 1)
+        #expect(episodeWatchStore.isWatched(episode))
     }
 }
 
@@ -126,6 +174,7 @@ private func makeUseCase(
     followedMediaStore: FollowedMediaStore,
     episodeWatchStore: EpisodeWatchStore,
     episodeScheduleStore: EpisodeScheduleStore,
+    detailsShouldFail: Bool = false,
     watchedEpisodes: [TVTimeWatchedEpisode] = [TVTimeWatchedEpisode(
         showTitle: "The Bear",
         seasonNumber: 1,
@@ -141,7 +190,10 @@ private func makeUseCase(
     return DefaultTVTimeImportUseCase(
         exportParser: TVTimeExportParserStub(export: export),
         searchCatalogUseCase: SearchCatalogUseCaseStub(candidate: candidate),
-        showDetailsUseCase: ShowDetailsUseCaseStub(episode: episode),
+        showDetailsUseCase: ShowDetailsUseCaseStub(
+            episode: episode,
+            shouldFail: detailsShouldFail
+        ),
         followedMediaStore: followedMediaStore,
         episodeWatchStore: episodeWatchStore,
         episodeScheduleStore: episodeScheduleStore,
@@ -172,13 +224,17 @@ private struct SearchCatalogUseCaseStub: SearchCatalogUseCase {
 
 private struct ShowDetailsUseCaseStub: ShowDetailsUseCase {
     let episode: ShowEpisode
+    let shouldFail: Bool
 
     func fetchDetails(for _: SearchCandidate) async throws -> ShowDetails {
         throw TVTimeImportTestError.expectedFailure
     }
 
     func fetchEpisodes(for _: SearchCandidate) async throws -> [ShowSeason] {
-        [ShowSeason(
+        if shouldFail {
+            throw TVTimeImportTestError.expectedFailure
+        }
+        return [ShowSeason(
             provider: episode.provider,
             showID: episode.showID,
             number: episode.seasonNumber,

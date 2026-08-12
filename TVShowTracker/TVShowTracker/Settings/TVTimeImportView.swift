@@ -83,6 +83,7 @@ struct TVTimeImportView: View {
         Section("Import complete") {
             LabeledContent("Shows added", value: "\(report.addedShowCount)")
             LabeledContent("Already in Library", value: "\(report.existingShowCount)")
+            LabeledContent("Watched episodes found", value: "\(report.parsedWatchedEpisodeCount)")
             LabeledContent("Watched episodes restored", value: "\(report.restoredEpisodeCount)")
             LabeledContent("Episodes not restored", value: "\(report.unresolvedEpisodeCount)")
 
@@ -116,6 +117,8 @@ struct TVTimeImportView: View {
             "Finding shows"
         case .loadingEpisodeSchedules:
             "Loading episode schedules"
+        case .restoringWatchedEpisodes:
+            "Restoring watched episodes"
         }
     }
 

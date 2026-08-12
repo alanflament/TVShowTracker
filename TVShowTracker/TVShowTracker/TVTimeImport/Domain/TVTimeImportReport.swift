@@ -8,6 +8,7 @@
 struct TVTimeImportReport: Sendable {
     let addedShowCount: Int
     let existingShowCount: Int
+    let parsedWatchedEpisodeCount: Int
     let restoredEpisodeCount: Int
     let unresolvedShowTitles: [String]
     let unresolvedEpisodeCount: Int

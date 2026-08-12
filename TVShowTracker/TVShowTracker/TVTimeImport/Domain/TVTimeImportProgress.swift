@@ -10,6 +10,7 @@ struct TVTimeImportProgress: Sendable {
         case readingExport
         case resolvingShows
         case loadingEpisodeSchedules
+        case restoringWatchedEpisodes
     }
 
     let phase: Phase

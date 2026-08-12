@@ -17,19 +17,15 @@ struct TVTimeCSVExportParser: TVTimeExportParsing {
         }
 
         var watchedEpisodes = [String: TVTimeWatchedEpisode]()
-        for filename in episodeSourceFilenames {
-            let fileURL = exportFolderURL.appending(path: filename)
-            guard FileManager.default.fileExists(atPath: fileURL.path()) else {
-                continue
-            }
-
+        for fileURL in try episodeSourceURLs(in: exportFolderURL) {
+            let filename = fileURL.lastPathComponent
             let rows = try TVTimeCSVDocument(contentsOf: fileURL).rows
             for row in rows {
                 guard let episode = makeEpisode(from: row, in: filename) else {
                     continue
                 }
 
-                let key = "\(episode.normalizedShowTitle):\(episode.seasonNumber):\(episode.episodeNumber)"
+                let key = episodeIdentity(for: episode)
                 if let existing = watchedEpisodes[key] {
                     watchedEpisodes[key] = latestEpisode(between: existing, and: episode)
                 } else {
@@ -40,7 +36,7 @@ struct TVTimeCSVExportParser: TVTimeExportParsing {
 
         return TVTimeExport(
             followedShows: Array(Set(followedShows)),
-            watchedEpisodes: Array(watchedEpisodes.values)
+            watchedEpisodes: watchedEpisodes.values.sorted(by: episodeOrder)
         )
     }
 }
@@ -77,6 +73,18 @@ private extension TVTimeCSVExportParser {
         ]
     }
 
+    func episodeSourceURLs(in exportFolderURL: URL) throws -> [URL] {
+        let fileURLs = try FileManager.default.contentsOfDirectory(
+            at: exportFolderURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        )
+        let urlsByFilename = Dictionary(uniqueKeysWithValues: fileURLs.map {
+            ($0.lastPathComponent, $0)
+        })
+        return episodeSourceFilenames.compactMap { urlsByFilename[$0] }
+    }
+
     func makeShow(_ title: String) -> TVTimeShow? {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmedTitle.isEmpty ? nil : TVTimeShow(title: trimmedTitle)
@@ -89,8 +97,8 @@ private extension TVTimeCSVExportParser {
         watchedAt: String?
     ) -> TVTimeWatchedEpisode? {
         guard let show = title.flatMap({ makeShow($0) }),
-              let seasonValue = seasonNumber.flatMap(Int.init),
-              let episodeValue = episodeNumber.flatMap(Int.init)
+              let seasonValue = seasonNumber.flatMap(integer),
+              let episodeValue = episodeNumber.flatMap(integer)
         else {
             return nil
         }
@@ -108,8 +116,22 @@ private extension TVTimeCSVExportParser {
             title: row["tv_show_name"],
             seasonNumber: row["episode_season_number"],
             episodeNumber: row["episode_number"],
-            watchedAt: row["updated_at"]
+            watchedAt: row["updated_at"] ?? row["created_at"]
         )
+    }
+
+    func integer(from value: String) -> Int? {
+        Int(value.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    func episodeIdentity(for episode: TVTimeWatchedEpisode) -> String {
+        "\(episode.normalizedShowTitle):\(episode.seasonNumber):\(episode.episodeNumber)"
+    }
+
+    func episodeOrder(_ lhs: TVTimeWatchedEpisode, _ rhs: TVTimeWatchedEpisode) -> Bool {
+        let lhsKey = (lhs.normalizedShowTitle, lhs.seasonNumber, lhs.episodeNumber)
+        let rhsKey = (rhs.normalizedShowTitle, rhs.seasonNumber, rhs.episodeNumber)
+        return lhsKey < rhsKey
     }
 
     func latestEpisode(
