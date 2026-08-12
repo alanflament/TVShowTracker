@@ -114,8 +114,8 @@ struct TVTimeImportView: View {
             "Reading export"
         case .resolvingShows:
             "Finding shows"
-        case .restoringEpisodes:
-            "Restoring watched episodes"
+        case .loadingEpisodeSchedules:
+            "Loading episode schedules"
         }
     }
 

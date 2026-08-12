@@ -43,9 +43,20 @@ struct TMDBShowDetails: Decodable {
             status: SearchMediaStatus(tmdbStatus: status),
             totalEpisodeCount: numberOfEpisodes,
             genres: genres.map(\.name),
-            seasonSummaries: seasons.map { $0.asDomain(provider: .tmdb, showID: id) }
+            seasonSummaries: seasons
+                .map { $0.asDomain(provider: .tmdb, showID: id) }
+                .sorted(by: seasonOrder)
         )
     }
+}
+
+private func seasonOrder(_ lhs: SeasonSummary, _ rhs: SeasonSummary) -> Bool {
+    let lhsIsSpecial = lhs.number == 0
+    let rhsIsSpecial = rhs.number == 0
+    if lhsIsSpecial != rhsIsSpecial {
+        return !lhsIsSpecial
+    }
+    return lhs.number < rhs.number
 }
 
 struct TMDBGenre: Decodable {

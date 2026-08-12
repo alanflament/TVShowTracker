@@ -13,7 +13,7 @@ final class CalendarViewModel {
     enum State {
         case idle
         case loading
-        case loaded(CalendarEpisode?, missingScheduleCount: Int)
+        case loaded([CalendarEpisode], missingScheduleCount: Int)
         case failed(String)
     }
 
@@ -54,7 +54,7 @@ final class CalendarViewModel {
     func refresh() async {
         let items = followedMediaStore.items
         guard !items.isEmpty else {
-            state = .loaded(nil, missingScheduleCount: 0)
+            state = .loaded([], missingScheduleCount: 0)
             return
         }
 
@@ -64,13 +64,10 @@ final class CalendarViewModel {
             watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs,
             now: .now
         )
-        state = .loaded(result.episode, missingScheduleCount: result.missingScheduleCount)
+        state = .loaded(result.episodes, missingScheduleCount: result.missingScheduleCount)
     }
 
-    func markEpisodeWatched() async {
-        guard case let .loaded(episode?, _) = state else {
-            return
-        }
+    func markEpisodeWatched(_ episode: CalendarEpisode) async {
         episodeWatchStore.markWatched(episode.episode, watchedAt: nil)
         await refresh()
     }

@@ -14,6 +14,14 @@ struct ShowSeason: Codable, Identifiable, Hashable, Sendable {
     let name: String
     let episodes: [ShowEpisode]
 
+    var isSpecial: Bool {
+        number == 0
+    }
+
+    var displayName: String {
+        isSpecial ? "Specials" : name
+    }
+
     var id: String {
         "\(provider.rawValue):\(showID):season:\(number)"
     }

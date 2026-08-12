@@ -16,8 +16,8 @@ struct CalendarView: View {
             switch viewModel.state {
             case .idle, .loading:
                 ProgressView("Finding your next episode…")
-            case let .loaded(episode, missingScheduleCount):
-                calendarContent(episode: episode, missingScheduleCount: missingScheduleCount)
+            case let .loaded(episodes, missingScheduleCount):
+                calendarContent(episodes: episodes, missingScheduleCount: missingScheduleCount)
             case let .failed(message):
                 ContentUnavailableView(
                     "Calendar unavailable",
@@ -36,22 +36,26 @@ struct CalendarView: View {
     }
 
     private func calendarContent(
-        episode: CalendarEpisode?,
+        episodes: [CalendarEpisode],
         missingScheduleCount: Int
     ) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                if let episode {
-                    Text("Next episode")
+                if !episodes.isEmpty {
+                    Text("Next episodes")
                         .font(.title2.bold())
-                    CalendarEpisodeCard(
-                        episode: episode,
-                        onMarkWatched: {
-                            Task {
-                                await viewModel.markEpisodeWatched()
-                            }
+                    LazyVStack(spacing: 16) {
+                        ForEach(episodes, id: \.episode.id) { episode in
+                            CalendarEpisodeCard(
+                                episode: episode,
+                                onMarkWatched: {
+                                    Task {
+                                        await viewModel.markEpisodeWatched(episode)
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 } else {
                     ContentUnavailableView(
                         "Nothing to watch next",

@@ -11,7 +11,7 @@ import Testing
 
 @MainActor
 struct DefaultNextEpisodeUseCaseTests {
-    @Test func releasedUnwatchedEpisodeIsPreferredOverFutureEpisode() async {
+    @Test func nextEpisodesAreSortedAlphabeticallyByShowTitle() async {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let availableEpisode = makeEpisode(showID: 1, number: 2, airDate: now.addingTimeInterval(-3600))
         let futureEpisode = makeEpisode(showID: 2, number: 4, airDate: now.addingTimeInterval(86400))
@@ -41,7 +41,7 @@ struct DefaultNextEpisodeUseCaseTests {
             now: now
         )
 
-        #expect(result.episode?.episode.id == availableEpisode.id)
+        #expect(result.episodes.map(\.episode.id) == [futureEpisode.id, availableEpisode.id])
         #expect(result.missingScheduleCount == 0)
     }
 
@@ -67,7 +67,65 @@ struct DefaultNextEpisodeUseCaseTests {
             now: now
         )
 
-        #expect(result.episode?.episode.id == nextEpisode.id)
+        #expect(result.episodes.map(\.episode.id) == [nextEpisode.id])
+    }
+
+    @Test func nextReleasedEpisodeUsesExpectedEpisodeIndexWhenAirDatesAreMissing() async {
+        let firstEpisode = makeEpisode(showID: 1, number: 1, airDate: .distantPast)
+        let secondEpisode = makeEpisode(showID: 1, number: 2, airDate: nil)
+        let tenthEpisode = makeEpisode(showID: 1, number: 10, airDate: nil)
+        let item = makeItem(id: 1, title: "The Bear")
+        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+            EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
+                provider: .tmdb,
+                showID: 1,
+                number: 1,
+                name: "Season 1",
+                episodes: [tenthEpisode, secondEpisode, firstEpisode]
+            )])
+        ]))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+
+        let result = await useCase.findNextEpisode(
+            in: [item],
+            watchedEpisodeIDs: [firstEpisode.id],
+            now: .now
+        )
+
+        #expect(result.episodes.map(\.episode.id) == [secondEpisode.id])
+    }
+
+    @Test func specialEpisodesDoNotAppearAsTheNextCalendarEpisode() async {
+        let specialEpisode = makeEpisode(showID: 1, seasonNumber: 0, number: 1, airDate: .distantPast)
+        let regularEpisode = makeEpisode(showID: 1, number: 1, airDate: .distantPast)
+        let item = makeItem(id: 1, title: "The Bear")
+        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+            EpisodeSchedule(itemID: item.id, seasons: [
+                ShowSeason(
+                    provider: .tmdb,
+                    showID: 1,
+                    number: 0,
+                    name: "Specials",
+                    episodes: [specialEpisode]
+                ),
+                ShowSeason(
+                    provider: .tmdb,
+                    showID: 1,
+                    number: 1,
+                    name: "Season 1",
+                    episodes: [regularEpisode]
+                )
+            ])
+        ]))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+
+        let result = await useCase.findNextEpisode(
+            in: [item],
+            watchedEpisodeIDs: [],
+            now: .now
+        )
+
+        #expect(result.episodes.map(\.episode.id) == [regularEpisode.id])
     }
 }
 
@@ -88,11 +146,16 @@ private extension DefaultNextEpisodeUseCaseTests {
         ))
     }
 
-    func makeEpisode(showID: Int, number: Int, airDate: Date) -> ShowEpisode {
+    func makeEpisode(
+        showID: Int,
+        seasonNumber: Int = 1,
+        number: Int,
+        airDate: Date?
+    ) -> ShowEpisode {
         ShowEpisode(
             provider: .tmdb,
             showID: showID,
-            seasonNumber: 1,
+            seasonNumber: seasonNumber,
             number: number,
             title: "Episode \(number)",
             overview: nil,

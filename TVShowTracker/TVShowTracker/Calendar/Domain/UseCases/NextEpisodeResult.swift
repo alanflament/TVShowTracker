@@ -6,6 +6,6 @@
 //
 
 struct NextEpisodeResult: Sendable {
-    let episode: CalendarEpisode?
+    let episodes: [CalendarEpisode]
     let missingScheduleCount: Int
 }

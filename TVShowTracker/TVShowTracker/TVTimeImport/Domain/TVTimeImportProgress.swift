@@ -9,7 +9,7 @@ struct TVTimeImportProgress: Sendable {
     enum Phase: Sendable {
         case readingExport
         case resolvingShows
-        case restoringEpisodes
+        case loadingEpisodeSchedules
     }
 
     let phase: Phase

@@ -14,7 +14,14 @@ struct EpisodeSchedule: Identifiable, Hashable, Sendable, Codable {
 
     init(itemID: String, seasons: [ShowSeason], refreshedAt: Date = .now) {
         id = itemID
-        self.seasons = seasons
+        self.seasons = seasons.sorted(by: seasonOrder)
         self.refreshedAt = refreshedAt
     }
+}
+
+private func seasonOrder(_ lhs: ShowSeason, _ rhs: ShowSeason) -> Bool {
+    if lhs.isSpecial != rhs.isSpecial {
+        return !lhs.isSpecial
+    }
+    return lhs.number < rhs.number
 }

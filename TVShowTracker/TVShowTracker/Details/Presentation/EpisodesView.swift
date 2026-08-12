@@ -54,7 +54,7 @@ struct EpisodesView: View {
                     }
                 } header: {
                     HStack {
-                        Text(season.name)
+                        Text(season.displayName)
                         Spacer()
                         Text("\(season.episodes.count) episodes")
                             .foregroundStyle(.secondary)

@@ -14,6 +14,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
     private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
+    private let episodeScheduleStore: EpisodeScheduleStore
     private let candidateMatcher: TVTimeSearchCandidateMatcher
 
     init(
@@ -22,6 +23,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
         showDetailsUseCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeWatchStore: EpisodeWatchStore,
+        episodeScheduleStore: EpisodeScheduleStore,
         candidateMatcher: TVTimeSearchCandidateMatcher
     ) {
         self.exportParser = exportParser
@@ -29,6 +31,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
         self.showDetailsUseCase = showDetailsUseCase
         self.followedMediaStore = followedMediaStore
         self.episodeWatchStore = episodeWatchStore
+        self.episodeScheduleStore = episodeScheduleStore
         self.candidateMatcher = candidateMatcher
     }
 
@@ -44,7 +47,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
         ))
         let export = try exportParser.parseExport(at: folderURL)
         let resolution = try await resolveShows(in: export, onProgress: onProgress)
-        let report = try await restoreEpisodes(
+        let report = try await restoreSchedulesAndEpisodes(
             for: resolution.shows,
             initialReport: resolution.report,
             onProgress: onProgress
@@ -108,43 +111,49 @@ private extension DefaultTVTimeImportUseCase {
         return Resolution(shows: resolvedShows, report: report)
     }
 
-    func restoreEpisodes(
+    func restoreSchedulesAndEpisodes(
         for resolvedShows: [ResolvedShow],
         initialReport: MutableReport,
         onProgress: @escaping @MainActor (TVTimeImportProgress) -> Void
     ) async throws -> MutableReport {
         var report = initialReport
-        let totalEpisodeCount = resolvedShows.reduce(0) { $0 + $1.watchedEpisodes.count }
-        var completedEpisodeCount = 0
+        var completedShowCount = 0
 
-        for resolvedShow in resolvedShows where !resolvedShow.watchedEpisodes.isEmpty {
+        for resolvedShow in resolvedShows {
             try Task.checkCancellation()
             onProgress(TVTimeImportProgress(
-                phase: .restoringEpisodes,
-                completedUnitCount: completedEpisodeCount,
-                totalUnitCount: totalEpisodeCount,
+                phase: .loadingEpisodeSchedules,
+                completedUnitCount: completedShowCount,
+                totalUnitCount: resolvedShows.count,
                 currentTitle: resolvedShow.candidate.title
             ))
-            let result = try await restoreEpisodes(for: resolvedShow)
-            completedEpisodeCount += result.processedEpisodeCount
+            let result = try await restoreScheduleAndEpisodes(for: resolvedShow)
+            completedShowCount += 1
             report.restoredEpisodeCount += result.restoredEpisodeCount
             report.unresolvedEpisodeCount += result.unresolvedEpisodeCount
         }
 
         onProgress(TVTimeImportProgress(
-            phase: .restoringEpisodes,
-            completedUnitCount: totalEpisodeCount,
-            totalUnitCount: totalEpisodeCount,
+            phase: .loadingEpisodeSchedules,
+            completedUnitCount: resolvedShows.count,
+            totalUnitCount: resolvedShows.count,
             currentTitle: nil
         ))
         return report
     }
 
-    func restoreEpisodes(
+    func restoreScheduleAndEpisodes(
         for resolvedShow: ResolvedShow
     ) async throws -> EpisodeRestorationResult {
         do {
             let seasons = try await showDetailsUseCase.fetchEpisodes(for: resolvedShow.candidate)
+            guard let item = followedMediaStore.item(id: resolvedShow.candidate.id) else {
+                return EpisodeRestorationResult(
+                    restoredEpisodeCount: 0,
+                    unresolvedEpisodeCount: resolvedShow.watchedEpisodes.count
+                )
+            }
+            episodeScheduleStore.save(item: item, seasons: seasons)
             let episodesByNumber = Dictionary(uniqueKeysWithValues: seasons.flatMap(\.episodes).map {
                 (EpisodeNumber(season: $0.seasonNumber, episode: $0.number), $0)
             })
@@ -156,7 +165,6 @@ private extension DefaultTVTimeImportUseCase {
             throw CancellationError()
         } catch {
             return EpisodeRestorationResult(
-                processedEpisodeCount: resolvedShow.watchedEpisodes.count,
                 restoredEpisodeCount: 0,
                 unresolvedEpisodeCount: resolvedShow.watchedEpisodes.count
             )
@@ -187,14 +195,12 @@ private extension DefaultTVTimeImportUseCase {
             }
         }
         return EpisodeRestorationResult(
-            processedEpisodeCount: watchedEpisodes.count,
             restoredEpisodeCount: restoredEpisodeCount,
             unresolvedEpisodeCount: unresolvedEpisodeCount
         )
     }
 
     struct EpisodeRestorationResult {
-        let processedEpisodeCount: Int
         let restoredEpisodeCount: Int
         let unresolvedEpisodeCount: Int
     }

@@ -17,6 +17,7 @@ struct TVTimeImportTests {
         let container = try ModelContainer(
             for: LibraryItemModel.self,
             WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
             configurations: configuration
         )
         let followedMediaStore = FollowedMediaStore(
@@ -25,13 +26,17 @@ struct TVTimeImportTests {
         let episodeWatchStore = EpisodeWatchStore(
             repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
         )
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
         let candidate = makeCandidate()
         let episode = makeEpisode()
         let useCase = makeUseCase(
             candidate: candidate,
             episode: episode,
             followedMediaStore: followedMediaStore,
-            episodeWatchStore: episodeWatchStore
+            episodeWatchStore: episodeWatchStore,
+            episodeScheduleStore: episodeScheduleStore
         )
 
         let report = try await useCase.importExport(at: URL(filePath: "/unused")) { _ in }
@@ -40,6 +45,47 @@ struct TVTimeImportTests {
         #expect(report.restoredEpisodeCount == 1)
         #expect(followedMediaStore.contains(candidate))
         #expect(episodeWatchStore.isWatched(episode))
+        #expect(episodeScheduleStore.schedule(for: LibraryItem(candidate: candidate))?.seasons == [ShowSeason(
+            provider: episode.provider,
+            showID: episode.showID,
+            number: episode.seasonNumber,
+            name: "Season \(episode.seasonNumber)",
+            episodes: [episode]
+        )])
+    }
+
+    @Test func savesEpisodeScheduleForAnImportedShowWithoutWatchedEpisodes() async throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
+            configurations: configuration
+        )
+        let followedMediaStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let episodeWatchStore = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+        )
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
+        let candidate = makeCandidate()
+        let episode = makeEpisode()
+        let useCase = makeUseCase(
+            candidate: candidate,
+            episode: episode,
+            followedMediaStore: followedMediaStore,
+            episodeWatchStore: episodeWatchStore,
+            episodeScheduleStore: episodeScheduleStore,
+            watchedEpisodes: []
+        )
+
+        let report = try await useCase.importExport(at: URL(filePath: "/unused")) { _ in }
+
+        #expect(report.addedShowCount == 1)
+        #expect(episodeScheduleStore.schedule(for: LibraryItem(candidate: candidate)) != nil)
     }
 }
 
@@ -78,16 +124,18 @@ private func makeUseCase(
     candidate: SearchCandidate,
     episode: ShowEpisode,
     followedMediaStore: FollowedMediaStore,
-    episodeWatchStore: EpisodeWatchStore
+    episodeWatchStore: EpisodeWatchStore,
+    episodeScheduleStore: EpisodeScheduleStore,
+    watchedEpisodes: [TVTimeWatchedEpisode] = [TVTimeWatchedEpisode(
+        showTitle: "The Bear",
+        seasonNumber: 1,
+        episodeNumber: 3,
+        watchedAt: .distantPast
+    )]
 ) -> DefaultTVTimeImportUseCase {
     let export = TVTimeExport(
         followedShows: [TVTimeShow(title: "The Bear")],
-        watchedEpisodes: [TVTimeWatchedEpisode(
-            showTitle: "The Bear",
-            seasonNumber: 1,
-            episodeNumber: 3,
-            watchedAt: .distantPast
-        )]
+        watchedEpisodes: watchedEpisodes
     )
 
     return DefaultTVTimeImportUseCase(
@@ -96,6 +144,7 @@ private func makeUseCase(
         showDetailsUseCase: ShowDetailsUseCaseStub(episode: episode),
         followedMediaStore: followedMediaStore,
         episodeWatchStore: episodeWatchStore,
+        episodeScheduleStore: episodeScheduleStore,
         candidateMatcher: TVTimeSearchCandidateMatcher()
     )
 }
