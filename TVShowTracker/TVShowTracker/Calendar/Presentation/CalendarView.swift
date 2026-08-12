@@ -10,6 +10,8 @@ import SwiftUI
 
 struct CalendarView: View {
     let viewModel: CalendarViewModel
+    let makeDetailsView: (SearchCandidate) -> ShowDetailsView
+    @State private var selectedCandidate: SearchCandidate?
 
     var body: some View {
         Group {
@@ -33,6 +35,9 @@ struct CalendarView: View {
         .refreshable {
             await viewModel.refreshFromServer()
         }
+        .navigationDestination(item: $selectedCandidate) { candidate in
+            makeDetailsView(candidate)
+        }
     }
 
     private func calendarContent(
@@ -48,6 +53,9 @@ struct CalendarView: View {
                         ForEach(episodes, id: \.episode.id) { episode in
                             CalendarEpisodeCard(
                                 episode: episode,
+                                onSelect: {
+                                    selectedCandidate = episode.candidate
+                                },
                                 onMarkWatched: {
                                     Task {
                                         await viewModel.markEpisodeWatched(episode)
@@ -78,6 +86,7 @@ struct CalendarView: View {
 
 private struct CalendarEpisodeCard: View {
     let episode: CalendarEpisode
+    let onSelect: () -> Void
     let onMarkWatched: () -> Void
 
     var body: some View {
@@ -116,6 +125,10 @@ private struct CalendarEpisodeCard: View {
         }
         .padding()
         .background(.thinMaterial, in: .rect(cornerRadius: 16))
+        .contentShape(.rect)
+        .onTapGesture(perform: onSelect)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens show details")
     }
 
     @ViewBuilder

@@ -8,11 +8,13 @@
 import Foundation
 
 struct CalendarEpisode: Hashable, Sendable {
+    let candidate: SearchCandidate
     let showTitle: String
     let posterURL: URL?
     let episode: ShowEpisode
 
     init(item: LibraryItem, episode: ShowEpisode) {
+        candidate = item.candidate
         showTitle = item.title
         posterURL = item.posterURL
         self.episode = episode

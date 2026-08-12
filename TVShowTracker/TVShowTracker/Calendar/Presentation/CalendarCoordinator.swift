@@ -14,19 +14,22 @@ final class CalendarCoordinator {
     private let episodeWatchStore: EpisodeWatchStore
     private let episodeScheduleStore: EpisodeScheduleStore
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
+    private let detailsCoordinator: DetailsCoordinator
 
     init(
         nextEpisodeUseCase: any NextEpisodeUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeWatchStore: EpisodeWatchStore,
         episodeScheduleStore: EpisodeScheduleStore,
-        followedMediaRefreshStore: FollowedMediaRefreshStore
+        followedMediaRefreshStore: FollowedMediaRefreshStore,
+        detailsCoordinator: DetailsCoordinator
     ) {
         self.nextEpisodeUseCase = nextEpisodeUseCase
         self.followedMediaStore = followedMediaStore
         self.episodeWatchStore = episodeWatchStore
         self.episodeScheduleStore = episodeScheduleStore
         self.followedMediaRefreshStore = followedMediaRefreshStore
+        self.detailsCoordinator = detailsCoordinator
     }
 
     func makeCalendarViewModel() -> CalendarViewModel {
@@ -37,5 +40,9 @@ final class CalendarCoordinator {
             episodeScheduleStore: episodeScheduleStore,
             followedMediaRefreshStore: followedMediaRefreshStore
         )
+    }
+
+    func makeDetailsView(for candidate: SearchCandidate) -> ShowDetailsView {
+        detailsCoordinator.makeDetailsView(for: candidate)
     }
 }

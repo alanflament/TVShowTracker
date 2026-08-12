@@ -127,7 +127,8 @@ final class AppContainer {
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: episodeScheduleStore,
-            followedMediaRefreshStore: followedMediaRefreshStore
+            followedMediaRefreshStore: followedMediaRefreshStore,
+            detailsCoordinator: makeDetailsCoordinator()
         )
     }
 
