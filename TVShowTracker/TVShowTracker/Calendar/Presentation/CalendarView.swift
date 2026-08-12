@@ -123,6 +123,7 @@ private struct CalendarEpisodeCard: View {
                 calendarAction
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(.thinMaterial, in: .rect(cornerRadius: 16))
         .contentShape(.rect)
