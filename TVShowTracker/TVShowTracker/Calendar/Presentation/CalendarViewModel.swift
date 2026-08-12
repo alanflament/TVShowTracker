@@ -14,7 +14,6 @@ final class CalendarViewModel {
         case idle
         case loading
         case loaded([CalendarEpisode], undatedMedia: [CalendarUndatedMedia])
-        case failed(String)
     }
 
     private let nextEpisodeUseCase: any NextEpisodeUseCase

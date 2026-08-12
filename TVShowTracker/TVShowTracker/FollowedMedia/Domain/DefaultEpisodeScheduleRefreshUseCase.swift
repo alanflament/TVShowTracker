@@ -6,6 +6,7 @@
 //
 
 struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
+    private static let maximumConcurrentRefreshes = 4
     private let showDetailsUseCase: any ShowDetailsUseCase
 
     init(showDetailsUseCase: any ShowDetailsUseCase) {
@@ -14,15 +15,26 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
 
     func refreshSchedules(for items: [LibraryItem]) async -> [EpisodeScheduleRefreshResult] {
         await withTaskGroup(of: EpisodeScheduleRefreshResult.self) { group in
-            for item in items {
+            var pendingItems = items.makeIterator()
+
+            for _ in 0 ..< min(Self.maximumConcurrentRefreshes, items.count) {
+                guard let item = pendingItems.next() else {
+                    break
+                }
                 group.addTask {
                     await refreshSchedule(for: item)
                 }
             }
 
             var results = [EpisodeScheduleRefreshResult]()
-            for await result in group {
+            while let result = await group.next() {
                 results.append(result)
+
+                if let item = pendingItems.next() {
+                    group.addTask {
+                        await refreshSchedule(for: item)
+                    }
+                }
             }
             return results
         }

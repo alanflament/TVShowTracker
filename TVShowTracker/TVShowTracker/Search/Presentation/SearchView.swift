@@ -137,20 +137,7 @@ private struct SearchCandidateRow: View {
 
         ZStack(alignment: .bottomTrailing) {
             HStack(alignment: .top, spacing: 12) {
-                AsyncImage(url: candidate.posterURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    Rectangle()
-                        .fill(.quaternary)
-                        .overlay {
-                            Image(systemName: candidate.kind == .anime ? "sparkles.tv" : "tv")
-                                .foregroundStyle(.secondary)
-                        }
-                }
-                .frame(width: 72, height: 108)
-                .clipShape(.rect(cornerRadius: 12))
+                MediaPoster(url: candidate.posterURL, kind: candidate.kind, width: 72, height: 108)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(candidate.title)
@@ -201,11 +188,9 @@ private struct SearchCandidateRow: View {
     }
 
     private var details: String {
-        [
-            candidate.releaseYear.map(String.init),
-            candidate.totalEpisodeCount.map { "\($0) episodes" }
-        ]
-        .compactMap { $0 }
-        .joined(separator: " · ")
+        MediaMetadata.text(
+            releaseYear: candidate.releaseYear,
+            totalEpisodeCount: candidate.totalEpisodeCount
+        )
     }
 }

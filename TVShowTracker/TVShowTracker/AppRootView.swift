@@ -11,18 +11,9 @@ struct AppRootView: View {
     @Environment(AppCoordinator.self) private var coordinator
 
     var body: some View {
-        Group {
-            switch coordinator.root {
-            case .onboarding:
-                OnboardingView(
-                    onFinished: coordinator.finishOnboarding
-                )
-            case .main:
-                MainCoordinatorView(
-                    coordinator: coordinator.mainCoordinator
-                )
-            }
-        }
+        MainCoordinatorView(
+            coordinator: coordinator.mainCoordinator
+        )
         .safeAreaInset(edge: .top, spacing: 0) {
             if coordinator.isRefreshingFollowedMedia {
                 HStack(spacing: 8) {

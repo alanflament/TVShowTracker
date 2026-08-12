@@ -78,23 +78,7 @@ private struct LibraryItemCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            AsyncImage(url: item.posterURL) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay {
-                        Image(systemName: item.kind == .anime ? "sparkles.tv" : "tv")
-                            .foregroundStyle(.secondary)
-                    }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 252)
-            .clipped()
-            .clipShape(.rect(cornerRadius: 14))
-            .id(item.posterURL)
+            MediaPoster(url: item.posterURL, kind: item.kind, height: 252, cornerRadius: 14)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
@@ -118,12 +102,10 @@ private struct LibraryItemCard: View {
     }
 
     private var details: String {
-        [
-            item.releaseYear.map(String.init),
-            item.totalEpisodeCount.map { "\($0) episodes" }
-        ]
-        .compactMap { $0 }
-        .joined(separator: " · ")
+        MediaMetadata.text(
+            releaseYear: item.releaseYear,
+            totalEpisodeCount: item.totalEpisodeCount
+        )
     }
 
     private var accessibilityLabel: String {

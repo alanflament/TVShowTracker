@@ -69,17 +69,7 @@ struct ShowDetailsView: View {
 
     private func header(_ details: ShowDetails) -> some View {
         HStack(alignment: .top, spacing: 16) {
-            AsyncImage(url: details.posterURL) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay { Image(systemName: "tv") }
-            }
-            .frame(width: 120, height: 180)
-            .clipShape(.rect(cornerRadius: 12))
+            MediaPoster(url: details.posterURL, kind: details.kind, width: 120, height: 180)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(details.title)
@@ -122,28 +112,28 @@ struct ShowDetailsView: View {
         NavigationLink {
             EpisodesView(viewModel: makeEpisodesViewModel())
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "list.number")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 36, height: 36)
-                    .background(Color.accentColor.opacity(0.14), in: .circle)
+            TrackerCard {
+                HStack(spacing: 14) {
+                    Image(systemName: "list.number")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 36, height: 36)
+                        .background(Color.accentColor.opacity(0.14), in: .circle)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Episodes")
-                        .font(.headline)
-                    Text(episodeNavigationSubtitle(for: details))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Episodes")
+                            .font(.headline)
+                        Text(episodeNavigationSubtitle(for: details))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
-
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
@@ -163,12 +153,10 @@ struct ShowDetailsView: View {
     }
 
     private func metadata(for details: ShowDetails) -> String {
-        [
-            details.releaseYear.map(String.init),
-            details.totalEpisodeCount.map { "\($0) episodes" }
-        ]
-        .compactMap { $0 }
-        .joined(separator: " · ")
+        MediaMetadata.text(
+            releaseYear: details.releaseYear,
+            totalEpisodeCount: details.totalEpisodeCount
+        )
     }
 
     private func episodeNavigationSubtitle(for details: ShowDetails) -> String {

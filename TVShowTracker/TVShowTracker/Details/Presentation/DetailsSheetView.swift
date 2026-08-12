@@ -2,6 +2,8 @@
 //  DetailsSheetView.swift
 //  TVShowTracker
 //
+//  Created by Alan Flament on 12/08/2026.
+//
 
 import SwiftUI
 

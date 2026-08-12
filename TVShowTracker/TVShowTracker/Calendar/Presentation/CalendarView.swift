@@ -27,12 +27,6 @@ struct CalendarView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case let .loaded(episodes, undatedMedia):
                 calendarContent(episodes: episodes, undatedMedia: undatedMedia)
-            case let .failed(message):
-                ContentUnavailableView(
-                    "Calendar unavailable",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(message)
-                )
             }
         }
         .navigationTitle("Up Next")
@@ -194,17 +188,7 @@ private struct CalendarEpisodeCard: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 16) {
-            AsyncImage(url: episode.posterURL) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay { Image(systemName: "tv") }
-            }
-            .frame(width: 80, height: 120)
-            .clipShape(.rect(cornerRadius: 12))
+            MediaPoster(url: episode.posterURL, kind: episode.candidate.kind, width: 80, height: 120)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(episode.showTitle.uppercased())
@@ -302,17 +286,7 @@ private struct CalendarUndatedMediaCard: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            AsyncImage(url: item.posterURL) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay { Image(systemName: "tv") }
-            }
-            .frame(width: 56, height: 84)
-            .clipShape(.rect(cornerRadius: 12))
+            MediaPoster(url: item.posterURL, kind: item.candidate.kind, width: 56, height: 84)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.showTitle)

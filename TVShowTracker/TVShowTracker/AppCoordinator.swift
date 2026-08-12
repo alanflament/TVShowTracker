@@ -9,23 +9,12 @@ import SwiftUI
 
 @MainActor @Observable
 final class AppCoordinator {
-    enum Root {
-        case onboarding
-        case main
-    }
-
-    var root: Root = .main
-
     let mainCoordinator: MainCoordinator
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     init(container: AppContainer, followedMediaRefreshStore: FollowedMediaRefreshStore) {
         mainCoordinator = MainCoordinator(container: container)
         self.followedMediaRefreshStore = followedMediaRefreshStore
-    }
-
-    func finishOnboarding() {
-        root = .main
     }
 
     var isRefreshingFollowedMedia: Bool {

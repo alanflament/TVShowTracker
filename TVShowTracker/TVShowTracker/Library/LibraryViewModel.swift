@@ -2,6 +2,8 @@
 //  LibraryViewModel.swift
 //  TVShowTracker
 //
+//  Created by Alan Flament on 12/08/2026.
+//
 
 import Foundation
 import Observation
@@ -26,10 +28,6 @@ final class LibraryViewModel {
 
     var isLibraryEmpty: Bool {
         followedMediaStore.items.isEmpty
-    }
-
-    var isFiltering: Bool {
-        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var errorMessage: String? {

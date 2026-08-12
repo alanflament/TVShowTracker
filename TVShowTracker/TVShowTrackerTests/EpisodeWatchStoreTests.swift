@@ -2,6 +2,8 @@
 //  EpisodeWatchStoreTests.swift
 //  TVShowTrackerTests
 //
+//  Created by Alan Flament on 12/08/2026.
+//
 
 import SwiftData
 import Testing
