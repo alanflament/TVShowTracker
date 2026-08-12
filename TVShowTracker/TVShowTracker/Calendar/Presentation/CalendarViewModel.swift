@@ -13,7 +13,7 @@ final class CalendarViewModel {
     enum State {
         case idle
         case loading
-        case loaded([CalendarEpisode], missingScheduleCount: Int)
+        case loaded([CalendarEpisode], undatedMedia: [CalendarUndatedMedia])
         case failed(String)
     }
 
@@ -24,6 +24,7 @@ final class CalendarViewModel {
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     private(set) var state: State = .idle
+    private(set) var refreshMessage: String?
 
     init(
         nextEpisodeUseCase: any NextEpisodeUseCase,
@@ -54,7 +55,7 @@ final class CalendarViewModel {
     func refresh() async {
         let items = followedMediaStore.items
         guard !items.isEmpty else {
-            state = .loaded([], missingScheduleCount: 0)
+            state = .loaded([], undatedMedia: [])
             return
         }
 
@@ -64,7 +65,7 @@ final class CalendarViewModel {
             watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs,
             now: .now
         )
-        state = .loaded(result.episodes, missingScheduleCount: result.missingScheduleCount)
+        state = .loaded(result.episodes, undatedMedia: result.undatedMedia)
     }
 
     func markEpisodeWatched(_ episode: CalendarEpisode) async {
@@ -74,5 +75,17 @@ final class CalendarViewModel {
 
     func refreshFromServer() async {
         await followedMediaRefreshStore.refresh()
+        await refresh()
+
+        let refreshedCount = followedMediaRefreshStore.refreshedMediaCount
+        let totalCount = followedMediaRefreshStore.totalMediaCount
+
+        if totalCount == 0 {
+            refreshMessage = "Your saved schedules are already up to date."
+        } else if refreshedCount == totalCount {
+            refreshMessage = "Updated \(refreshedCount) \(refreshedCount == 1 ? "schedule" : "schedules")."
+        } else {
+            refreshMessage = "Updated \(refreshedCount) of \(totalCount) schedules. Saved dates are still shown below."
+        }
     }
 }

@@ -11,6 +11,7 @@ final class LibraryViewModel {
     private let followedMediaStore: FollowedMediaStore
 
     var query = ""
+    var filter: LibraryFilter = .all
 
     init(followedMediaStore: FollowedMediaStore) {
         self.followedMediaStore = followedMediaStore
@@ -19,6 +20,7 @@ final class LibraryViewModel {
     var items: [LibraryItem] {
         followedMediaStore.items
             .filter(matchesQuery)
+            .filter(filter.matches)
             .sorted(by: isAlphabeticallyOrdered)
     }
 

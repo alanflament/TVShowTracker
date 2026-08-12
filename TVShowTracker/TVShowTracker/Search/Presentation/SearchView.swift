@@ -24,10 +24,21 @@ struct SearchView: View {
             Group {
                 switch viewModel.state {
                 case .idle:
-                    ContentUnavailableView.search
+                    TrackerEmptyState(
+                        title: "Find something to watch",
+                        systemImage: "magnifyingglass",
+                        description: "Search TV shows and anime, then add the ones you love to My Shows."
+                    )
 
                 case .loading:
-                    ProgressView("Searching…")
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Searching every catalogue…")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 case let .loaded(catalog):
                     if catalog.isEmpty {
@@ -35,7 +46,7 @@ struct SearchView: View {
                             ContentUnavailableView.search(text: viewModel.query)
                         } else {
                             ContentUnavailableView(
-                                "Search unavailable",
+                                "Discover unavailable",
                                 systemImage: "exclamationmark.triangle",
                                 description: Text(unavailableProviderMessage(for: catalog))
                             )
@@ -45,7 +56,7 @@ struct SearchView: View {
                     }
                 }
             }
-            .navigationTitle("Search")
+            .navigationTitle("Discover")
             .searchable(text: $viewModel.query, prompt: "Search TV shows and anime")
             .task(id: viewModel.query) {
                 await viewModel.search()
@@ -68,6 +79,8 @@ struct SearchView: View {
                         } isFollowed: {
                             viewModel.isFollowed(candidate)
                         }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 }
             }
@@ -82,18 +95,22 @@ struct SearchView: View {
                         } isFollowed: {
                             viewModel.isFollowed(candidate)
                         }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 }
             }
 
             if !catalog.unavailableProviders.isEmpty {
                 Section {
-                    Text("Some sources are temporarily unavailable.")
+                    Label("Some catalogues are temporarily unavailable. Results from the others are still shown.", systemImage: "info.circle")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+                .listRowBackground(Color.orange.opacity(0.08))
             }
         }
+        .listStyle(.plain)
     }
 
     private func unavailableProviderMessage(for catalog: SearchCatalog) -> String {
@@ -116,57 +133,79 @@ private struct SearchCandidateRow: View {
     let isFollowed: () -> Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button(action: onSelect) {
-                HStack(alignment: .top, spacing: 12) {
-                    AsyncImage(url: candidate.posterURL) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(.quaternary)
-                            .overlay {
-                                Image(systemName: candidate.kind == .anime ? "sparkles.tv" : "tv")
-                                    .foregroundStyle(.secondary)
-                            }
-                    }
-                    .frame(width: 56, height: 84)
-                    .clipShape(.rect(cornerRadius: 8))
+        let isFollowed = isFollowed()
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(candidate.title)
-                            .font(.headline)
-
-                        if let alternateTitle, alternateTitle != candidate.title {
-                            Text(alternateTitle)
-                                .font(.subheadline)
+        ZStack(alignment: .bottomTrailing) {
+            HStack(alignment: .top, spacing: 12) {
+                AsyncImage(url: candidate.posterURL) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Rectangle()
+                        .fill(.quaternary)
+                        .overlay {
+                            Image(systemName: candidate.kind == .anime ? "sparkles.tv" : "tv")
                                 .foregroundStyle(.secondary)
                         }
+                }
+                .frame(width: 72, height: 108)
+                .clipShape(.rect(cornerRadius: 12))
 
-                        Text(candidate.metadata)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(candidate.title)
+                        .font(.headline)
+                        .lineLimit(2)
+
+                    if let alternateTitle, alternateTitle != candidate.title {
+                        Text(alternateTitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    if !details.isEmpty {
+                        Text(details)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
+            .padding(12)
 
             Button(action: onToggleLibrary) {
-                Image(systemName: isFollowed() ? "checkmark.circle.fill" : "plus.circle")
-                    .font(.title3)
-                    .foregroundStyle(
-                        isFollowed() ? Color.green : Color.accentColor
-                    )
+                Label(
+                    isFollowed ? "Following" : "Add",
+                    systemImage: isFollowed ? "checkmark" : "plus"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isFollowed ? Color.green : Color.accentColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.primary.opacity(0.08), in: Capsule())
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(isFollowed() ? "Remove from library" : "Add to library")
+            .accessibilityLabel(isFollowed ? "Remove from My Shows" : "Add to My Shows")
+            .padding(12)
         }
-        .accessibilityElement(children: .combine)
+        .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 16))
+        .contentShape(.rect)
+        .onTapGesture(perform: onSelect)
+        .accessibilityElement(children: .contain)
+        .accessibilityHint("Opens show details")
     }
 
     private var alternateTitle: String? {
         candidate.alternateTitle
+    }
+
+    private var details: String {
+        [
+            candidate.releaseYear.map(String.init),
+            candidate.totalEpisodeCount.map { "\($0) episodes" }
+        ]
+        .compactMap { $0 }
+        .joined(separator: " · ")
     }
 }

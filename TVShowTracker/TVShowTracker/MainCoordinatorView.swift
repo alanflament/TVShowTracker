@@ -14,19 +14,19 @@ struct MainCoordinatorView: View {
         TabView(selection: $coordinator.selectedTab) {
             LibraryCoordinatorView(coordinator: coordinator.libraryCoordinator)
                 .tabItem {
-                    Label("Library", systemImage: "books.vertical")
+                    Label("My Shows", systemImage: "rectangle.stack")
                 }
                 .tag(MainCoordinator.Tab.library)
 
             CalendarCoordinatorView(coordinator: coordinator.calendarCoordinator)
                 .tabItem {
-                    Label("Calendar", systemImage: "calendar")
+                    Label("Up Next", systemImage: "play.circle")
                 }
                 .tag(MainCoordinator.Tab.calendar)
 
             coordinator.searchCoordinator.makeSearchView()
                 .tabItem {
-                    Label("Search", systemImage: "magnifyingglass")
+                    Label("Discover", systemImage: "magnifyingglass")
                 }
                 .tag(MainCoordinator.Tab.search)
 

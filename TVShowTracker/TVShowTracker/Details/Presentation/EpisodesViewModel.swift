@@ -67,6 +67,10 @@ final class EpisodesViewModel {
         episodes.count { $0.isReleased && !isWatched($0) }
     }
 
+    func watchedEpisodeCount(in episodes: [ShowEpisode]) -> Int {
+        episodes.count { isWatched($0) }
+    }
+
     func areAllWatched(in episodes: [ShowEpisode]) -> Bool {
         episodes.allSatisfy(isWatched)
     }

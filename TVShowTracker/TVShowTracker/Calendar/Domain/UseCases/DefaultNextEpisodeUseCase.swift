@@ -20,14 +20,23 @@ struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
         watchedEpisodeIDs: Set<String>,
         now: Date
     ) async -> NextEpisodeResult {
-        let missingScheduleCount = items.count { episodeScheduleStore.schedule(for: $0) == nil }
+        let episodes = items.compactMap { item in
+            nextEpisode(for: item, watchedEpisodeIDs: watchedEpisodeIDs, now: now)
+        }.sorted { lhs, rhs in
+            alphabeticalShowOrder(lhs, rhs)
+        }
+        let episodeMediaIDs = Set(episodes.map(\.candidate.id))
+
         return NextEpisodeResult(
-            episodes: items.compactMap { item in
-                nextEpisode(for: item, watchedEpisodeIDs: watchedEpisodeIDs, now: now)
-            }.sorted { lhs, rhs in
-                alphabeticalShowOrder(lhs, rhs)
-            },
-            missingScheduleCount: missingScheduleCount
+            episodes: episodes,
+            undatedMedia: items
+                .filter { item in
+                    item.requiresEpisodeScheduleRefresh
+                        && item.nextEpisodeAirDate == nil
+                        && !episodeMediaIDs.contains(item.id)
+                }
+                .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+                .map(CalendarUndatedMedia.init)
         )
     }
 }

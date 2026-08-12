@@ -17,9 +17,16 @@ struct CalendarView: View {
         Group {
             switch viewModel.state {
             case .idle, .loading:
-                ProgressView("Finding your next episode…")
-            case let .loaded(episodes, missingScheduleCount):
-                calendarContent(episodes: episodes, missingScheduleCount: missingScheduleCount)
+                VStack(spacing: 14) {
+                    ProgressView()
+                        .controlSize(.large)
+                    Text("Finding your next episode…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case let .loaded(episodes, undatedMedia):
+                calendarContent(episodes: episodes, undatedMedia: undatedMedia)
             case let .failed(message):
                 ContentUnavailableView(
                     "Calendar unavailable",
@@ -28,7 +35,7 @@ struct CalendarView: View {
                 )
             }
         }
-        .navigationTitle("Calendar")
+        .navigationTitle("Up Next")
         .task(id: viewModel.calendarDataID) {
             await viewModel.refresh()
         }
@@ -42,44 +49,140 @@ struct CalendarView: View {
 
     private func calendarContent(
         episodes: [CalendarEpisode],
-        missingScheduleCount: Int
+        undatedMedia: [CalendarUndatedMedia]
     ) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if !episodes.isEmpty {
-                    Text("Next episodes")
-                        .font(.title2.bold())
-                    LazyVStack(spacing: 16) {
-                        ForEach(episodes, id: \.episode.id) { episode in
-                            CalendarEpisodeCard(
-                                episode: episode,
-                                onSelect: {
-                                    selectedCandidate = episode.candidate
-                                },
-                                onMarkWatched: {
-                                    Task {
-                                        await viewModel.markEpisodeWatched(episode)
-                                    }
-                                }
-                            )
-                        }
-                    }
-                } else {
-                    ContentUnavailableView(
-                        "Nothing to watch next",
-                        systemImage: "calendar",
-                        description: Text("Follow a TV show or anime to see its next episode here.")
-                    )
-                }
+        let availableEpisodes = episodes.filter(\.episode.isReleased)
+        let upcomingEpisodes = episodes
+            .filter { !$0.episode.isReleased }
+            .sorted(by: upcomingEpisodeOrder)
 
-                if missingScheduleCount > 0 {
-                    Text("Episode schedules for \(missingScheduleCount) followed \(missingScheduleCount == 1 ? "show" : "shows") have not been refreshed yet.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                if episodes.isEmpty, undatedMedia.isEmpty {
+                    emptyContent()
+                } else {
+                    UpNextSummary(
+                        availableEpisodeCount: availableEpisodes.count,
+                        undatedMediaCount: undatedMedia.count
+                    )
+
+                    if let refreshMessage = viewModel.refreshMessage {
+                        Label(refreshMessage, systemImage: "arrow.clockwise.circle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 12))
+                            .accessibilityElement(children: .combine)
+                    }
+
+                    if !availableEpisodes.isEmpty {
+                        episodeSection(
+                            title: "Available now",
+                            subtitle: "Ready when you are",
+                            episodes: availableEpisodes
+                        )
+                    }
+
+                    if !upcomingEpisodes.isEmpty {
+                        episodeSection(
+                            title: "Coming soon",
+                            subtitle: "Your next releases",
+                            episodes: upcomingEpisodes
+                        )
+                    }
+
+                    if !undatedMedia.isEmpty {
+                        undatedMediaSection(undatedMedia)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
+        }
+    }
+
+    private func episodeSection(
+        title: String,
+        subtitle: String,
+        episodes: [CalendarEpisode]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.title2.bold())
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVStack(spacing: 14) {
+                ForEach(episodes, id: \.episode.id) { episode in
+                    CalendarEpisodeCard(
+                        episode: episode,
+                        onSelect: {
+                            selectedCandidate = episode.candidate
+                        },
+                        onMarkWatched: {
+                            Task {
+                                await viewModel.markEpisodeWatched(episode)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private func undatedMediaSection(_ media: [CalendarUndatedMedia]) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("To be announced")
+                    .font(.title2.bold())
+                Text("Still in release, with no next episode date yet")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVStack(spacing: 14) {
+                ForEach(media, id: \.candidate.id) { item in
+                    CalendarUndatedMediaCard(item: item) {
+                        selectedCandidate = item.candidate
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func emptyContent() -> some View {
+        if viewModel.followedMediaIDs.isEmpty {
+            TrackerEmptyState(
+                title: "Your next episode starts here",
+                systemImage: "play.circle.fill",
+                description: "Follow TV shows and anime in Discover to build your personal queue."
+            )
+            .frame(maxWidth: .infinity, minHeight: 320)
+        } else {
+            TrackerEmptyState(
+                title: "You’re all caught up",
+                systemImage: "checkmark.circle.fill",
+                description: "There are no unwatched episodes in your saved schedules right now. Pull down to check for new releases."
+            )
+            .frame(maxWidth: .infinity, minHeight: 320)
+        }
+    }
+
+    private func upcomingEpisodeOrder(_ lhs: CalendarEpisode, _ rhs: CalendarEpisode) -> Bool {
+        switch (lhs.episode.airDate, rhs.episode.airDate) {
+        case let (lhsDate?, rhsDate?):
+            return lhsDate == rhsDate
+                ? lhs.showTitle.localizedCaseInsensitiveCompare(rhs.showTitle) == .orderedAscending
+                : lhsDate < rhsDate
+        case (.some, .none):
+            return true
+        default:
+            return false
         }
     }
 }
@@ -90,7 +193,7 @@ private struct CalendarEpisodeCard: View {
     let onMarkWatched: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .bottom, spacing: 16) {
             AsyncImage(url: episode.posterURL) { image in
                 image
                     .resizable()
@@ -100,32 +203,31 @@ private struct CalendarEpisodeCard: View {
                     .fill(.quaternary)
                     .overlay { Image(systemName: "tv") }
             }
-            .frame(width: 96, height: 144)
+            .frame(width: 80, height: 120)
             .clipShape(.rect(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(episode.showTitle)
-                    .font(.headline)
+                Text(episode.showTitle.uppercased())
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
                 Text("Season \(episode.episode.seasonNumber), Episode \(episode.episode.number)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text(episode.episode.title)
-                    .font(.title3.bold())
-
-                if let overview = episode.episode.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                }
-
-                Spacer(minLength: 0)
+                    .font(.headline)
+                    .lineLimit(2, reservesSpace: true)
                 calendarAction
+                    .frame(height: 32, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.thinMaterial, in: .rect(cornerRadius: 16))
+        .padding(14)
+        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Color.primary.opacity(0.08))
+        }
         .contentShape(.rect)
         .onTapGesture(perform: onSelect)
         .accessibilityAddTraits(.isButton)
@@ -139,6 +241,7 @@ private struct CalendarEpisodeCard: View {
                 Label("Mark as watched", systemImage: "checkmark.circle")
             }
             .buttonStyle(.borderedProminent)
+            .tint(.green)
         } else if let airDate = episode.episode.airDate {
             Label(
                 ReleaseCountdown(
@@ -154,6 +257,78 @@ private struct CalendarEpisodeCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+private struct UpNextSummary: View {
+    let availableEpisodeCount: Int
+    let undatedMediaCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(summaryTitle)
+                .font(.title.bold())
+            Text(summaryDescription)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var summaryTitle: String {
+        switch availableEpisodeCount {
+        case 0:
+            "Your upcoming episodes"
+        case 1:
+            "One episode is ready"
+        default:
+            "\(availableEpisodeCount) episodes are ready"
+        }
+    }
+
+    private var summaryDescription: String {
+        if availableEpisodeCount > 0 {
+            return "Pick up where you left off."
+        }
+        if undatedMediaCount > 0 {
+            return "Some of your shows have not announced their next episode yet."
+        }
+        return "Keep an eye on what is coming next."
+    }
+}
+
+private struct CalendarUndatedMediaCard: View {
+    let item: CalendarUndatedMedia
+    let onSelect: () -> Void
+
+    var body: some View {
+        HStack(spacing: 14) {
+            AsyncImage(url: item.posterURL) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                Rectangle()
+                    .fill(.quaternary)
+                    .overlay { Image(systemName: "tv") }
+            }
+            .frame(width: 56, height: 84)
+            .clipShape(.rect(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.showTitle)
+                    .font(.headline)
+                Label("Next episode to be announced", systemImage: "calendar.badge.exclamationmark")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
+        .contentShape(.rect)
+        .onTapGesture(perform: onSelect)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens show details")
     }
 }
 

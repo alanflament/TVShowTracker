@@ -114,4 +114,22 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             addedAt: addedAt
         )
     }
+
+    func updating(with details: ShowDetails) -> LibraryItem {
+        LibraryItem(
+            provider: provider,
+            providerID: providerID,
+            kind: kind,
+            title: details.title,
+            alternateTitle: details.alternateTitle,
+            posterURL: details.posterURL ?? posterURL,
+            releaseYear: details.releaseYear ?? releaseYear,
+            totalEpisodeCount: details.totalEpisodeCount ?? totalEpisodeCount,
+            status: details.status ?? status,
+            nextEpisodeNumber: nextEpisodeNumber,
+            nextEpisodeAirDate: nextEpisodeAirDate,
+            animeInstallments: animeInstallments,
+            addedAt: addedAt
+        )
+    }
 }

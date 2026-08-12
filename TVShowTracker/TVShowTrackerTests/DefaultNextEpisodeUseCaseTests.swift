@@ -42,7 +42,7 @@ struct DefaultNextEpisodeUseCaseTests {
         )
 
         #expect(result.episodes.map(\.episode.id) == [futureEpisode.id, availableEpisode.id])
-        #expect(result.missingScheduleCount == 0)
+        #expect(result.undatedMedia.isEmpty)
     }
 
     @Test func watchedEpisodeIsSkippedForTheNextAvailableEpisode() async {
@@ -127,10 +127,30 @@ struct DefaultNextEpisodeUseCaseTests {
 
         #expect(result.episodes.map(\.episode.id) == [regularEpisode.id])
     }
+
+    @Test func undatedOngoingMediaIsPresentedWithoutARefreshNotice() async {
+        let airingItem = makeItem(id: 1, title: "The Bear", status: .airing)
+        let finishedItem = makeItem(id: 2, title: "Dark", status: .finished)
+        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: []))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+
+        let result = await useCase.findNextEpisode(
+            in: [finishedItem, airingItem],
+            watchedEpisodeIDs: [],
+            now: .now
+        )
+
+        #expect(result.episodes.isEmpty)
+        #expect(result.undatedMedia.map(\.candidate.id) == [airingItem.id])
+    }
 }
 
 private extension DefaultNextEpisodeUseCaseTests {
-    func makeItem(id: Int, title: String) -> LibraryItem {
+    func makeItem(
+        id: Int,
+        title: String,
+        status: SearchMediaStatus? = nil
+    ) -> LibraryItem {
         LibraryItem(candidate: SearchCandidate(
             provider: .tmdb,
             providerID: id,
@@ -140,7 +160,7 @@ private extension DefaultNextEpisodeUseCaseTests {
             posterURL: nil,
             releaseYear: nil,
             totalEpisodeCount: nil,
-            status: nil,
+            status: status,
             nextEpisodeNumber: nil,
             nextEpisodeAirDate: nil
         ))

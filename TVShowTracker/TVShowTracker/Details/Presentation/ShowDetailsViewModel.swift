@@ -37,6 +37,13 @@ final class ShowDetailsViewModel {
 
     func toggleFollowed() {
         followedMediaStore.toggle(candidate)
+
+        guard followedMediaStore.contains(candidate),
+              case let .loaded(details) = state
+        else {
+            return
+        }
+        followedMediaStore.update(with: details, for: candidate)
     }
 
     func load() async {
@@ -46,7 +53,9 @@ final class ShowDetailsViewModel {
 
         state = .loading
         do {
-            state = try .loaded(await useCase.fetchDetails(for: candidate))
+            let details = try await useCase.fetchDetails(for: candidate)
+            followedMediaStore.update(with: details, for: candidate)
+            state = .loaded(details)
         } catch {
             state = .failed((error as? LocalizedError)?.errorDescription ?? "Details could not be loaded.")
         }

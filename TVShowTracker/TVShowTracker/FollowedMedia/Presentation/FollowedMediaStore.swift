@@ -64,6 +64,13 @@ final class FollowedMediaStore {
         save(item.updating(status: status))
     }
 
+    func update(with details: ShowDetails, for candidate: SearchCandidate) {
+        guard let item = item(id: candidate.id) else {
+            return
+        }
+        save(item.updating(with: details))
+    }
+
     private func save(_ item: LibraryItem) {
         do {
             try repository.save(item)

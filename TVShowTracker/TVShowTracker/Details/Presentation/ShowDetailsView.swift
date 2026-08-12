@@ -43,8 +43,16 @@ struct ShowDetailsView: View {
 
     private func detailsContent(_ details: ShowDetails) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 28) {
                 header(details)
+
+                episodeNavigation(details)
+
+                followButton
+
+                if !details.genres.isEmpty {
+                    genres(details.genres)
+                }
 
                 if let overview = details.overview, !overview.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -54,43 +62,6 @@ struct ShowDetailsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-
-                if !details.genres.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(details.genres, id: \.self) { genre in
-                                Text(genre)
-                                    .font(.caption)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(.thinMaterial, in: Capsule())
-                            }
-                        }
-                    }
-                }
-
-                Button {
-                    viewModel.toggleFollowed()
-                } label: {
-                    Label(
-                        viewModel.isFollowed
-                            ? "Remove from Library"
-                            : "Add to Library",
-                        systemImage: viewModel.isFollowed
-                            ? "checkmark.circle.fill"
-                            : "plus.circle"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-
-                NavigationLink {
-                    EpisodesView(viewModel: makeEpisodesViewModel())
-                } label: {
-                    Label("Episodes", systemImage: "list.number")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
             }
             .padding()
         }
@@ -113,18 +84,97 @@ struct ShowDetailsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(details.title)
                     .font(.title2.bold())
+                    .fixedSize(horizontal: false, vertical: true)
                 if let alternateTitle = details.alternateTitle, alternateTitle != details.title {
                     Text(alternateTitle)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                Text(details.metadata)
+                Text(metadata(for: details))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if let status = details.status {
                     Text(status.rawValue.capitalized)
-                        .font(.subheadline.weight(.medium))
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.primary.opacity(0.08), in: Capsule())
                 }
             }
         }
+    }
+
+    private var followButton: some View {
+        Button {
+            viewModel.toggleFollowed()
+        } label: {
+            Label(
+                viewModel.isFollowed ? "Following" : "Add to My Shows",
+                systemImage: viewModel.isFollowed ? "checkmark.circle.fill" : "plus.circle"
+            )
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .tint(viewModel.isFollowed ? .green : .accentColor)
+    }
+
+    private func episodeNavigation(_ details: ShowDetails) -> some View {
+        NavigationLink {
+            EpisodesView(viewModel: makeEpisodesViewModel())
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "list.number")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Color.accentColor.opacity(0.14), in: .circle)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Episodes")
+                        .font(.headline)
+                    Text(episodeNavigationSubtitle(for: details))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func genres(_ genres: [String]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(genres, id: \.self) { genre in
+                    Text(genre)
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.primary.opacity(0.08), in: Capsule())
+                }
+            }
+        }
+    }
+
+    private func metadata(for details: ShowDetails) -> String {
+        [
+            details.releaseYear.map(String.init),
+            details.totalEpisodeCount.map { "\($0) episodes" }
+        ]
+        .compactMap { $0 }
+        .joined(separator: " · ")
+    }
+
+    private func episodeNavigationSubtitle(for details: ShowDetails) -> String {
+        if let totalEpisodeCount = details.totalEpisodeCount {
+            return "\(totalEpisodeCount) episodes"
+        }
+        return "Browse seasons and episodes"
     }
 }

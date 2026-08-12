@@ -17,18 +17,13 @@ struct TVTimeImportView: View {
     }
 
     var body: some View {
-        List {
-            Section {
-                Text("Choose the unmodified gdpr-data folder exported by TV Time. The folder stays on your device and is read only during this import.")
-                    .foregroundStyle(.secondary)
-
-                Button("Choose gdpr-data folder") {
-                    isFolderPickerPresented = true
-                }
-                .disabled(isImporting)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                importIntroduction
+                stateContent
             }
-
-            stateContent
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
         }
         .navigationTitle("TV Time import")
         .fileImporter(
@@ -55,7 +50,9 @@ struct TVTimeImportView: View {
         case .idle:
             EmptyView()
         case let .importing(progress):
-            Section("Importing") {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Importing", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.title3.bold())
                 ProgressView(value: progressFraction(progress)) {
                     Text(progressTitle(progress))
                 } currentValueLabel: {
@@ -66,26 +63,42 @@ struct TVTimeImportView: View {
                     viewModel.cancelImport()
                 }
             }
+            .padding(16)
+            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
         case let .completed(report):
             reportContent(report)
         case let .failed(message):
-            Section("Import failed") {
-                Text(message)
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Import failed", systemImage: "exclamationmark.triangle.fill")
+                    .font(.title3.bold())
                     .foregroundStyle(.red)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 Button("Try again") {
                     viewModel.reset()
                 }
             }
+            .padding(16)
+            .background(Color.red.opacity(0.08), in: .rect(cornerRadius: 16))
         }
     }
 
     private func reportContent(_ report: TVTimeImportReport) -> some View {
-        Section("Import complete") {
-            LabeledContent("Shows added", value: "\(report.addedShowCount)")
-            LabeledContent("Already in Library", value: "\(report.existingShowCount)")
-            LabeledContent("Watched episodes found", value: "\(report.parsedWatchedEpisodeCount)")
-            LabeledContent("Watched episodes restored", value: "\(report.restoredEpisodeCount)")
-            LabeledContent("Episodes not restored", value: "\(report.unresolvedEpisodeCount)")
+        VStack(alignment: .leading, spacing: 14) {
+            Label("Import complete", systemImage: "checkmark.circle.fill")
+                .font(.title3.bold())
+                .foregroundStyle(.green)
+
+            VStack(spacing: 12) {
+                importMetric("Shows added", value: report.addedShowCount)
+                importMetric("Already in My Shows", value: report.existingShowCount)
+                importMetric("Watched episodes found", value: report.parsedWatchedEpisodeCount)
+                importMetric("Watched episodes restored", value: report.restoredEpisodeCount)
+                importMetric("Episodes not restored", value: report.unresolvedEpisodeCount)
+            }
+            .padding(16)
+            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
 
             if !report.unresolvedShowTitles.isEmpty {
                 NavigationLink("Shows needing review") {
@@ -99,6 +112,40 @@ struct TVTimeImportView: View {
             Button("Import another folder") {
                 viewModel.reset()
             }
+        }
+    }
+
+    private var importIntroduction: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Image(systemName: "square.and.arrow.down")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 48, height: 48)
+                .background(Color.accentColor.opacity(0.14), in: .rect(cornerRadius: 14))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Move your TV Time progress")
+                    .font(.title2.bold())
+                Text("Choose the unmodified gdpr-data folder exported by TV Time. It stays on your device and is read only during this import.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button("Choose gdpr-data folder") {
+                isFolderPickerPresented = true
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isImporting)
+        }
+    }
+
+    private func importMetric(_ title: String, value: Int) -> some View {
+        HStack {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value, format: .number)
+                .fontWeight(.semibold)
         }
     }
 
