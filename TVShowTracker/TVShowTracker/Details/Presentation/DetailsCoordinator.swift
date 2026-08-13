@@ -57,7 +57,8 @@ final class DetailsCoordinator {
 
     func makeEpisodeDetailsView(
         for candidate: SearchCandidate,
-        episode: ShowEpisode
+        episode: ShowEpisode,
+        onShowMediaDetails: (() -> Void)? = nil
     ) -> EpisodeDetailsView {
         EpisodeDetailsView(
             viewModel: EpisodeDetailsViewModel(
@@ -66,7 +67,8 @@ final class DetailsCoordinator {
                 useCase: useCase,
                 episodeDetailsStore: episodeDetailsStore,
                 episodeWatchStore: episodeWatchStore
-            )
+            ),
+            onShowMediaDetails: onShowMediaDetails
         )
     }
 }

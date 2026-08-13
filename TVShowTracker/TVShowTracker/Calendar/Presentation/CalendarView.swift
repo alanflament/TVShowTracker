@@ -10,10 +10,8 @@ import SwiftUI
 
 struct CalendarView: View {
     let viewModel: CalendarViewModel
-    let makeDetailsView: (SearchCandidate) -> ShowDetailsView
-    let makeEpisodeDetailsView: (SearchCandidate, ShowEpisode) -> EpisodeDetailsView
-    @State private var selectedCandidate: SearchCandidate?
-    @State private var selectedEpisode: CalendarEpisode?
+    let onSelectMedia: (SearchCandidate) -> Void
+    let onSelectEpisode: (CalendarEpisode) -> Void
 
     var body: some View {
         Group {
@@ -41,12 +39,6 @@ struct CalendarView: View {
         }
         .refreshable {
             await viewModel.refreshFromServer()
-        }
-        .navigationDestination(item: $selectedCandidate) { candidate in
-            makeDetailsView(candidate)
-        }
-        .navigationDestination(item: $selectedEpisode) { episode in
-            makeEpisodeDetailsView(episode.candidate, episode.episode)
         }
     }
 
@@ -125,7 +117,7 @@ struct CalendarView: View {
                     CalendarEpisodeCard(
                         episode: episode,
                         onSelect: {
-                            selectedEpisode = episode
+                            onSelectEpisode(episode)
                         },
                         onMarkWatched: {
                             Task {
@@ -151,7 +143,7 @@ struct CalendarView: View {
             LazyVStack(spacing: 14) {
                 ForEach(media, id: \.candidate.id) { item in
                     CalendarUndatedMediaCard(item: item) {
-                        selectedCandidate = item.candidate
+                        onSelectMedia(item.candidate)
                     }
                 }
             }

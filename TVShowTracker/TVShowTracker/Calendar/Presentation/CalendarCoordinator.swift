@@ -48,8 +48,13 @@ final class CalendarCoordinator {
 
     func makeEpisodeDetailsView(
         for candidate: SearchCandidate,
-        episode: ShowEpisode
+        episode: ShowEpisode,
+        onShowMediaDetails: @escaping () -> Void
     ) -> EpisodeDetailsView {
-        detailsCoordinator.makeEpisodeDetailsView(for: candidate, episode: episode)
+        detailsCoordinator.makeEpisodeDetailsView(
+            for: candidate,
+            episode: episode,
+            onShowMediaDetails: onShowMediaDetails
+        )
     }
 }

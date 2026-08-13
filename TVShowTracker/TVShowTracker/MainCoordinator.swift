@@ -31,6 +31,8 @@ final class MainCoordinator {
         #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--settings-tab") {
                 selectedTab = .settings
+            } else if ProcessInfo.processInfo.arguments.contains("--calendar-tab") {
+                selectedTab = .calendar
             } else if ProcessInfo.processInfo.arguments.contains("--discover-tab") {
                 selectedTab = .search
             }

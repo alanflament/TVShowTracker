@@ -10,9 +10,14 @@ import SwiftUI
 
 struct EpisodeDetailsView: View {
     @State private var viewModel: EpisodeDetailsViewModel
+    private let onShowMediaDetails: (() -> Void)?
 
-    init(viewModel: EpisodeDetailsViewModel) {
+    init(
+        viewModel: EpisodeDetailsViewModel,
+        onShowMediaDetails: (() -> Void)? = nil
+    ) {
         _viewModel = State(initialValue: viewModel)
+        self.onShowMediaDetails = onShowMediaDetails
     }
 
     var body: some View {
@@ -57,6 +62,10 @@ struct EpisodeDetailsView: View {
                         .font(.title.bold())
                 }
 
+                if let onShowMediaDetails {
+                    mediaDetailsButton(action: onShowMediaDetails)
+                }
+
                 metadata(details)
                 watchedButton
 
@@ -78,6 +87,35 @@ struct EpisodeDetailsView: View {
             }
             .padding()
         }
+    }
+
+    private func mediaDetailsButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "tv")
+                    .font(.title3)
+                    .foregroundStyle(Color.accentColor)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.candidate.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text("View show details")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Replaces episode details with show details")
     }
 
     private func metadata(_ details: EpisodeDetails) -> some View {
