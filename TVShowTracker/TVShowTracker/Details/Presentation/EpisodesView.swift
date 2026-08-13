@@ -49,80 +49,108 @@ struct EpisodesView: View {
     }
 
     private func episodesList(_ seasons: [ShowSeason]) -> some View {
-        List {
-            if seasons.isEmpty {
-                TrackerEmptyState(
-                    title: "No episodes yet",
-                    systemImage: "list.number",
-                    description: "Episode information will appear here as soon as it is available."
-                )
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-            } else {
-                progressSummary(seasons)
-                markAllAvailableSection(seasons)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if seasons.isEmpty {
+                    TrackerEmptyState(
+                        title: "No episodes yet",
+                        systemImage: "list.number",
+                        description: "Episode information will appear here as soon as it is available."
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 80)
+                } else {
+                    progressSummary(seasons)
+                        .padding(.top, 12)
 
-                ForEach(seasons) { season in
-                    seasonSection(season)
+                    markAllAvailableSection(seasons)
+
+                    Divider()
+
+                    ForEach(seasons) { season in
+                        seasonSection(season)
+
+                        if season.id != seasons.last?.id {
+                            Divider()
+                        }
+                    }
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
         }
-        .listStyle(.plain)
     }
 
     private func progressSummary(_ seasons: [ShowSeason]) -> some View {
         let episodes = seasons.flatMap(\.episodes)
         let watchedCount = viewModel.watchedEpisodeCount(in: episodes)
 
-        return Section {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Your progress")
-                            .font(.headline)
-                        Text("\(watchedCount) of \(episodes.count) episodes watched")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: watchedCount == episodes.count ? "checkmark.circle.fill" : "play.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(watchedCount == episodes.count ? .green : Color.accentColor)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your progress")
+                        .font(.headline)
+                    Text("\(watchedCount) of \(episodes.count) episodes watched")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-
-                ProgressView(value: progress(watched: watchedCount, total: episodes.count))
-                    .tint(watchedCount == episodes.count ? .green : .accentColor)
+                Spacer()
+                Image(systemName: watchedCount == episodes.count ? "checkmark.circle.fill" : "play.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(watchedCount == episodes.count ? .green : Color.accentColor)
             }
-            .padding(16)
-            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
+
+            ProgressView(value: progress(watched: watchedCount, total: episodes.count))
+                .tint(watchedCount == episodes.count ? .green : .accentColor)
         }
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
+        .padding(16)
+        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
     }
 
     @ViewBuilder
     private func markAllAvailableSection(_ seasons: [ShowSeason]) -> some View {
         if viewModel.releasedUnwatchedEpisodeCount(in: seasons.flatMap(\.episodes)) > 0 {
-            Section {
-                Button {
-                    viewModel.markAllWatched(seasons)
-                    watchActionID += 1
-                } label: {
-                    Label(
-                        "Mark all available episodes as watched",
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
+            Button {
+                viewModel.markAllWatched(seasons)
+                watchActionID += 1
+            } label: {
+                Label(
+                    "Mark all available episodes as watched",
+                    systemImage: "checkmark.circle.fill"
+                )
+                .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .padding(.vertical, 14)
+        } else {
+            Color.clear
+                .frame(height: 14)
         }
     }
 
     private func seasonSection(_ season: ShowSeason) -> some View {
-        Section {
-            DisclosureGroup(isExpanded: expansionBinding(for: season)) {
-                LazyVStack(spacing: 10) {
+        let isExpanded = expandedSeasonIDs.contains(season.id)
+
+        return VStack(spacing: 0) {
+            SeasonHeader(
+                season: season,
+                isExpanded: isExpanded,
+                isFullyWatched: viewModel.areAllWatched(in: season.episodes),
+                watchedEpisodeCount: viewModel.watchedEpisodeCount(in: season.episodes),
+                unwatchedReleasedEpisodeCount: viewModel.releasedUnwatchedEpisodeCount(
+                    in: season.episodes
+                ),
+                onToggleExpanded: {
+                    toggleExpansion(for: season)
+                },
+                onMarkWatched: {
+                    viewModel.markSeasonWatched(season)
+                    watchActionID += 1
+                }
+            )
+
+            CollapsibleEpisodeList(isExpanded: isExpanded) {
+                VStack(spacing: 10) {
                     ForEach(season.episodes) { episode in
                         EpisodeRow(
                             episode: episode,
@@ -138,47 +166,29 @@ struct EpisodesView: View {
                     }
                 }
                 .padding(.top, 12)
-            } label: {
-                SeasonHeader(
-                    season: season,
-                    isFullyWatched: viewModel.areAllWatched(in: season.episodes),
-                    watchedEpisodeCount: viewModel.watchedEpisodeCount(in: season.episodes),
-                    unwatchedReleasedEpisodeCount: viewModel.releasedUnwatchedEpisodeCount(
-                        in: season.episodes
-                    ),
-                    onMarkWatched: {
-                        viewModel.markSeasonWatched(season)
-                        watchActionID += 1
-                    }
-                )
             }
-            .tint(.primary)
         }
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
+        .padding(.vertical, 4)
     }
 
-    private func expansionBinding(for season: ShowSeason) -> Binding<Bool> {
-        Binding(
-            get: {
-                expandedSeasonIDs.contains(season.id)
-            },
-            set: { isExpanded in
-                let update = {
-                    if isExpanded {
-                        expandedSeasonIDs.insert(season.id)
-                    } else {
-                        expandedSeasonIDs.remove(season.id)
-                    }
-                }
+    private func toggleExpansion(for season: ShowSeason) {
+        guard !season.episodes.isEmpty else {
+            return
+        }
 
-                if reduceMotion {
-                    update()
-                } else {
-                    withAnimation(.snappy(duration: 0.32, extraBounce: 0.05), update)
-                }
+        let update = {
+            if expandedSeasonIDs.contains(season.id) {
+                expandedSeasonIDs.remove(season.id)
+            } else {
+                expandedSeasonIDs.insert(season.id)
             }
-        )
+        }
+
+        if reduceMotion {
+            update()
+        } else {
+            withAnimation(.smooth(duration: 0.42), update)
+        }
     }
 
     private func progress(watched: Int, total: Int) -> Double {
@@ -191,32 +201,42 @@ struct EpisodesView: View {
 
 private struct SeasonHeader: View {
     let season: ShowSeason
+    let isExpanded: Bool
     let isFullyWatched: Bool
     let watchedEpisodeCount: Int
     let unwatchedReleasedEpisodeCount: Int
+    let onToggleExpanded: () -> Void
     let onMarkWatched: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text(season.displayName)
-                    .font(.headline)
+            Button(action: onToggleExpanded) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(season.displayName)
+                        .font(.headline)
 
-                if season.episodes.isEmpty {
-                    Text("To be announced")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    HStack(spacing: 8) {
-                        ProgressView(value: progress)
-                            .tint(isFullyWatched ? .green : .accentColor)
-                        Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
+                    if season.episodes.isEmpty {
+                        Text("To be announced")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    } else {
+                        HStack(spacing: 8) {
+                            ProgressView(value: progress)
+                                .tint(isFullyWatched ? .green : .accentColor)
+                            Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .disabled(season.episodes.isEmpty)
+            .accessibilityLabel(season.displayName)
+            .accessibilityValue(expansionAccessibilityValue)
+            .accessibilityHint(season.episodes.isEmpty ? "" : "Shows or hides the episode list")
 
             if season.episodes.isEmpty {
                 Image(systemName: "calendar")
@@ -231,6 +251,16 @@ private struct SeasonHeader: View {
                 .disabled(unwatchedReleasedEpisodeCount == 0)
                 .accessibilityLabel("Mark all released episodes in \(season.displayName) as watched")
                 .accessibilityValue(isFullyWatched ? "Complete" : "\(unwatchedReleasedEpisodeCount) available")
+
+                Button(action: onToggleExpanded) {
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(width: 20, height: 28)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isExpanded ? "Collapse \(season.displayName)" : "Expand \(season.displayName)")
             }
         }
         .padding(.vertical, 8)
@@ -243,6 +273,39 @@ private struct SeasonHeader: View {
             return 0
         }
         return Double(watchedEpisodeCount) / Double(season.episodes.count)
+    }
+
+    private var expansionAccessibilityValue: String {
+        guard !season.episodes.isEmpty else {
+            return "To be announced"
+        }
+        return isExpanded ? "Expanded" : "Collapsed"
+    }
+}
+
+private struct CollapsibleEpisodeList<Content: View>: View {
+    let isExpanded: Bool
+    let content: Content
+    @State private var contentHeight: CGFloat = 0
+
+    init(isExpanded: Bool, @ViewBuilder content: () -> Content) {
+        self.isExpanded = isExpanded
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { geometry in
+                geometry.size.height
+            } action: { newHeight in
+                contentHeight = newHeight
+            }
+            .offset(y: isExpanded ? 0 : -14)
+            .frame(height: isExpanded ? contentHeight : 0, alignment: .top)
+            .clipped()
+            .allowsHitTesting(isExpanded)
+            .accessibilityHidden(!isExpanded)
     }
 }
 
