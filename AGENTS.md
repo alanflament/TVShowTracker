@@ -135,6 +135,31 @@ rows are reported rather than guessed.
   navigation stack, and episode lists push in either context.
 - Keep provider-specific behavior out of SwiftUI views and view models.
 
+## Design and product language
+
+- Reuse `Core/Presentation` primitives before creating feature-local visual
+  styles: `MediaPoster`, `MediaMetadata`, `TrackerCard`, and
+  `TrackerEmptyState`.
+- Keep repeated content visually consistent: use the same card geometry, poster
+  ratios, spacing, and metadata hierarchy unless the content has a meaningfully
+  different role.
+- Prefer semantic system colors and Dynamic Type text styles. Do not introduce
+  hard-coded colors, fixed screen-width layouts, or custom fonts without an
+  explicit product decision.
+- Cards in vertical lists must fill the available row width while retaining
+  left-aligned content. Apply the maximum-width frame before padding and the
+  card background.
+- Make states understandable in user language. For Up Next, distinguish
+  “Available now”, “Coming soon”, and “To be announced”; avoid implementation
+  terms such as cache, sync, provider, or refresh in primary UI copy.
+- Preserve the established Up Next information hierarchy: one next episode per
+  followed title, a separate aggregate available-now count, and an explicit
+  undated-media section.
+- Reuse `TrackerEmptyState` for empty states and ensure every loading, empty,
+  error, and offline state explains the next useful action.
+- Before calling a UI iteration complete, inspect it in an iPhone simulator in
+  both light and dark appearance, including long titles and Dynamic Type.
+
 ## Required checks
 
 From the repository root:
@@ -160,6 +185,9 @@ xcodebuild test \
 
 Also run `git diff --check`. Report environment-only simulator or Xcode plugin
 failures separately from source failures.
+
+For UI changes, perform the visual inspection described in “Design and product
+language”; it supplements, rather than replaces, the automated checks.
 
 ## Working with Codex
 
