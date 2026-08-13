@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct EpisodesView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel: EpisodesViewModel
     @State private var expandedSeasonIDs = Set<String>()
     @State private var watchActionID = 0
@@ -120,49 +121,64 @@ struct EpisodesView: View {
 
     private func seasonSection(_ season: ShowSeason) -> some View {
         Section {
-            if expandedSeasonIDs.contains(season.id) {
-                ForEach(season.episodes) { episode in
-                    EpisodeRow(
-                        episode: episode,
-                        isWatched: viewModel.isWatched(episode),
-                        onSelect: {
-                            selectedEpisode = episode
-                        },
-                        onToggleWatched: {
-                            viewModel.toggleWatched(episode)
-                            watchActionID += 1
-                        }
-                    )
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+            DisclosureGroup(isExpanded: expansionBinding(for: season)) {
+                LazyVStack(spacing: 10) {
+                    ForEach(season.episodes) { episode in
+                        EpisodeRow(
+                            episode: episode,
+                            isWatched: viewModel.isWatched(episode),
+                            onSelect: {
+                                selectedEpisode = episode
+                            },
+                            onToggleWatched: {
+                                viewModel.toggleWatched(episode)
+                                watchActionID += 1
+                            }
+                        )
+                    }
                 }
+                .padding(.top, 12)
+            } label: {
+                SeasonHeader(
+                    season: season,
+                    isFullyWatched: viewModel.areAllWatched(in: season.episodes),
+                    watchedEpisodeCount: viewModel.watchedEpisodeCount(in: season.episodes),
+                    unwatchedReleasedEpisodeCount: viewModel.releasedUnwatchedEpisodeCount(
+                        in: season.episodes
+                    ),
+                    onMarkWatched: {
+                        viewModel.markSeasonWatched(season)
+                        watchActionID += 1
+                    }
+                )
             }
-        } header: {
-            SeasonHeader(
-                season: season,
-                isExpanded: expandedSeasonIDs.contains(season.id),
-                isFullyWatched: viewModel.areAllWatched(in: season.episodes),
-                watchedEpisodeCount: viewModel.watchedEpisodeCount(in: season.episodes),
-                unwatchedReleasedEpisodeCount: viewModel.releasedUnwatchedEpisodeCount(
-                    in: season.episodes
-                ),
-                onToggle: {
-                    toggleExpansion(for: season)
-                },
-                onMarkWatched: {
-                    viewModel.markSeasonWatched(season)
-                    watchActionID += 1
-                }
-            )
+            .tint(.primary)
         }
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
     }
 
-    private func toggleExpansion(for season: ShowSeason) {
-        if expandedSeasonIDs.contains(season.id) {
-            expandedSeasonIDs.remove(season.id)
-        } else {
-            expandedSeasonIDs.insert(season.id)
-        }
+    private func expansionBinding(for season: ShowSeason) -> Binding<Bool> {
+        Binding(
+            get: {
+                expandedSeasonIDs.contains(season.id)
+            },
+            set: { isExpanded in
+                let update = {
+                    if isExpanded {
+                        expandedSeasonIDs.insert(season.id)
+                    } else {
+                        expandedSeasonIDs.remove(season.id)
+                    }
+                }
+
+                if reduceMotion {
+                    update()
+                } else {
+                    withAnimation(.snappy(duration: 0.32, extraBounce: 0.05), update)
+                }
+            }
+        )
     }
 
     private func progress(watched: Int, total: Int) -> Double {
@@ -175,39 +191,26 @@ struct EpisodesView: View {
 
 private struct SeasonHeader: View {
     let season: ShowSeason
-    let isExpanded: Bool
     let isFullyWatched: Bool
     let watchedEpisodeCount: Int
     let unwatchedReleasedEpisodeCount: Int
-    let onToggle: () -> Void
     let onMarkWatched: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Button(action: onToggle) {
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(spacing: 8) {
-                        Text(season.displayName)
-                            .font(.headline)
-                        Spacer()
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.caption.weight(.semibold))
-                    }
+            VStack(alignment: .leading, spacing: 7) {
+                Text(season.displayName)
+                    .font(.headline)
 
-                    HStack(spacing: 8) {
-                        ProgressView(value: progress)
-                            .tint(isFullyWatched ? .green : .accentColor)
-                        Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                HStack(spacing: 8) {
+                    ProgressView(value: progress)
+                        .tint(isFullyWatched ? .green : .accentColor)
+                    Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .contentShape(.rect)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(season.displayName), \(season.episodes.count) episodes")
-            .accessibilityValue("\(watchedEpisodeCount) watched")
-            .accessibilityHint(isExpanded ? "Collapse season" : "Expand season")
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Button(action: onMarkWatched) {
                 Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
@@ -220,6 +223,7 @@ private struct SeasonHeader: View {
         }
         .padding(.vertical, 8)
         .textCase(nil)
+        .accessibilityElement(children: .contain)
     }
 
     private var progress: Double {
