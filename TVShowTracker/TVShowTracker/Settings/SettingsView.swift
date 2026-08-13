@@ -72,6 +72,7 @@ private struct SettingsInfoCard: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 14))
         .accessibilityElement(children: .combine)
