@@ -167,6 +167,9 @@ final class AppContainer {
             dataImportUseCase: DefaultDataImportUseCase(
                 libraryRepository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext),
                 episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext),
+                showDetailsUseCase: showDetailsUseCase,
+                followedMediaStore: followedMediaStore,
+                episodeScheduleStore: episodeScheduleStore,
                 didImport: {
                     self.followedMediaStore.reload()
                     self.episodeWatchStore.reload()

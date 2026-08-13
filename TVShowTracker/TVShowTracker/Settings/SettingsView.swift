@@ -44,6 +44,7 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .disabled(dataBackupViewModel.isImporting)
 
                     Button(action: dataBackupViewModel.prepareExport) {
                         SettingsActionCard(
@@ -54,6 +55,7 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .disabled(dataBackupViewModel.isImporting)
 
                     Button {
                         dataBackupViewModel.isImporterPresented = true
@@ -66,6 +68,20 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .disabled(dataBackupViewModel.isImporting)
+
+                    if dataBackupViewModel.isImporting {
+                        TrackerCard {
+                            HStack(spacing: 12) {
+                                ProgressView()
+                                Text(dataBackupViewModel.importProgressMessage)
+                                    .font(.subheadline.weight(.medium))
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(dataBackupViewModel.importProgressMessage)
+                    }
 
                     SettingsInfoCard(
                         title: "Kept on this device",

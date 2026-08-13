@@ -66,7 +66,7 @@ struct DataExportUseCaseTests {
         #expect(json.contains("\"schemaVersion\" : 1"))
     }
 
-    @Test func importsExportedDataWithoutDeletingExistingItems() throws {
+    @Test func importsExportedDataWithoutDeletingExistingItems() async throws {
         let sourceContainer = try makeContainer()
         let sourceLibrary = SwiftDataLibraryRepository(modelContext: sourceContainer.mainContext)
         let sourceHistory = SwiftDataEpisodeWatchRepository(modelContext: sourceContainer.mainContext)
@@ -81,16 +81,31 @@ struct DataExportUseCaseTests {
         let destinationContainer = try makeContainer()
         let destinationLibrary = SwiftDataLibraryRepository(modelContext: destinationContainer.mainContext)
         let destinationHistory = SwiftDataEpisodeWatchRepository(modelContext: destinationContainer.mainContext)
+        let followedMediaStore = FollowedMediaStore(repository: destinationLibrary)
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
+        )
         try destinationLibrary.save(makeItem(id: 1396, title: "Breaking Bad", trackingStatus: .watching))
         try destinationHistory.save(WatchedEpisode(id: "tmdb:95396:1:1", watchedAt: .now))
         let useCase = DefaultDataImportUseCase(
             libraryRepository: destinationLibrary,
-            episodeWatchRepository: destinationHistory
+            episodeWatchRepository: destinationHistory,
+            showDetailsUseCase: BackupImportDetailsUseCaseStub(),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore,
+            didImport: {
+                followedMediaStore.reload()
+            }
         )
 
-        let report = try useCase.importBackup(data)
+        let report = try await useCase.importBackup(data)
 
-        #expect(report == DataImportReport(mediaCount: 1, watchedEpisodeCount: 1))
+        #expect(report == DataImportReport(
+            mediaCount: 1,
+            watchedEpisodeCount: 1,
+            refreshedMediaCount: 1,
+            refreshedScheduleCount: 1
+        ))
         #expect(try destinationLibrary.loadItems().map(\.title).sorted() == ["Breaking Bad", "Severance"])
         #expect(try destinationLibrary.loadItems().first { $0.title == "Severance" }?.trackingStatus == .completed)
         #expect(try destinationHistory.loadWatchedEpisodes() == [
@@ -98,13 +113,92 @@ struct DataExportUseCaseTests {
         ])
     }
 
-    @Test func rejectsUnsupportedSchemaBeforeWriting() throws {
+    @Test func refreshesMissingPostersAndPersistsSchedulesAfterImport() async throws {
+        let sourceContainer = try makeContainer()
+        let sourceLibrary = SwiftDataLibraryRepository(modelContext: sourceContainer.mainContext)
+        let sourceHistory = SwiftDataEpisodeWatchRepository(modelContext: sourceContainer.mainContext)
+        try sourceLibrary.save(makeItem(id: 95396, title: "Severance", trackingStatus: .completed))
+        let data = try DefaultDataExportUseCase(
+            libraryRepository: sourceLibrary,
+            episodeWatchRepository: sourceHistory
+        ).export(at: .now)
+
+        let destinationContainer = try makeContainer()
+        let destinationLibrary = SwiftDataLibraryRepository(modelContext: destinationContainer.mainContext)
+        let followedMediaStore = FollowedMediaStore(repository: destinationLibrary)
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
+        )
+        let posterURL = try #require(URL(string: "https://example.com/refreshed-poster.jpg"))
+        let useCase = DefaultDataImportUseCase(
+            libraryRepository: destinationLibrary,
+            episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: destinationContainer.mainContext),
+            showDetailsUseCase: BackupImportDetailsUseCaseStub(posterURL: posterURL),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore,
+            didImport: {
+                followedMediaStore.reload()
+            }
+        )
+
+        let report = try await useCase.importBackup(data)
+        let importedItem = try #require(followedMediaStore.items.first)
+
+        #expect(importedItem.posterURL == posterURL)
+        #expect(importedItem.trackingStatus == .completed)
+        #expect(episodeScheduleStore.schedule(for: importedItem)?.seasons.count == 1)
+        #expect(report.refreshedMediaCount == 1)
+        #expect(report.refreshedScheduleCount == 1)
+    }
+
+    @Test func keepsRestoredDataWhenProviderEnrichmentFails() async throws {
+        let sourceContainer = try makeContainer()
+        let sourceLibrary = SwiftDataLibraryRepository(modelContext: sourceContainer.mainContext)
+        let sourceHistory = SwiftDataEpisodeWatchRepository(modelContext: sourceContainer.mainContext)
+        try sourceLibrary.save(makeItem(id: 95396, title: "Severance", trackingStatus: .planToWatch))
+        let data = try DefaultDataExportUseCase(
+            libraryRepository: sourceLibrary,
+            episodeWatchRepository: sourceHistory
+        ).export(at: .now)
+
+        let destinationContainer = try makeContainer()
+        let destinationLibrary = SwiftDataLibraryRepository(modelContext: destinationContainer.mainContext)
+        let followedMediaStore = FollowedMediaStore(repository: destinationLibrary)
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
+        )
+        let useCase = DefaultDataImportUseCase(
+            libraryRepository: destinationLibrary,
+            episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: destinationContainer.mainContext),
+            showDetailsUseCase: BackupImportDetailsUseCaseStub(shouldFail: true),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore,
+            didImport: {
+                followedMediaStore.reload()
+            }
+        )
+
+        let report = try await useCase.importBackup(data)
+
+        #expect(followedMediaStore.items.map(\.title) == ["Severance"])
+        #expect(followedMediaStore.items.first?.trackingStatus == .planToWatch)
+        #expect(report.mediaRefreshFailureCount == 1)
+        #expect(report.refreshedScheduleCount == 0)
+    }
+
+    @Test func rejectsUnsupportedSchemaBeforeWriting() async throws {
         let container = try makeContainer()
         let library = SwiftDataLibraryRepository(modelContext: container.mainContext)
         let history = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+        let followedMediaStore = FollowedMediaStore(repository: library)
         let useCase = DefaultDataImportUseCase(
             libraryRepository: library,
-            episodeWatchRepository: history
+            episodeWatchRepository: history,
+            showDetailsUseCase: BackupImportDetailsUseCaseStub(),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: EpisodeScheduleStore(
+                repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+            )
         )
         let data = Data("""
         {
@@ -115,8 +209,8 @@ struct DataExportUseCaseTests {
         }
         """.utf8)
 
-        #expect(throws: DataImportError.unsupportedSchemaVersion(2)) {
-            try useCase.importBackup(data)
+        await #expect(throws: DataImportError.unsupportedSchemaVersion(2)) {
+            try await useCase.importBackup(data)
         }
         #expect(try library.loadItems().isEmpty)
         #expect(try history.loadWatchedEpisodes().isEmpty)
@@ -149,7 +243,56 @@ struct DataExportUseCaseTests {
         try ModelContainer(
             for: LibraryItemModel.self,
             WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
     }
+}
+
+private struct BackupImportDetailsUseCaseStub: ShowDetailsUseCase {
+    let posterURL: URL?
+    let shouldFail: Bool
+
+    init(posterURL: URL? = nil, shouldFail: Bool = false) {
+        self.posterURL = posterURL
+        self.shouldFail = shouldFail
+    }
+
+    func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails {
+        if shouldFail {
+            throw BackupImportTestError.expectedFailure
+        }
+        return ShowDetails(
+            provider: candidate.provider,
+            providerID: candidate.providerID,
+            kind: candidate.kind,
+            title: candidate.title,
+            alternateTitle: candidate.alternateTitle,
+            overview: nil,
+            posterURL: posterURL,
+            backdropURL: nil,
+            releaseYear: candidate.releaseYear,
+            status: candidate.status,
+            totalEpisodeCount: candidate.totalEpisodeCount,
+            genres: [],
+            seasonSummaries: []
+        )
+    }
+
+    func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason] {
+        if shouldFail {
+            throw BackupImportTestError.expectedFailure
+        }
+        return [ShowSeason(
+            provider: candidate.provider,
+            showID: candidate.providerID,
+            number: 1,
+            name: "Season 1",
+            episodes: []
+        )]
+    }
+}
+
+private enum BackupImportTestError: Error {
+    case expectedFailure
 }
