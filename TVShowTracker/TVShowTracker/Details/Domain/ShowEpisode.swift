@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ShowEpisode: Codable, Identifiable, Hashable, Sendable {
+nonisolated struct ShowEpisode: Codable, Identifiable, Hashable, Sendable {
     let provider: SearchProvider
     let showID: Int
     let seasonNumber: Int

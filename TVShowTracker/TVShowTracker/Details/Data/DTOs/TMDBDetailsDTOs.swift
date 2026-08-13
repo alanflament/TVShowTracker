@@ -117,12 +117,14 @@ nonisolated struct TMDBEpisode: Decodable {
     let airDate: String?
     let stillPath: String?
     let runtime: Int?
+    let voteAverage: Double?
 
     enum CodingKeys: String, CodingKey {
         case name, overview, runtime
         case episodeNumber = "episode_number"
         case airDate = "air_date"
         case stillPath = "still_path"
+        case voteAverage = "vote_average"
     }
 
     func asDomain(provider: SearchProvider, showID: Int, seasonNumber: Int) -> ShowEpisode {
@@ -136,6 +138,17 @@ nonisolated struct TMDBEpisode: Decodable {
             airDate: DateParser.parseISO8601(airDate),
             stillURL: tmdbImageURL(path: stillPath, size: "w300"),
             runtimeMinutes: runtime
+        )
+    }
+
+    func asEpisodeDetails(
+        provider: SearchProvider,
+        showID: Int,
+        seasonNumber: Int
+    ) -> EpisodeDetails {
+        EpisodeDetails(
+            episode: asDomain(provider: provider, showID: showID, seasonNumber: seasonNumber),
+            voteAverage: voteAverage
         )
     }
 }

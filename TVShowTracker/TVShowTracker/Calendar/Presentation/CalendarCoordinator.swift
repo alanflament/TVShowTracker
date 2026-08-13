@@ -45,4 +45,11 @@ final class CalendarCoordinator {
     func makeDetailsView(for candidate: SearchCandidate) -> ShowDetailsView {
         detailsCoordinator.makeDetailsView(for: candidate)
     }
+
+    func makeEpisodeDetailsView(
+        for candidate: SearchCandidate,
+        episode: ShowEpisode
+    ) -> EpisodeDetailsView {
+        detailsCoordinator.makeEpisodeDetailsView(for: candidate, episode: episode)
+    }
 }

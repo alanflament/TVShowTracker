@@ -10,13 +10,16 @@ import SwiftUI
 struct ShowDetailsView: View {
     @State private var viewModel: ShowDetailsViewModel
     private let makeEpisodesViewModel: () -> EpisodesViewModel
+    private let makeEpisodeDetailsView: (ShowEpisode) -> EpisodeDetailsView
 
     init(
         viewModel: ShowDetailsViewModel,
-        makeEpisodesViewModel: @escaping () -> EpisodesViewModel
+        makeEpisodesViewModel: @escaping () -> EpisodesViewModel,
+        makeEpisodeDetailsView: @escaping (ShowEpisode) -> EpisodeDetailsView
     ) {
         _viewModel = State(initialValue: viewModel)
         self.makeEpisodesViewModel = makeEpisodesViewModel
+        self.makeEpisodeDetailsView = makeEpisodeDetailsView
     }
 
     var body: some View {
@@ -110,7 +113,10 @@ struct ShowDetailsView: View {
 
     private func episodeNavigation(_ details: ShowDetails) -> some View {
         NavigationLink {
-            EpisodesView(viewModel: makeEpisodesViewModel())
+            EpisodesView(
+                viewModel: makeEpisodesViewModel(),
+                makeEpisodeDetailsView: makeEpisodeDetailsView
+            )
         } label: {
             TrackerCard {
                 HStack(spacing: 14) {

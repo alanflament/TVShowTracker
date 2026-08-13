@@ -11,7 +11,9 @@ import SwiftUI
 struct CalendarView: View {
     let viewModel: CalendarViewModel
     let makeDetailsView: (SearchCandidate) -> ShowDetailsView
+    let makeEpisodeDetailsView: (SearchCandidate, ShowEpisode) -> EpisodeDetailsView
     @State private var selectedCandidate: SearchCandidate?
+    @State private var selectedEpisode: CalendarEpisode?
 
     var body: some View {
         Group {
@@ -42,6 +44,9 @@ struct CalendarView: View {
         }
         .navigationDestination(item: $selectedCandidate) { candidate in
             makeDetailsView(candidate)
+        }
+        .navigationDestination(item: $selectedEpisode) { episode in
+            makeEpisodeDetailsView(episode.candidate, episode.episode)
         }
     }
 
@@ -120,7 +125,7 @@ struct CalendarView: View {
                     CalendarEpisodeCard(
                         episode: episode,
                         onSelect: {
-                            selectedCandidate = episode.candidate
+                            selectedEpisode = episode
                         },
                         onMarkWatched: {
                             Task {
@@ -220,7 +225,7 @@ private struct CalendarEpisodeCard: View {
         .contentShape(.rect)
         .onTapGesture(perform: onSelect)
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Opens show details")
+        .accessibilityHint("Opens episode details")
     }
 
     @ViewBuilder

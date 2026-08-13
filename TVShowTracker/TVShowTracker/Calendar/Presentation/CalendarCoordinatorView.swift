@@ -20,7 +20,8 @@ struct CalendarCoordinatorView: View {
         NavigationStack {
             CalendarView(
                 viewModel: viewModel,
-                makeDetailsView: coordinator.makeDetailsView(for:)
+                makeDetailsView: coordinator.makeDetailsView(for:),
+                makeEpisodeDetailsView: coordinator.makeEpisodeDetailsView(for:episode:)
             )
         }
     }

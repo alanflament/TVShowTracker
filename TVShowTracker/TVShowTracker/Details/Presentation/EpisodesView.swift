@@ -11,9 +11,15 @@ struct EpisodesView: View {
     @State private var viewModel: EpisodesViewModel
     @State private var expandedSeasonIDs = Set<String>()
     @State private var watchActionID = 0
+    @State private var selectedEpisode: ShowEpisode?
+    private let makeEpisodeDetailsView: (ShowEpisode) -> EpisodeDetailsView
 
-    init(viewModel: EpisodesViewModel) {
+    init(
+        viewModel: EpisodesViewModel,
+        makeEpisodeDetailsView: @escaping (ShowEpisode) -> EpisodeDetailsView
+    ) {
         _viewModel = State(initialValue: viewModel)
+        self.makeEpisodeDetailsView = makeEpisodeDetailsView
     }
 
     var body: some View {
@@ -34,6 +40,9 @@ struct EpisodesView: View {
         .navigationTitle("Episodes")
         .task {
             await viewModel.load()
+        }
+        .navigationDestination(item: $selectedEpisode) { episode in
+            makeEpisodeDetailsView(episode)
         }
         .sensoryFeedback(.success, trigger: watchActionID)
     }
@@ -116,6 +125,9 @@ struct EpisodesView: View {
                     EpisodeRow(
                         episode: episode,
                         isWatched: viewModel.isWatched(episode),
+                        onSelect: {
+                            selectedEpisode = episode
+                        },
                         onToggleWatched: {
                             viewModel.toggleWatched(episode)
                             watchActionID += 1
@@ -221,6 +233,7 @@ private struct SeasonHeader: View {
 private struct EpisodeRow: View {
     let episode: ShowEpisode
     let isWatched: Bool
+    let onSelect: () -> Void
     let onToggleWatched: () -> Void
 
     var body: some View {
@@ -261,6 +274,8 @@ private struct EpisodeRow: View {
         .opacity(episode.isReleased ? 1 : 0.6)
         .padding(14)
         .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 14))
+        .contentShape(.rect)
+        .onTapGesture(perform: onSelect)
         .accessibilityElement(children: .contain)
     }
 

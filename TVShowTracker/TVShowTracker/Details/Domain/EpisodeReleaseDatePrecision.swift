@@ -5,7 +5,7 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-enum EpisodeReleaseDatePrecision: Codable, Hashable, Sendable {
+nonisolated enum EpisodeReleaseDatePrecision: Codable, Hashable, Sendable {
     case day
     case time
 }

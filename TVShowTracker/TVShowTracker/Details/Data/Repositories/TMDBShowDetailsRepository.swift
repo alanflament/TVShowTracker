@@ -50,6 +50,20 @@ struct TMDBShowDetailsRepository: TVShowDetailsRepository {
             return seasons.sorted { $0.number < $1.number }
         }
     }
+
+    func fetchEpisodeDetails(
+        for candidate: SearchCandidate,
+        episode: ShowEpisode
+    ) async throws -> EpisodeDetails {
+        let details: TMDBEpisode = try await request(
+            path: "/3/tv/\(candidate.providerID)/season/\(episode.seasonNumber)/episode/\(episode.number)"
+        )
+        return details.asEpisodeDetails(
+            provider: .tmdb,
+            showID: candidate.providerID,
+            seasonNumber: episode.seasonNumber
+        )
+    }
 }
 
 private extension TMDBShowDetailsRepository {

@@ -17,19 +17,21 @@ final class AppContainer {
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
     private let episodeScheduleStore: EpisodeScheduleStore
+    private let episodeDetailsStore: EpisodeDetailsStore
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     init() {
         modelContainer = Self.makeModelContainer()
 
-        followedMediaStore = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext)
-        )
+        followedMediaStore = .init(repository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext))
         episodeWatchStore = EpisodeWatchStore(
             repository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext)
         )
         episodeScheduleStore = EpisodeScheduleStore(
             repository: SwiftDataEpisodeScheduleRepository(modelContext: modelContainer.mainContext)
+        )
+        episodeDetailsStore = .init(
+            repository: SwiftDataEpisodeDetailsRepository(modelContext: modelContainer.mainContext)
         )
 
         let tvShowRepository: any TVShowSearchRepository
@@ -82,7 +84,8 @@ final class AppContainer {
             return try ModelContainer(
                 for: LibraryItemModel.self,
                 WatchedEpisodeModel.self,
-                EpisodeScheduleModel.self
+                EpisodeScheduleModel.self,
+                EpisodeDetailsModel.self
             )
         } catch {
             fatalError("Unable to create the SwiftData container: \(error)")
@@ -108,7 +111,8 @@ final class AppContainer {
         DetailsCoordinator(
             useCase: showDetailsUseCase,
             followedMediaStore: followedMediaStore,
-            episodeWatchStore: episodeWatchStore
+            episodeWatchStore: episodeWatchStore,
+            episodeDetailsStore: episodeDetailsStore
         )
     }
 
