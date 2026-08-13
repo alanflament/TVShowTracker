@@ -202,24 +202,36 @@ private struct SeasonHeader: View {
                 Text(season.displayName)
                     .font(.headline)
 
-                HStack(spacing: 8) {
-                    ProgressView(value: progress)
-                        .tint(isFullyWatched ? .green : .accentColor)
-                    Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
+                if season.episodes.isEmpty {
+                    Text("To be announced")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } else {
+                    HStack(spacing: 8) {
+                        ProgressView(value: progress)
+                            .tint(isFullyWatched ? .green : .accentColor)
+                        Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button(action: onMarkWatched) {
-                Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
-                    .foregroundStyle(isFullyWatched ? .green : .secondary)
+            if season.episodes.isEmpty {
+                Image(systemName: "calendar")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Episode schedule to be announced")
+            } else {
+                Button(action: onMarkWatched) {
+                    Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                        .foregroundStyle(isFullyWatched ? .green : .secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(unwatchedReleasedEpisodeCount == 0)
+                .accessibilityLabel("Mark all released episodes in \(season.displayName) as watched")
+                .accessibilityValue(isFullyWatched ? "Complete" : "\(unwatchedReleasedEpisodeCount) available")
             }
-            .buttonStyle(.plain)
-            .disabled(unwatchedReleasedEpisodeCount == 0)
-            .accessibilityLabel("Mark all released episodes in \(season.displayName) as watched")
-            .accessibilityValue(isFullyWatched ? "Complete" : "\(unwatchedReleasedEpisodeCount) available")
         }
         .padding(.vertical, 8)
         .textCase(nil)

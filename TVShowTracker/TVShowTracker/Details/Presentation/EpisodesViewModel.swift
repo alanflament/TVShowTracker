@@ -82,7 +82,7 @@ final class EpisodesViewModel {
     }
 
     func areAllWatched(in episodes: [ShowEpisode]) -> Bool {
-        episodes.allSatisfy(isWatched)
+        !episodes.isEmpty && episodes.allSatisfy(isWatched)
     }
 
     private func markWatched(_ episodes: [ShowEpisode]) {

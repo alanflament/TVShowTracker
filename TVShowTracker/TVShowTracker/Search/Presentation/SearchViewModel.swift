@@ -37,6 +37,10 @@ final class SearchViewModel {
         followedMediaStore.addIfMissing(candidate, trackingStatus: trackingStatus)
     }
 
+    func addToPlan(_ candidate: SearchCandidate) {
+        add(candidate, trackingStatus: .planToWatch)
+    }
+
     func update(_ candidate: SearchCandidate, trackingStatus: TrackingStatus) {
         guard let item = followedMediaStore.item(id: candidate.id) else {
             add(candidate, trackingStatus: trackingStatus)

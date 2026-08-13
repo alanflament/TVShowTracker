@@ -74,6 +74,8 @@ struct SearchView: View {
                     ForEach(catalog.tvShows) { candidate in
                         SearchCandidateRow(candidate: candidate) {
                             selectedCandidate = candidate
+                        } onAddToPlan: {
+                            viewModel.addToPlan(candidate)
                         } onSetTrackingStatus: { status in
                             viewModel.update(candidate, trackingStatus: status)
                         } onRemoveFromLibrary: {
@@ -92,6 +94,8 @@ struct SearchView: View {
                     ForEach(catalog.anime) { candidate in
                         SearchCandidateRow(candidate: candidate) {
                             selectedCandidate = candidate
+                        } onAddToPlan: {
+                            viewModel.addToPlan(candidate)
                         } onSetTrackingStatus: { status in
                             viewModel.update(candidate, trackingStatus: status)
                         } onRemoveFromLibrary: {
@@ -133,6 +137,7 @@ struct SearchView: View {
 private struct SearchCandidateRow: View {
     let candidate: SearchCandidate
     let onSelect: () -> Void
+    let onAddToPlan: () -> Void
     let onSetTrackingStatus: (TrackingStatus) -> Void
     let onRemoveFromLibrary: () -> Void
     let trackingStatus: () -> TrackingStatus?
@@ -166,33 +171,40 @@ private struct SearchCandidateRow: View {
             }
             .padding(12)
 
-            Menu {
-                Picker("Tracking status", selection: trackingStatusBinding) {
-                    ForEach(TrackingStatus.allCases) { status in
-                        Label(status.title, systemImage: status.systemImage)
-                            .tag(Optional(status))
-                    }
-                }
+            Group {
+                if let trackingStatus {
+                    Menu {
+                        Picker("Tracking status", selection: trackingStatusBinding) {
+                            ForEach(TrackingStatus.allCases) { status in
+                                Label(status.title, systemImage: status.systemImage)
+                                    .tag(Optional(status))
+                            }
+                        }
 
-                if trackingStatus != nil {
-                    Divider()
-                    Button(role: .destructive, action: onRemoveFromLibrary) {
-                        Label("Remove from My Shows", systemImage: "trash")
+                        Divider()
+                        Button(role: .destructive, action: onRemoveFromLibrary) {
+                            Label("Remove from My Shows", systemImage: "trash")
+                        }
+                    } label: {
+                        trackingControlLabel(
+                            title: trackingStatus.title,
+                            systemImage: trackingStatus.systemImage,
+                            color: .green
+                        )
                     }
+                    .accessibilityLabel("Change tracking status")
+                } else {
+                    Button(action: onAddToPlan) {
+                        trackingControlLabel(
+                            title: "Add",
+                            systemImage: "plus",
+                            color: .accentColor
+                        )
+                    }
+                    .accessibilityLabel("Add to Plan to Watch")
                 }
-            } label: {
-                Label(
-                    trackingStatus?.title ?? "Add",
-                    systemImage: trackingStatus?.systemImage ?? "plus"
-                )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(trackingStatus == nil ? Color.accentColor : Color.green)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(Color.primary.opacity(0.08), in: Capsule())
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(trackingStatus == nil ? "Add to My Shows" : "Change tracking status")
             .padding(12)
         }
         .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 16))
@@ -200,6 +212,22 @@ private struct SearchCandidateRow: View {
         .onTapGesture(perform: onSelect)
         .accessibilityElement(children: .contain)
         .accessibilityHint("Opens show details")
+    }
+
+    private func trackingControlLabel(
+        title: String,
+        systemImage: String,
+        color: Color
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .frame(minWidth: 132)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Color.primary.opacity(0.08), in: Capsule())
     }
 
     private var trackingStatusBinding: Binding<TrackingStatus?> {

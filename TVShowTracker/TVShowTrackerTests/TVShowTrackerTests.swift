@@ -143,7 +143,7 @@ struct TVShowTrackerTests {
 
         #expect(searchViewModel.trackingStatus(for: candidate) == nil)
 
-        searchViewModel.add(candidate, trackingStatus: .planToWatch)
+        searchViewModel.addToPlan(candidate)
 
         #expect(searchViewModel.trackingStatus(for: candidate) == .planToWatch)
         #expect(libraryViewModel.items.map(\.id) == [candidate.id])

@@ -95,6 +95,11 @@ Existing persisted titles and TV Time imports default to `watching` so schema
 migration preserves the previous Up Next behavior. New manual additions must
 let the user choose their tracking status.
 
+In Discover results, an unfollowed title's `Add` action immediately saves it as
+`planToWatch`; do not open the tracking-status menu first. Once followed, the
+status control opens the menu for changing status or removing the title. Keep
+both control states at a stable width so the label transition is not clipped.
+
 JSON backups are a versioned portability contract. Schema version 1 exports
 followed-media provider identities and metadata, personal tracking statuses,
 and watched-episode IDs with their original watched dates. Import is a merge:
