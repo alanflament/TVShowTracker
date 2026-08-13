@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct LibraryView: View {
     @State private var isFilterPopoverPresented = false
@@ -29,36 +30,42 @@ struct LibraryView: View {
                     description: "Find TV shows and anime in Discover, then add them here to keep track of every release."
                 )
             } else {
-                VStack(spacing: 0) {
-                    filterMenu(viewModel)
-                        .padding(.horizontal)
-                        .padding(.top)
-
-                    if viewModel.items.isEmpty {
-                        noMatchesView(viewModel)
-                    } else {
-                        ScrollView {
-                            LazyVGrid(
-                                columns: [GridItem(.adaptive(minimum: 152, maximum: 180), spacing: 16)],
-                                spacing: 20
-                            ) {
-                                ForEach(viewModel.items) { item in
-                                    NavigationLink {
-                                        makeDetailsView(item.candidate)
-                                    } label: {
-                                        LibraryItemCard(item: item)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            viewModel.remove(item)
+                ScrollView {
+                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            if viewModel.items.isEmpty {
+                                noMatchesView(viewModel)
+                                    .padding(.top, 80)
+                            } else {
+                                LazyVGrid(
+                                    columns: [GridItem(.adaptive(minimum: 152, maximum: 180), spacing: 16)],
+                                    spacing: 20
+                                ) {
+                                    ForEach(viewModel.items) { item in
+                                        NavigationLink {
+                                            makeDetailsView(item.candidate)
                                         } label: {
-                                            Label("Remove from My Shows", systemImage: "trash")
+                                            LibraryItemCard(item: item)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .contextMenu {
+                                            Button(role: .destructive) {
+                                                viewModel.remove(item)
+                                            } label: {
+                                                Label("Remove from My Shows", systemImage: "trash")
+                                            }
                                         }
                                     }
                                 }
+                                .padding(.horizontal)
+                                .padding(.bottom)
                             }
-                            .padding()
+                        } header: {
+                            filterMenu(viewModel, isPresented: $isFilterPopoverPresented)
+                                .padding(.horizontal)
+                                .padding(.top, 8)
+                                .padding(.bottom, 20)
+                                .background(Color(.systemBackground))
                         }
                     }
                 }
@@ -66,11 +73,15 @@ struct LibraryView: View {
         }
         .navigationTitle("My Shows")
         .searchable(text: $viewModel.query, prompt: "Search your library")
+        .background(OpaqueNavigationBarAppearance())
     }
 
-    private func filterMenu(_ viewModel: LibraryViewModel) -> some View {
+    private func filterMenu(
+        _ viewModel: LibraryViewModel,
+        isPresented: Binding<Bool>
+    ) -> some View {
         Button {
-            isFilterPopoverPresented.toggle()
+            isPresented.wrappedValue.toggle()
         } label: {
             Label(viewModel.filter.title, systemImage: "line.3.horizontal.decrease.circle")
                 .font(.subheadline.weight(.semibold))
@@ -79,12 +90,12 @@ struct LibraryView: View {
                 .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $isFilterPopoverPresented, arrowEdge: .top) {
+        .popover(isPresented: isPresented, arrowEdge: .top) {
             VStack(spacing: 4) {
                 ForEach(LibraryFilter.allCases) { filter in
                     Button {
                         viewModel.filter = filter
-                        isFilterPopoverPresented = false
+                        isPresented.wrappedValue = false
                     } label: {
                         HStack(spacing: 12) {
                             filterCountBadge(viewModel.count(for: filter))
@@ -148,6 +159,82 @@ struct LibraryView: View {
             .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct OpaqueNavigationBarAppearance: UIViewControllerRepresentable {
+    func makeUIViewController(context _: Context) -> NavigationBarAppearanceController {
+        NavigationBarAppearanceController()
+    }
+
+    func updateUIViewController(
+        _ uiViewController: NavigationBarAppearanceController,
+        context _: Context
+    ) {
+        uiViewController.applyAppearanceIfVisible()
+    }
+
+    final class NavigationBarAppearanceController: UIViewController {
+        private var originalStandardAppearance: UINavigationBarAppearance?
+        private var originalScrollEdgeAppearance: UINavigationBarAppearance?
+        private var originalCompactAppearance: UINavigationBarAppearance?
+        private var hasCapturedOriginalAppearance = false
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            applyAppearance()
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            restoreAppearance()
+        }
+
+        func applyAppearanceIfVisible() {
+            guard viewIfLoaded?.window != nil else {
+                return
+            }
+            applyAppearance()
+        }
+
+        private func applyAppearance() {
+            guard let navigationBar = navigationController?.navigationBar else {
+                return
+            }
+
+            if !hasCapturedOriginalAppearance {
+                originalStandardAppearance = navigationBar.standardAppearance.copy()
+                originalScrollEdgeAppearance = navigationBar.scrollEdgeAppearance?.copy()
+                originalCompactAppearance = navigationBar.compactAppearance?.copy()
+                hasCapturedOriginalAppearance = true
+            }
+
+            makeOpaque(navigationBar.standardAppearance)
+            if let scrollEdgeAppearance = navigationBar.scrollEdgeAppearance {
+                makeOpaque(scrollEdgeAppearance)
+            }
+            if let compactAppearance = navigationBar.compactAppearance {
+                makeOpaque(compactAppearance)
+            }
+        }
+
+        private func makeOpaque(_ appearance: UINavigationBarAppearance) {
+            appearance.backgroundEffect = nil
+            appearance.backgroundColor = .systemBackground
+        }
+
+        private func restoreAppearance() {
+            guard hasCapturedOriginalAppearance,
+                  let navigationBar = navigationController?.navigationBar,
+                  let originalStandardAppearance
+            else {
+                return
+            }
+
+            navigationBar.standardAppearance = originalStandardAppearance
+            navigationBar.scrollEdgeAppearance = originalScrollEdgeAppearance
+            navigationBar.compactAppearance = originalCompactAppearance
+        }
     }
 }
 
