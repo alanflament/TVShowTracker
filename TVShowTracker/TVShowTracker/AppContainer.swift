@@ -159,6 +159,18 @@ final class AppContainer {
                 episodeWatchStore: episodeWatchStore,
                 episodeScheduleStore: episodeScheduleStore,
                 candidateMatcher: TVTimeSearchCandidateMatcher()
+            ),
+            dataExportUseCase: DefaultDataExportUseCase(
+                libraryRepository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext),
+                episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext)
+            ),
+            dataImportUseCase: DefaultDataImportUseCase(
+                libraryRepository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext),
+                episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext),
+                didImport: {
+                    self.followedMediaStore.reload()
+                    self.episodeWatchStore.reload()
+                }
             )
         )
     }

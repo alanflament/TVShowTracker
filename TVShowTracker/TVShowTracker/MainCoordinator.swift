@@ -28,5 +28,10 @@ final class MainCoordinator {
         calendarCoordinator = container.makeCalendarCoordinator()
         searchCoordinator = container.makeSearchCoordinator()
         settingsCoordinator = container.makeSettingsCoordinator()
+        #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--settings-tab") {
+                selectedTab = .settings
+            }
+        #endif
     }
 }

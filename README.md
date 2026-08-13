@@ -48,3 +48,10 @@ The search feature reads a TMDB v4 read-access token from the generated app `Inf
 The Library stores followed TV shows and anime locally with SwiftData, so the
 saved list is available when the app is offline. Opening details or episodes
 still fetches the latest provider data when a network connection is available.
+
+### Data backups
+
+Settings can export the user's followed titles, provider identifiers, personal
+tracking statuses, and watched-episode dates as a versioned JSON backup. The
+same screen can import that file later. Import merges the backup into the local
+library and does not remove records that are only present on the device.

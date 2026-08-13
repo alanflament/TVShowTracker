@@ -95,6 +95,13 @@ Existing persisted titles and TV Time imports default to `watching` so schema
 migration preserves the previous Up Next behavior. New manual additions must
 let the user choose their tracking status.
 
+JSON backups are a versioned portability contract. Schema version 1 exports
+followed-media provider identities and metadata, personal tracking statuses,
+and watched-episode IDs with their original watched dates. Import is a merge:
+upsert matching exported records and add missing ones, then reload the shared
+stores; never delete local records merely because they are absent from a backup.
+Reject malformed or unsupported schema versions before writing data.
+
 ## Declaration and file rules
 
 - Give important domain entities, protocols, repositories, DTO families, and

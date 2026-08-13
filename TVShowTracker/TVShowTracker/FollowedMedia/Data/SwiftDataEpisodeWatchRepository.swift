@@ -29,7 +29,10 @@ final class SwiftDataEpisodeWatchRepository: EpisodeWatchRepository {
             predicate: #Predicate { $0.id == episodeID }
         )
 
-        if try modelContext.fetch(descriptor).isEmpty {
+        if let existingEpisode = try modelContext.fetch(descriptor).first {
+            existingEpisode.watchedAt = episode.watchedAt
+            try modelContext.save()
+        } else {
             modelContext.insert(WatchedEpisodeModel(episode: episode))
             try modelContext.save()
         }
@@ -42,15 +45,18 @@ final class SwiftDataEpisodeWatchRepository: EpisodeWatchRepository {
         }
 
         let descriptor = FetchDescriptor<WatchedEpisodeModel>()
-        let existingIDs = try Set(modelContext.fetch(descriptor).map(\.id))
-        let episodesToSave = uniqueEpisodes.values.filter { !existingIDs.contains($0.id) }
+        let existingEpisodes = try Dictionary(
+            uniqueKeysWithValues: modelContext.fetch(descriptor).map { ($0.id, $0) }
+        )
 
-        for episode in episodesToSave {
-            modelContext.insert(WatchedEpisodeModel(episode: episode))
+        for episode in uniqueEpisodes.values {
+            if let existingEpisode = existingEpisodes[episode.id] {
+                existingEpisode.watchedAt = episode.watchedAt
+            } else {
+                modelContext.insert(WatchedEpisodeModel(episode: episode))
+            }
         }
-        if !episodesToSave.isEmpty {
-            try modelContext.save()
-        }
+        try modelContext.save()
     }
 
     func delete(id: String) throws {
