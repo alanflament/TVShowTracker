@@ -167,6 +167,13 @@ struct CalendarView: View {
                 description: "Follow TV shows and anime in Discover to build your personal queue."
             )
             .frame(maxWidth: .infinity, minHeight: 320)
+        } else if viewModel.watchingMediaIDs.isEmpty {
+            TrackerEmptyState(
+                title: "Nothing in Up Next",
+                systemImage: "pause.circle.fill",
+                description: "Set a show to Watching from its details to include its episodes here."
+            )
+            .frame(maxWidth: .infinity, minHeight: 320)
         } else {
             TrackerEmptyState(
                 title: "You’re all caught up",

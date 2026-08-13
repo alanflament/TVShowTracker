@@ -31,6 +31,55 @@ struct EpisodeWatchStoreTests {
         #expect(try repository.loadWatchedEpisodes().map(\WatchedEpisode.id).sorted() == episodes.map(\.id).sorted())
     }
 
+    @Test func derivesTrackingStatusFromReleasedEpisodeProgress() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
+            configurations: configuration
+        )
+        let libraryStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let scheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
+        let candidate = SearchCandidate(
+            provider: .tmdb,
+            providerID: 42,
+            kind: .tvShow,
+            title: "A show",
+            alternateTitle: nil,
+            posterURL: nil,
+            releaseYear: nil,
+            totalEpisodeCount: 2,
+            status: .airing,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil
+        )
+        libraryStore.addIfMissing(candidate, trackingStatus: .planToWatch)
+        let item = try #require(libraryStore.items.first)
+        let episodes = [makeEpisode(number: 1), makeEpisode(number: 2)]
+        scheduleStore.save(item: item, seasons: [
+            ShowSeason(provider: .tmdb, showID: 42, number: 1, name: "Season 1", episodes: episodes)
+        ])
+        let store = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            followedMediaStore: libraryStore,
+            episodeScheduleStore: scheduleStore
+        )
+
+        store.toggle(episodes[0])
+        #expect(libraryStore.items.first?.trackingStatus == .watching)
+
+        store.toggle(episodes[1])
+        #expect(libraryStore.items.first?.trackingStatus == .completed)
+
+        store.toggle(episodes[1])
+        #expect(libraryStore.items.first?.trackingStatus == .watching)
+    }
+
     private func makeEpisode(number: Int) -> ShowEpisode {
         ShowEpisode(
             provider: .tmdb,

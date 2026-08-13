@@ -34,8 +34,17 @@ final class LibraryViewModel {
         followedMediaStore.errorMessage
     }
 
+    func count(for filter: LibraryFilter) -> Int {
+        followedMediaStore.items.count(where: filter.matches)
+    }
+
     func remove(_ item: LibraryItem) {
         followedMediaStore.remove(item)
+    }
+
+    func resetFilters() {
+        query = ""
+        filter = .all
     }
 
     private func matchesQuery(_ item: LibraryItem) -> Bool {

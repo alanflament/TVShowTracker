@@ -29,12 +29,27 @@ final class SearchViewModel {
         self.followedMediaStore = followedMediaStore
     }
 
-    func isFollowed(_ candidate: SearchCandidate) -> Bool {
-        followedMediaStore.contains(candidate)
+    func trackingStatus(for candidate: SearchCandidate) -> TrackingStatus? {
+        followedMediaStore.item(id: candidate.id)?.trackingStatus
     }
 
-    func toggleFollowed(_ candidate: SearchCandidate) {
-        followedMediaStore.toggle(candidate)
+    func add(_ candidate: SearchCandidate, trackingStatus: TrackingStatus) {
+        followedMediaStore.addIfMissing(candidate, trackingStatus: trackingStatus)
+    }
+
+    func update(_ candidate: SearchCandidate, trackingStatus: TrackingStatus) {
+        guard let item = followedMediaStore.item(id: candidate.id) else {
+            add(candidate, trackingStatus: trackingStatus)
+            return
+        }
+        followedMediaStore.updateTrackingStatus(trackingStatus, for: item)
+    }
+
+    func remove(_ candidate: SearchCandidate) {
+        guard let item = followedMediaStore.item(id: candidate.id) else {
+            return
+        }
+        followedMediaStore.remove(item)
     }
 
     func search() async {

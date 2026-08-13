@@ -49,6 +49,14 @@ Details features:
 
 - `FollowedMedia/Domain/LibraryItem.swift` is the persisted domain snapshot rebuilt
   into a `SearchCandidate` when details are opened.
+- `TrackingStatus` describes the user's relationship with a saved title (`planToWatch`,
+  `watching`, `paused`, `completed`, or `dropped`). Keep it separate from
+  `SearchMediaStatus`, which describes the provider's release lifecycle. Only
+  `watching` titles contribute to Up Next.
+- Episode watch mutations reconcile `TrackingStatus` from the persisted schedule:
+  watching any released episode moves the title to `watching`, and watching every
+  released non-special episode moves it to `completed`. Unwatching an episode from
+  a completed title moves it back to `watching`.
 - `FollowedMedia/Data/LibraryItemModel.swift` is the SwiftData record. Provider IDs,
   kind, display metadata, and AniList installment references are stored locally.
 - `FollowedMedia/Data/SwiftDataLibraryRepository.swift` is the only SwiftData access
@@ -82,6 +90,10 @@ TV Time `gdpr-data` directory locally, never copies it into the app container,
 and resolves titles through the normal search and details use cases. Import only
 accepts an exact, unambiguous provider title match; uncertain shows and episode
 rows are reported rather than guessed.
+
+Existing persisted titles and TV Time imports default to `watching` so schema
+migration preserves the previous Up Next behavior. New manual additions must
+let the user choose their tracking status.
 
 ## Declaration and file rules
 

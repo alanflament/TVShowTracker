@@ -21,8 +21,13 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
     let nextEpisodeAirDate: Date?
     let animeInstallments: [AnimeInstallmentReference]
     let addedAt: Date
+    let trackingStatus: TrackingStatus
 
-    init(candidate: SearchCandidate, addedAt: Date = .now) {
+    init(
+        candidate: SearchCandidate,
+        addedAt: Date = .now,
+        trackingStatus: TrackingStatus = .watching
+    ) {
         provider = candidate.provider
         providerID = candidate.providerID
         kind = candidate.kind
@@ -36,6 +41,7 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         nextEpisodeAirDate = candidate.nextEpisodeAirDate
         animeInstallments = candidate.animeInstallments
         self.addedAt = addedAt
+        self.trackingStatus = trackingStatus
     }
 
     init(
@@ -51,7 +57,8 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         nextEpisodeNumber: Int?,
         nextEpisodeAirDate: Date?,
         animeInstallments: [AnimeInstallmentReference],
-        addedAt: Date
+        addedAt: Date,
+        trackingStatus: TrackingStatus = .watching
     ) {
         self.provider = provider
         self.providerID = providerID
@@ -66,6 +73,7 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         self.nextEpisodeAirDate = nextEpisodeAirDate
         self.animeInstallments = animeInstallments
         self.addedAt = addedAt
+        self.trackingStatus = trackingStatus
     }
 
     var id: String {
@@ -97,6 +105,14 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         status?.requiresEpisodeScheduleRefresh ?? true
     }
 
+    func contains(_ episode: ShowEpisode) -> Bool {
+        guard provider == episode.provider else {
+            return false
+        }
+        return providerID == episode.showID
+            || animeInstallments.contains { $0.providerID == episode.showID }
+    }
+
     func updating(status: SearchMediaStatus) -> LibraryItem {
         LibraryItem(
             provider: provider,
@@ -111,7 +127,8 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             nextEpisodeNumber: nextEpisodeNumber,
             nextEpisodeAirDate: nextEpisodeAirDate,
             animeInstallments: animeInstallments,
-            addedAt: addedAt
+            addedAt: addedAt,
+            trackingStatus: trackingStatus
         )
     }
 
@@ -129,7 +146,27 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             nextEpisodeNumber: nextEpisodeNumber,
             nextEpisodeAirDate: nextEpisodeAirDate,
             animeInstallments: animeInstallments,
-            addedAt: addedAt
+            addedAt: addedAt,
+            trackingStatus: trackingStatus
+        )
+    }
+
+    func updating(trackingStatus: TrackingStatus) -> LibraryItem {
+        LibraryItem(
+            provider: provider,
+            providerID: providerID,
+            kind: kind,
+            title: title,
+            alternateTitle: alternateTitle,
+            posterURL: posterURL,
+            releaseYear: releaseYear,
+            totalEpisodeCount: totalEpisodeCount,
+            status: status,
+            nextEpisodeNumber: nextEpisodeNumber,
+            nextEpisodeAirDate: nextEpisodeAirDate,
+            animeInstallments: animeInstallments,
+            addedAt: addedAt,
+            trackingStatus: trackingStatus
         )
     }
 }

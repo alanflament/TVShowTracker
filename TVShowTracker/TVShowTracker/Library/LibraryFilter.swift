@@ -9,9 +9,11 @@ import Foundation
 
 enum LibraryFilter: String, CaseIterable, Identifiable {
     case all
+    case planToWatch
     case watching
-    case upcoming
-    case finished
+    case paused
+    case completed
+    case dropped
 
     var id: Self {
         self
@@ -21,12 +23,16 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         switch self {
         case .all:
             "All"
+        case .planToWatch:
+            TrackingStatus.planToWatch.title
         case .watching:
-            "Watching"
-        case .upcoming:
-            "Upcoming"
-        case .finished:
-            "Finished"
+            TrackingStatus.watching.title
+        case .paused:
+            TrackingStatus.paused.title
+        case .completed:
+            TrackingStatus.completed.title
+        case .dropped:
+            TrackingStatus.dropped.title
         }
     }
 
@@ -34,12 +40,16 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         switch self {
         case .all:
             true
+        case .planToWatch:
+            item.trackingStatus == .planToWatch
         case .watching:
-            item.status == .airing || item.status == .hiatus
-        case .upcoming:
-            item.status == .upcoming
-        case .finished:
-            item.status == .finished || item.status == .cancelled
+            item.trackingStatus == .watching
+        case .paused:
+            item.trackingStatus == .paused
+        case .completed:
+            item.trackingStatus == .completed
+        case .dropped:
+            item.trackingStatus == .dropped
         }
     }
 }

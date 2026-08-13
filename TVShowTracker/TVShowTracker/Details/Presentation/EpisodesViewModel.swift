@@ -19,15 +19,21 @@ final class EpisodesViewModel {
     let candidate: SearchCandidate
     private(set) var state: State = .idle
     private let useCase: any ShowDetailsUseCase
+    private let followedMediaStore: FollowedMediaStore
+    private let episodeScheduleStore: EpisodeScheduleStore
     private let episodeWatchStore: EpisodeWatchStore
 
     init(
         candidate: SearchCandidate,
         useCase: any ShowDetailsUseCase,
+        followedMediaStore: FollowedMediaStore,
+        episodeScheduleStore: EpisodeScheduleStore,
         episodeWatchStore: EpisodeWatchStore
     ) {
         self.candidate = candidate
         self.useCase = useCase
+        self.followedMediaStore = followedMediaStore
+        self.episodeScheduleStore = episodeScheduleStore
         self.episodeWatchStore = episodeWatchStore
     }
 
@@ -38,7 +44,11 @@ final class EpisodesViewModel {
 
         state = .loading
         do {
-            state = try .loaded(await useCase.fetchEpisodes(for: candidate))
+            let seasons = try await useCase.fetchEpisodes(for: candidate)
+            if let item = followedMediaStore.item(id: candidate.id) {
+                episodeScheduleStore.save(item: item, seasons: seasons)
+            }
+            state = .loaded(seasons)
         } catch {
             state = .failed((error as? LocalizedError)?.errorDescription ?? "Episodes could not be loaded.")
         }

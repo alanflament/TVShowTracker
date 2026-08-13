@@ -20,13 +20,14 @@ struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
         watchedEpisodeIDs: Set<String>,
         now: Date
     ) async -> NextEpisodeResult {
-        let episodes = items.compactMap { item in
+        let activeItems = items.filter { $0.trackingStatus.appearsInUpNext }
+        let episodes = activeItems.compactMap { item in
             nextEpisode(for: item, watchedEpisodeIDs: watchedEpisodeIDs, now: now)
         }.sorted { lhs, rhs in
             alphabeticalShowOrder(lhs, rhs)
         }
         let episodeMediaIDs = Set(episodes.map(\.candidate.id))
-        let availableEpisodeCount = items.reduce(into: 0) { count, item in
+        let availableEpisodeCount = activeItems.reduce(into: 0) { count, item in
             count += (episodeScheduleStore.schedule(for: item)?.seasons ?? [])
                 .filter { !$0.isSpecial }
                 .flatMap(\.episodes)
@@ -38,7 +39,7 @@ struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
         return NextEpisodeResult(
             episodes: episodes,
             availableEpisodeCount: availableEpisodeCount,
-            undatedMedia: items
+            undatedMedia: activeItems
                 .filter { item in
                     item.requiresEpisodeScheduleRefresh
                         && item.nextEpisodeAirDate == nil

@@ -164,13 +164,47 @@ struct DefaultNextEpisodeUseCaseTests {
         #expect(result.episodes.isEmpty)
         #expect(result.undatedMedia.map(\.candidate.id) == [airingItem.id])
     }
+
+    @Test func onlyWatchingMediaAppearsInUpNext() async {
+        let watchingItem = makeItem(id: 1, title: "The Bear", trackingStatus: .watching)
+        let pausedItem = makeItem(id: 2, title: "Severance", trackingStatus: .paused)
+        let watchingEpisode = makeEpisode(showID: 1, number: 1, airDate: .distantPast)
+        let pausedEpisode = makeEpisode(showID: 2, number: 1, airDate: .distantPast)
+        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+            EpisodeSchedule(itemID: watchingItem.id, seasons: [ShowSeason(
+                provider: .tmdb,
+                showID: 1,
+                number: 1,
+                name: "Season 1",
+                episodes: [watchingEpisode]
+            )]),
+            EpisodeSchedule(itemID: pausedItem.id, seasons: [ShowSeason(
+                provider: .tmdb,
+                showID: 2,
+                number: 1,
+                name: "Season 1",
+                episodes: [pausedEpisode]
+            )])
+        ]))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+
+        let result = await useCase.findNextEpisode(
+            in: [watchingItem, pausedItem],
+            watchedEpisodeIDs: [],
+            now: .now
+        )
+
+        #expect(result.episodes.map(\.candidate.id) == [watchingItem.id])
+        #expect(result.availableEpisodeCount == 1)
+    }
 }
 
 private extension DefaultNextEpisodeUseCaseTests {
     func makeItem(
         id: Int,
         title: String,
-        status: SearchMediaStatus? = nil
+        status: SearchMediaStatus? = nil,
+        trackingStatus: TrackingStatus = .watching
     ) -> LibraryItem {
         LibraryItem(candidate: SearchCandidate(
             provider: .tmdb,
@@ -184,7 +218,7 @@ private extension DefaultNextEpisodeUseCaseTests {
             status: status,
             nextEpisodeNumber: nil,
             nextEpisodeAirDate: nil
-        ))
+        ), trackingStatus: trackingStatus)
     }
 
     func makeEpisode(

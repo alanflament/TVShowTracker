@@ -24,6 +24,7 @@ final class LibraryItemModel {
     var nextEpisodeAirDate: Date?
     var animeInstallmentsData: Data
     var addedAt: Date
+    var trackingStatusRawValue: String?
 
     init(
         id: String,
@@ -39,7 +40,8 @@ final class LibraryItemModel {
         nextEpisodeNumber: Int?,
         nextEpisodeAirDate: Date?,
         animeInstallmentsData: Data,
-        addedAt: Date
+        addedAt: Date,
+        trackingStatusRawValue: String? = nil
     ) {
         self.id = id
         self.providerRawValue = providerRawValue
@@ -55,5 +57,6 @@ final class LibraryItemModel {
         self.nextEpisodeAirDate = nextEpisodeAirDate
         self.animeInstallmentsData = animeInstallmentsData
         self.addedAt = addedAt
+        self.trackingStatusRawValue = trackingStatusRawValue
     }
 }

@@ -141,11 +141,11 @@ struct TVShowTrackerTests {
         let libraryViewModel = LibraryViewModel(followedMediaStore: store)
         let candidate = SearchCandidate.tvShow(id: 42, title: "The Bear")
 
-        #expect(!searchViewModel.isFollowed(candidate))
+        #expect(searchViewModel.trackingStatus(for: candidate) == nil)
 
-        searchViewModel.toggleFollowed(candidate)
+        searchViewModel.add(candidate, trackingStatus: .planToWatch)
 
-        #expect(searchViewModel.isFollowed(candidate))
+        #expect(searchViewModel.trackingStatus(for: candidate) == .planToWatch)
         #expect(libraryViewModel.items.map(\.id) == [candidate.id])
     }
 

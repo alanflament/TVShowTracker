@@ -35,18 +35,25 @@ final class FollowedMediaStore {
     }
 
     func toggle(_ candidate: SearchCandidate) {
+        toggle(candidate, trackingStatus: .watching)
+    }
+
+    func toggle(_ candidate: SearchCandidate, trackingStatus: TrackingStatus) {
         if contains(candidate) {
             remove(id: candidate.id)
         } else {
-            addIfMissing(candidate)
+            addIfMissing(candidate, trackingStatus: trackingStatus)
         }
     }
 
-    func addIfMissing(_ candidate: SearchCandidate) {
+    func addIfMissing(
+        _ candidate: SearchCandidate,
+        trackingStatus: TrackingStatus = .watching
+    ) {
         guard !contains(candidate) else {
             return
         }
-        save(LibraryItem(candidate: candidate))
+        save(LibraryItem(candidate: candidate, trackingStatus: trackingStatus))
     }
 
     func remove(_ item: LibraryItem) {
@@ -62,6 +69,13 @@ final class FollowedMediaStore {
             return
         }
         save(item.updating(status: status))
+    }
+
+    func updateTrackingStatus(_ trackingStatus: TrackingStatus, for item: LibraryItem) {
+        guard item.trackingStatus != trackingStatus else {
+            return
+        }
+        save(item.updating(trackingStatus: trackingStatus))
     }
 
     func update(with details: ShowDetails, for candidate: SearchCandidate) {

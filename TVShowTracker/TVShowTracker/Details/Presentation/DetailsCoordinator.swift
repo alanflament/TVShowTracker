@@ -12,17 +12,20 @@ final class DetailsCoordinator {
     private let useCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
+    private let episodeScheduleStore: EpisodeScheduleStore
     private let episodeDetailsStore: EpisodeDetailsStore
 
     init(
         useCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeWatchStore: EpisodeWatchStore,
+        episodeScheduleStore: EpisodeScheduleStore,
         episodeDetailsStore: EpisodeDetailsStore
     ) {
         self.useCase = useCase
         self.followedMediaStore = followedMediaStore
         self.episodeWatchStore = episodeWatchStore
+        self.episodeScheduleStore = episodeScheduleStore
         self.episodeDetailsStore = episodeDetailsStore
     }
 
@@ -41,6 +44,8 @@ final class DetailsCoordinator {
                 EpisodesViewModel(
                     candidate: candidate,
                     useCase: self.useCase,
+                    followedMediaStore: self.followedMediaStore,
+                    episodeScheduleStore: self.episodeScheduleStore,
                     episodeWatchStore: self.episodeWatchStore
                 )
             },

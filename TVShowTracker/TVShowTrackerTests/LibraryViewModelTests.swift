@@ -36,7 +36,7 @@ struct LibraryViewModelTests {
         #expect(viewModel.items.map(\.title) == ["Éclair"])
     }
 
-    @Test func filtersItemsByPersistedReleaseStatus() throws {
+    @Test func filtersItemsByPersonalTrackingStatus() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
             for: LibraryItemModel.self,
@@ -45,19 +45,92 @@ struct LibraryViewModelTests {
         let store = FollowedMediaStore(
             repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
-        store.toggle(candidate(id: 1, title: "Airing", status: .airing))
-        store.toggle(candidate(id: 2, title: "Upcoming", status: .upcoming))
-        store.toggle(candidate(id: 3, title: "Finished", status: .finished))
+        store.addIfMissing(candidate(id: 1, title: "Airing", status: .airing), trackingStatus: .watching)
+        store.addIfMissing(candidate(id: 2, title: "Upcoming", status: .upcoming), trackingStatus: .planToWatch)
+        store.addIfMissing(candidate(id: 3, title: "Finished", status: .finished), trackingStatus: .completed)
         let viewModel = LibraryViewModel(followedMediaStore: store)
 
         viewModel.filter = .watching
         #expect(viewModel.items.map(\.title) == ["Airing"])
 
-        viewModel.filter = .upcoming
+        viewModel.filter = .planToWatch
         #expect(viewModel.items.map(\.title) == ["Upcoming"])
 
-        viewModel.filter = .finished
+        viewModel.filter = .completed
         #expect(viewModel.items.map(\.title) == ["Finished"])
+
+        #expect(viewModel.count(for: .all) == 3)
+        #expect(viewModel.count(for: .watching) == 1)
+        #expect(viewModel.count(for: .paused) == 0)
+    }
+
+    @Test func resetsSearchAndTrackingStatusFilters() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let store = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
+        let viewModel = LibraryViewModel(followedMediaStore: store)
+        viewModel.query = "missing"
+        viewModel.filter = .completed
+
+        viewModel.resetFilters()
+
+        #expect(viewModel.query.isEmpty)
+        #expect(viewModel.filter == .all)
+        #expect(viewModel.items.map(\.title) == ["The Bear"])
+    }
+
+    @Test func preservesTrackingStatusWhenProviderDetailsAreUpdated() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let store = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let searchCandidate = candidate(id: 1, title: "Dark", status: .finished)
+        store.addIfMissing(searchCandidate, trackingStatus: .watching)
+
+        store.update(with: details(for: searchCandidate, totalEpisodeCount: 26), for: searchCandidate)
+
+        #expect(store.items.first?.trackingStatus == .watching)
+        #expect(store.items.first?.status == .airing)
+    }
+
+    @Test func legacyLibraryItemDefaultsToWatching() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let model = try LibraryItemModel(
+            id: "tmdb:42",
+            providerRawValue: SearchProvider.tmdb.rawValue,
+            providerID: 42,
+            kindRawValue: SearchMediaKind.tvShow.rawValue,
+            title: "The Bear",
+            alternateTitle: nil,
+            posterURLString: nil,
+            releaseYear: nil,
+            totalEpisodeCount: nil,
+            statusRawValue: SearchMediaStatus.finished.rawValue,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil,
+            animeInstallmentsData: JSONEncoder().encode([AnimeInstallmentReference]()),
+            addedAt: .now
+        )
+        container.mainContext.insert(model)
+        try container.mainContext.save()
+
+        let items = try SwiftDataLibraryRepository(modelContext: container.mainContext).loadItems()
+
+        #expect(items.first?.trackingStatus == .watching)
     }
 
     @Test func preservesPosterURLWhenReloadingPersistedItems() throws {

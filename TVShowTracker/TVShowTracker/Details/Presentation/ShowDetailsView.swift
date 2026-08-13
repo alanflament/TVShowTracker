@@ -51,7 +51,7 @@ struct ShowDetailsView: View {
 
                 episodeNavigation(details)
 
-                followButton
+                trackingControl
 
                 if !details.genres.isEmpty {
                     genres(details.genres)
@@ -97,18 +97,39 @@ struct ShowDetailsView: View {
         }
     }
 
-    private var followButton: some View {
-        Button {
-            viewModel.toggleFollowed()
+    private var trackingControl: some View {
+        Menu {
+            Picker("Tracking status", selection: trackingStatusBinding) {
+                ForEach(TrackingStatus.allCases) { status in
+                    Label(status.title, systemImage: status.systemImage)
+                        .tag(status)
+                }
+            }
+
+            if viewModel.isFollowed {
+                Divider()
+                Button(role: .destructive) {
+                    viewModel.removeFromLibrary()
+                } label: {
+                    Label("Remove from My Shows", systemImage: "trash")
+                }
+            }
         } label: {
             Label(
-                viewModel.isFollowed ? "Following" : "Add to My Shows",
-                systemImage: viewModel.isFollowed ? "checkmark.circle.fill" : "plus.circle"
+                viewModel.trackingStatus?.title ?? "Add to My Shows",
+                systemImage: viewModel.trackingStatus?.systemImage ?? "plus.circle"
             )
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
         .tint(viewModel.isFollowed ? .green : .accentColor)
+    }
+
+    private var trackingStatusBinding: Binding<TrackingStatus> {
+        Binding(
+            get: { viewModel.trackingStatus ?? .watching },
+            set: viewModel.setTrackingStatus
+        )
     }
 
     private func episodeNavigation(_ details: ShowDetails) -> some View {

@@ -21,18 +21,17 @@ final class AppContainer {
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     init() {
-        modelContainer = Self.makeModelContainer()
+        modelContainer = Self.makeModelContainer(isStoredInMemoryOnly: Self.usesDemoData)
 
         followedMediaStore = .init(repository: SwiftDataLibraryRepository(modelContext: modelContainer.mainContext))
-        episodeWatchStore = EpisodeWatchStore(
-            repository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext)
-        )
         episodeScheduleStore = EpisodeScheduleStore(
             repository: SwiftDataEpisodeScheduleRepository(modelContext: modelContainer.mainContext)
         )
+        episodeWatchStore = Self.makeEpisodeWatchStore(modelContainer, followedMediaStore, episodeScheduleStore)
         episodeDetailsStore = .init(
             repository: SwiftDataEpisodeDetailsRepository(modelContext: modelContainer.mainContext)
         )
+        Self.seedDemoDataIfNeeded(into: followedMediaStore)
 
         let tvShowRepository: any TVShowSearchRepository
 
@@ -79,17 +78,30 @@ final class AppContainer {
         )
     }
 
-    private static func makeModelContainer() -> ModelContainer {
+    private static func makeModelContainer(isStoredInMemoryOnly: Bool) -> ModelContainer {
         do {
             return try ModelContainer(
                 for: LibraryItemModel.self,
                 WatchedEpisodeModel.self,
                 EpisodeScheduleModel.self,
-                EpisodeDetailsModel.self
+                EpisodeDetailsModel.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: isStoredInMemoryOnly)
             )
         } catch {
             fatalError("Unable to create the SwiftData container: \(error)")
         }
+    }
+
+    private static func makeEpisodeWatchStore(
+        _ modelContainer: ModelContainer,
+        _ followedMediaStore: FollowedMediaStore,
+        _ episodeScheduleStore: EpisodeScheduleStore
+    ) -> EpisodeWatchStore {
+        EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore
+        )
     }
 
     func makeAppCoordinator() -> AppCoordinator {
@@ -112,6 +124,7 @@ final class AppContainer {
             useCase: showDetailsUseCase,
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
+            episodeScheduleStore: episodeScheduleStore,
             episodeDetailsStore: episodeDetailsStore
         )
     }
@@ -157,5 +170,50 @@ final class AppContainer {
 
         let token = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return token.isEmpty ? nil : token
+    }
+
+    private static var usesDemoData: Bool {
+        #if DEBUG
+            ProcessInfo.processInfo.arguments.contains("--demo-data")
+        #else
+            false
+        #endif
+    }
+
+    private static func seedDemoDataIfNeeded(into store: FollowedMediaStore) {
+        guard usesDemoData else {
+            return
+        }
+
+        let samples: [(SearchCandidate, TrackingStatus)] = [
+            (demoCandidate(id: 95396, title: "Severance", status: .airing), .watching),
+            (demoCandidate(id: 1396, title: "Breaking Bad", status: .finished), .planToWatch),
+            (demoCandidate(id: 136_315, title: "The Bear", status: .airing), .paused),
+            (demoCandidate(id: 70523, title: "Dark", status: .finished), .completed),
+            (demoCandidate(id: 63247, title: "Westworld", status: .cancelled), .dropped)
+        ]
+        for sample in samples {
+            store.addIfMissing(sample.0, trackingStatus: sample.1)
+        }
+    }
+
+    private static func demoCandidate(
+        id: Int,
+        title: String,
+        status: SearchMediaStatus
+    ) -> SearchCandidate {
+        SearchCandidate(
+            provider: .tmdb,
+            providerID: id,
+            kind: .tvShow,
+            title: title,
+            alternateTitle: nil,
+            posterURL: nil,
+            releaseYear: 2022,
+            totalEpisodeCount: 10,
+            status: status,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil
+        )
     }
 }

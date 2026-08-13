@@ -35,8 +35,16 @@ final class ShowDetailsViewModel {
         followedMediaStore.contains(candidate)
     }
 
-    func toggleFollowed() {
-        followedMediaStore.toggle(candidate)
+    var trackingStatus: TrackingStatus? {
+        followedMediaStore.item(id: candidate.id)?.trackingStatus
+    }
+
+    func setTrackingStatus(_ trackingStatus: TrackingStatus) {
+        if let item = followedMediaStore.item(id: candidate.id) {
+            followedMediaStore.updateTrackingStatus(trackingStatus, for: item)
+        } else {
+            followedMediaStore.addIfMissing(candidate, trackingStatus: trackingStatus)
+        }
 
         guard followedMediaStore.contains(candidate),
               case let .loaded(details) = state
@@ -44,6 +52,13 @@ final class ShowDetailsViewModel {
             return
         }
         followedMediaStore.update(with: details, for: candidate)
+    }
+
+    func removeFromLibrary() {
+        guard let item = followedMediaStore.item(id: candidate.id) else {
+            return
+        }
+        followedMediaStore.remove(item)
     }
 
     func load() async {

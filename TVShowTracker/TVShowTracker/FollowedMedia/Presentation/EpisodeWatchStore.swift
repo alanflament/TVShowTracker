@@ -11,12 +11,20 @@ import Observation
 @MainActor @Observable
 final class EpisodeWatchStore {
     private let repository: any EpisodeWatchRepository
+    private let followedMediaStore: FollowedMediaStore?
+    private let episodeScheduleStore: EpisodeScheduleStore?
 
     private(set) var watchedEpisodeIDs = Set<String>()
     private(set) var errorMessage: String?
 
-    init(repository: any EpisodeWatchRepository) {
+    init(
+        repository: any EpisodeWatchRepository,
+        followedMediaStore: FollowedMediaStore? = nil,
+        episodeScheduleStore: EpisodeScheduleStore? = nil
+    ) {
         self.repository = repository
+        self.followedMediaStore = followedMediaStore
+        self.episodeScheduleStore = episodeScheduleStore
         reload()
     }
 
@@ -47,7 +55,9 @@ final class EpisodeWatchStore {
             return
         }
 
-        saveWatchedEpisode(WatchedEpisode(episode: episode, watchedAt: watchedAt ?? .now))
+        if saveWatchedEpisode(WatchedEpisode(episode: episode, watchedAt: watchedAt ?? .now)) {
+            synchronizeTrackingStatus(for: episode)
+        }
     }
 
     func markWatched(_ episodes: [ShowEpisode]) {
@@ -65,22 +75,28 @@ final class EpisodeWatchStore {
             try repository.save(watchedEpisodes)
             watchedEpisodeIDs.formUnion(watchedEpisodes.map(\.id))
             errorMessage = nil
+            episodesToMark.forEach(synchronizeTrackingStatus)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
     private func markWatched(_ episode: ShowEpisode) {
-        saveWatchedEpisode(WatchedEpisode(episode: episode))
+        if saveWatchedEpisode(WatchedEpisode(episode: episode)) {
+            synchronizeTrackingStatus(for: episode)
+        }
     }
 
-    private func saveWatchedEpisode(_ watchedEpisode: WatchedEpisode) {
+    @discardableResult
+    private func saveWatchedEpisode(_ watchedEpisode: WatchedEpisode) -> Bool {
         do {
             try repository.save(watchedEpisode)
             watchedEpisodeIDs.insert(watchedEpisode.id)
             errorMessage = nil
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 
@@ -89,8 +105,32 @@ final class EpisodeWatchStore {
             try repository.delete(id: episode.id)
             watchedEpisodeIDs.remove(episode.id)
             errorMessage = nil
+            synchronizeTrackingStatus(for: episode)
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func synchronizeTrackingStatus(for episode: ShowEpisode) {
+        guard let followedMediaStore,
+              let item = followedMediaStore.items.first(where: { $0.contains(episode) })
+        else {
+            return
+        }
+
+        let releasedEpisodes = episodeScheduleStore?
+            .schedule(for: item)?
+            .seasons
+            .filter { !$0.isSpecial }
+            .flatMap(\.episodes)
+            .filter(\.isReleased) ?? []
+
+        let trackingStatus: TrackingStatus
+        if !releasedEpisodes.isEmpty, releasedEpisodes.allSatisfy(isWatched) {
+            trackingStatus = .completed
+        } else {
+            trackingStatus = .watching
+        }
+        followedMediaStore.updateTrackingStatus(trackingStatus, for: item)
     }
 }

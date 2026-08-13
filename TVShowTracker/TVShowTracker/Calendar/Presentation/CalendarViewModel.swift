@@ -47,12 +47,21 @@ final class CalendarViewModel {
         followedMediaStore.items.map(\.id)
     }
 
+    var watchingMediaIDs: [String] {
+        followedMediaStore.items
+            .filter { $0.trackingStatus.appearsInUpNext }
+            .map(\.id)
+    }
+
     var scheduleCount: Int {
         episodeScheduleStore.schedules.count
     }
 
     var calendarDataID: String {
-        "\(followedMediaIDs.joined(separator: ",")):\(scheduleCount)"
+        let libraryState = followedMediaStore.items
+            .map { "\($0.id):\($0.trackingStatus.rawValue)" }
+            .joined(separator: ",")
+        return "\(libraryState):\(scheduleCount)"
     }
 
     func refresh() async {

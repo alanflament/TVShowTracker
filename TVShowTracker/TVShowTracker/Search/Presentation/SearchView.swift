@@ -74,10 +74,12 @@ struct SearchView: View {
                     ForEach(catalog.tvShows) { candidate in
                         SearchCandidateRow(candidate: candidate) {
                             selectedCandidate = candidate
-                        } onToggleLibrary: {
-                            viewModel.toggleFollowed(candidate)
-                        } isFollowed: {
-                            viewModel.isFollowed(candidate)
+                        } onSetTrackingStatus: { status in
+                            viewModel.update(candidate, trackingStatus: status)
+                        } onRemoveFromLibrary: {
+                            viewModel.remove(candidate)
+                        } trackingStatus: {
+                            viewModel.trackingStatus(for: candidate)
                         }
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -90,10 +92,12 @@ struct SearchView: View {
                     ForEach(catalog.anime) { candidate in
                         SearchCandidateRow(candidate: candidate) {
                             selectedCandidate = candidate
-                        } onToggleLibrary: {
-                            viewModel.toggleFollowed(candidate)
-                        } isFollowed: {
-                            viewModel.isFollowed(candidate)
+                        } onSetTrackingStatus: { status in
+                            viewModel.update(candidate, trackingStatus: status)
+                        } onRemoveFromLibrary: {
+                            viewModel.remove(candidate)
+                        } trackingStatus: {
+                            viewModel.trackingStatus(for: candidate)
                         }
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -129,11 +133,12 @@ struct SearchView: View {
 private struct SearchCandidateRow: View {
     let candidate: SearchCandidate
     let onSelect: () -> Void
-    let onToggleLibrary: () -> Void
-    let isFollowed: () -> Bool
+    let onSetTrackingStatus: (TrackingStatus) -> Void
+    let onRemoveFromLibrary: () -> Void
+    let trackingStatus: () -> TrackingStatus?
 
     var body: some View {
-        let isFollowed = isFollowed()
+        let trackingStatus = trackingStatus()
 
         ZStack(alignment: .bottomTrailing) {
             HStack(alignment: .top, spacing: 12) {
@@ -161,19 +166,33 @@ private struct SearchCandidateRow: View {
             }
             .padding(12)
 
-            Button(action: onToggleLibrary) {
+            Menu {
+                Picker("Tracking status", selection: trackingStatusBinding) {
+                    ForEach(TrackingStatus.allCases) { status in
+                        Label(status.title, systemImage: status.systemImage)
+                            .tag(Optional(status))
+                    }
+                }
+
+                if trackingStatus != nil {
+                    Divider()
+                    Button(role: .destructive, action: onRemoveFromLibrary) {
+                        Label("Remove from My Shows", systemImage: "trash")
+                    }
+                }
+            } label: {
                 Label(
-                    isFollowed ? "Following" : "Add",
-                    systemImage: isFollowed ? "checkmark" : "plus"
+                    trackingStatus?.title ?? "Add",
+                    systemImage: trackingStatus?.systemImage ?? "plus"
                 )
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(isFollowed ? Color.green : Color.accentColor)
+                .foregroundStyle(trackingStatus == nil ? Color.accentColor : Color.green)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(Color.primary.opacity(0.08), in: Capsule())
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(isFollowed ? "Remove from My Shows" : "Add to My Shows")
+            .accessibilityLabel(trackingStatus == nil ? "Add to My Shows" : "Change tracking status")
             .padding(12)
         }
         .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 16))
@@ -181,6 +200,18 @@ private struct SearchCandidateRow: View {
         .onTapGesture(perform: onSelect)
         .accessibilityElement(children: .contain)
         .accessibilityHint("Opens show details")
+    }
+
+    private var trackingStatusBinding: Binding<TrackingStatus?> {
+        Binding(
+            get: trackingStatus,
+            set: { status in
+                guard let status else {
+                    return
+                }
+                onSetTrackingStatus(status)
+            }
+        )
     }
 
     private var alternateTitle: String? {
