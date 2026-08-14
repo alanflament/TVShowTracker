@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "28ED88A4301A8B88001DDC8A"
-               BuildableName = "TVShowTracker.app"
+               BuildableName = "Showlogue.app"
                BlueprintName = "TVShowTracker"
                ReferencedContainer = "container:TVShowTracker.xcodeproj">
             </BuildableReference>
@@ -70,7 +70,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "28ED88A4301A8B88001DDC8A"
-            BuildableName = "TVShowTracker.app"
+            BuildableName = "Showlogue.app"
             BlueprintName = "TVShowTracker"
             ReferencedContainer = "container:TVShowTracker.xcodeproj">
          </BuildableReference>
@@ -94,7 +94,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "28ED88A4301A8B88001DDC8A"
-            BuildableName = "TVShowTracker.app"
+            BuildableName = "Showlogue.app"
             BlueprintName = "TVShowTracker"
             ReferencedContainer = "container:TVShowTracker.xcodeproj">
          </BuildableReference>
