@@ -30,6 +30,7 @@ rm -rf "$extraction_directory"
 trap 'rm -f "$archive_path"; rm -rf "$extraction_directory"' EXIT
 
 curl --fail --location --silent --show-error --max-time 60 \
+  --retry 3 --retry-all-errors --retry-delay 2 --retry-max-time 180 \
   --output "$archive_path" \
   "$download_url"
 
