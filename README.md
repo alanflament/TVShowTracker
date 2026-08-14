@@ -34,6 +34,14 @@ git hook run pre-commit
 
 The hook is stored in [`.githooks/pre-commit`](.githooks/pre-commit). It formats staged `.swift` files, then re-stages the formatted files before the commit is created. The app target's **SwiftLint** build phase runs `swiftlint lint --strict` on every build.
 
+### Xcode Cloud
+
+Xcode Cloud runs [`TVShowTracker/ci_scripts/ci_post_clone.sh`](TVShowTracker/ci_scripts/ci_post_clone.sh)
+after cloning the repository. The script downloads and verifies the pinned
+SwiftLint release used by the app target's strict SwiftLint build phase, so archives and
+TestFlight builds use the same lint gate as local builds. Do not disable the
+build phase in the distribution workflow.
+
 ### Configure the TMDB token
 
 The search feature reads a TMDB v4 read-access token from the generated app `Info.plist` key named `TMDBAccessToken`.
