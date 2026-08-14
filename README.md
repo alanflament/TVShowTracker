@@ -42,6 +42,12 @@ SwiftLint release used by the app target's strict SwiftLint build phase, so arch
 TestFlight builds use the same lint gate as local builds. Do not disable the
 build phase in the distribution workflow.
 
+The workflow also requires a `TMDB_ACCESS_TOKEN` environment variable. In the
+workflow's **Environment** section, add the token as a **Secret** (with value
+redaction enabled). The post-clone script writes it to the ignored
+`Secrets.xcconfig` file for that build and fails clearly if it is absent. Never
+store this token in Git or print it in build logs.
+
 ### Configure the TMDB token
 
 The search feature reads a TMDB v4 read-access token from the generated app `Info.plist` key named `TMDBAccessToken`.
