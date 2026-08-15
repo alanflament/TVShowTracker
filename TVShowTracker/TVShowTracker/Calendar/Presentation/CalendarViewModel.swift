@@ -90,7 +90,7 @@ final class CalendarViewModel {
     }
 
     func refreshFromServer() async {
-        await followedMediaRefreshStore.refresh()
+        await followedMediaRefreshStore.refresh(force: true)
         await refresh()
 
         let refreshedCount = followedMediaRefreshStore.refreshedMediaCount

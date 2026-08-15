@@ -22,11 +22,13 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
     let animeInstallments: [AnimeInstallmentReference]
     let addedAt: Date
     let trackingStatus: TrackingStatus
+    let lastLifecycleCheckAt: Date?
 
     init(
         candidate: SearchCandidate,
         addedAt: Date = .now,
-        trackingStatus: TrackingStatus = .watching
+        trackingStatus: TrackingStatus = .watching,
+        lastLifecycleCheckAt: Date? = nil
     ) {
         provider = candidate.provider
         providerID = candidate.providerID
@@ -42,6 +44,7 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         animeInstallments = candidate.animeInstallments
         self.addedAt = addedAt
         self.trackingStatus = trackingStatus
+        self.lastLifecycleCheckAt = lastLifecycleCheckAt
     }
 
     init(
@@ -58,7 +61,8 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         nextEpisodeAirDate: Date?,
         animeInstallments: [AnimeInstallmentReference],
         addedAt: Date,
-        trackingStatus: TrackingStatus = .watching
+        trackingStatus: TrackingStatus = .watching,
+        lastLifecycleCheckAt: Date? = nil
     ) {
         self.provider = provider
         self.providerID = providerID
@@ -74,6 +78,7 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         self.animeInstallments = animeInstallments
         self.addedAt = addedAt
         self.trackingStatus = trackingStatus
+        self.lastLifecycleCheckAt = lastLifecycleCheckAt
     }
 
     var id: String {
@@ -105,6 +110,16 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         status?.requiresEpisodeScheduleRefresh ?? true
     }
 
+    func requiresProviderRefresh(at date: Date, force: Bool) -> Bool {
+        guard !force, status?.isTerminal == true else {
+            return true
+        }
+        guard let lastLifecycleCheckAt else {
+            return true
+        }
+        return date.timeIntervalSince(lastLifecycleCheckAt) >= 30 * 24 * 60 * 60
+    }
+
     func contains(_ episode: ShowEpisode) -> Bool {
         guard provider == episode.provider else {
             return false
@@ -128,7 +143,8 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             nextEpisodeAirDate: nextEpisodeAirDate,
             animeInstallments: animeInstallments,
             addedAt: addedAt,
-            trackingStatus: trackingStatus
+            trackingStatus: trackingStatus,
+            lastLifecycleCheckAt: lastLifecycleCheckAt
         )
     }
 
@@ -145,9 +161,10 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             status: details.status ?? status,
             nextEpisodeNumber: nextEpisodeNumber,
             nextEpisodeAirDate: nextEpisodeAirDate,
-            animeInstallments: animeInstallments,
+            animeInstallments: details.animeInstallments ?? animeInstallments,
             addedAt: addedAt,
-            trackingStatus: trackingStatus
+            trackingStatus: trackingStatus,
+            lastLifecycleCheckAt: lastLifecycleCheckAt
         )
     }
 
@@ -166,7 +183,28 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             nextEpisodeAirDate: nextEpisodeAirDate,
             animeInstallments: animeInstallments,
             addedAt: addedAt,
-            trackingStatus: trackingStatus
+            trackingStatus: trackingStatus,
+            lastLifecycleCheckAt: lastLifecycleCheckAt
+        )
+    }
+
+    func updating(lastLifecycleCheckAt: Date) -> LibraryItem {
+        LibraryItem(
+            provider: provider,
+            providerID: providerID,
+            kind: kind,
+            title: title,
+            alternateTitle: alternateTitle,
+            posterURL: posterURL,
+            releaseYear: releaseYear,
+            totalEpisodeCount: totalEpisodeCount,
+            status: status,
+            nextEpisodeNumber: nextEpisodeNumber,
+            nextEpisodeAirDate: nextEpisodeAirDate,
+            animeInstallments: animeInstallments,
+            addedAt: addedAt,
+            trackingStatus: trackingStatus,
+            lastLifecycleCheckAt: lastLifecycleCheckAt
         )
     }
 }

@@ -43,25 +43,33 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
 
 private extension DefaultEpisodeScheduleRefreshUseCase {
     func refreshSchedule(for item: LibraryItem) async -> EpisodeScheduleRefreshResult {
-        guard item.status == nil else {
-            return await refreshScheduleWithoutStatusLookup(for: item)
+        guard let details = try? await showDetailsUseCase.fetchDetails(for: item.candidate) else {
+            return EpisodeScheduleRefreshResult(
+                item: item,
+                seasons: item.status?.isTerminal == true
+                    ? nil
+                    : try? await showDetailsUseCase.fetchEpisodes(for: item.candidate),
+                status: nil,
+                details: nil
+            )
         }
 
-        async let details = showDetailsUseCase.fetchDetails(for: item.candidate)
-        async let seasons = showDetailsUseCase.fetchEpisodes(for: item.candidate)
+        guard details.status?.isTerminal != true else {
+            return EpisodeScheduleRefreshResult(
+                item: item,
+                seasons: nil,
+                status: details.status,
+                details: details
+            )
+        }
 
         return EpisodeScheduleRefreshResult(
             item: item,
-            seasons: try? await seasons,
-            status: (try? await details)?.status
-        )
-    }
-
-    func refreshScheduleWithoutStatusLookup(for item: LibraryItem) async -> EpisodeScheduleRefreshResult {
-        EpisodeScheduleRefreshResult(
-            item: item,
-            seasons: try? await showDetailsUseCase.fetchEpisodes(for: item.candidate),
-            status: nil
+            seasons: try? await showDetailsUseCase.fetchEpisodes(
+                for: item.updating(with: details).candidate
+            ),
+            status: details.status,
+            details: details
         )
     }
 }

@@ -16,25 +16,26 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
 
     func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails {
         let id = try await aniListID(for: candidate)
-        let details = try await request(id: id, query: Self.detailsQuery).asDomain
-        guard !candidate.animeInstallments.isEmpty else {
-            return details
-        }
+        let details = try await request(id: id, query: Self.detailsQuery)
+        let installments = mergedInstallments(from: details, existing: candidate.animeInstallments)
+        let latestInstallment = installments.last
 
         return ShowDetails(
-            provider: details.provider,
-            providerID: details.providerID,
-            kind: details.kind,
-            title: details.title,
-            alternateTitle: details.alternateTitle,
-            overview: details.overview,
-            posterURL: details.posterURL,
-            backdropURL: details.backdropURL,
-            releaseYear: details.releaseYear,
-            status: candidate.status,
-            totalEpisodeCount: candidate.totalEpisodeCount,
+            provider: candidate.provider,
+            providerID: candidate.providerID,
+            kind: .anime,
+            title: details.title.preferredTitle,
+            alternateTitle: details.title.alternateTitle,
+            overview: details.description,
+            posterURL: details.coverImage.large ?? details.coverImage.medium,
+            backdropURL: nil,
+            releaseYear: details.startDate.year,
+            status: latestInstallment?.status ?? SearchMediaStatus(anilistStatus: details.status),
+            totalEpisodeCount: installments.isEmpty
+                ? nil
+                : installments.compactMap(\.episodeCount).reduce(0, +),
             genres: details.genres,
-            seasonSummaries: candidate.animeInstallments.enumerated().map { index, installment in
+            seasonSummaries: installments.enumerated().map { index, installment in
                 SeasonSummary(
                     provider: .aniList,
                     showID: installment.providerID,
@@ -43,7 +44,8 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
                     episodeCount: installment.episodeCount ?? 0,
                     airDate: nil
                 )
-            }
+            },
+            animeInstallments: installments
         )
     }
 
@@ -110,6 +112,39 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
 }
 
 private extension AniListAnimeDetailsRepository {
+    func mergedInstallments(
+        from details: AniListDetailsAnime,
+        existing: [AnimeInstallmentReference]
+    ) -> [AnimeInstallmentReference] {
+        let root = AniListDetailsInstallment(
+            id: details.id,
+            title: details.title,
+            format: details.format,
+            status: details.status,
+            episodes: details.episodes,
+            startDate: details.startDate,
+            relations: details.relations
+        )
+        var installments = Dictionary(uniqueKeysWithValues: existing.map { ($0.providerID, $0) })
+
+        func ingest(_ installment: AniListDetailsInstallment) {
+            guard installment.isSeasonInstallment else {
+                return
+            }
+            installments[installment.id] = installment.installmentReference
+            for relation in installment.relations?.edges ?? [] where relation.connectsSeasons {
+                ingest(relation.node)
+            }
+        }
+
+        ingest(root)
+        return installments.values.sorted { lhs, rhs in
+            let lhsDate = (lhs.releaseYear ?? .max, lhs.releaseMonth ?? .max, lhs.releaseDay ?? .max)
+            let rhsDate = (rhs.releaseYear ?? .max, rhs.releaseMonth ?? .max, rhs.releaseDay ?? .max)
+            return lhsDate == rhsDate ? lhs.providerID < rhs.providerID : lhsDate < rhsDate
+        }
+    }
+
     func aniListID(for candidate: SearchCandidate) async throws -> Int {
         switch candidate.provider {
         case .aniList:
@@ -172,6 +207,33 @@ private extension AniListAnimeDetailsRepository {
         episodes
         startDate { year }
         genres
+        format
+        relations {
+          edges {
+            relationType
+            node {
+              id
+              title { userPreferred english romaji native }
+              format
+              status
+              episodes
+              startDate { year month day }
+              relations {
+                edges {
+                  relationType
+                  node {
+                    id
+                    title { userPreferred english romaji native }
+                    format
+                    status
+                    episodes
+                    startDate { year month day }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
     """

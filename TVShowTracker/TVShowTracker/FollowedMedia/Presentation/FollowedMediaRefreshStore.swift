@@ -5,12 +5,14 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
+import Foundation
 import Observation
 
 @MainActor @Observable
 final class FollowedMediaRefreshStore {
     private let refreshUseCase: any EpisodeScheduleRefreshUseCase
     private let followedMediaStore: FollowedMediaStore
+    private let episodeWatchStore: EpisodeWatchStore
     private let episodeScheduleStore: EpisodeScheduleStore
 
     private(set) var isRefreshing = false
@@ -20,20 +22,23 @@ final class FollowedMediaRefreshStore {
     init(
         refreshUseCase: any EpisodeScheduleRefreshUseCase,
         followedMediaStore: FollowedMediaStore,
+        episodeWatchStore: EpisodeWatchStore,
         episodeScheduleStore: EpisodeScheduleStore
     ) {
         self.refreshUseCase = refreshUseCase
         self.followedMediaStore = followedMediaStore
+        self.episodeWatchStore = episodeWatchStore
         self.episodeScheduleStore = episodeScheduleStore
     }
 
-    func refresh() async {
+    func refresh(force: Bool = false) async {
         guard !isRefreshing else {
             return
         }
 
         let allItems = followedMediaStore.items
-        let items = allItems.filter(\.requiresEpisodeScheduleRefresh)
+        let refreshDate = Date.now
+        let items = allItems.filter { $0.requiresProviderRefresh(at: refreshDate, force: force) }
         totalMediaCount = items.count
         refreshedMediaCount = 0
         isRefreshing = true
@@ -42,14 +47,26 @@ final class FollowedMediaRefreshStore {
         episodeScheduleStore.removeSchedules(excluding: Set(allItems.map(\.id)))
         let results = await refreshUseCase.refreshSchedules(for: items)
         for result in results {
+            if let details = result.details {
+                followedMediaStore.update(with: details, for: result.item.candidate)
+            }
             if let status = result.status {
-                followedMediaStore.updateStatus(status, for: result.item)
+                let item = followedMediaStore.item(id: result.item.id) ?? result.item
+                followedMediaStore.updateStatus(status, for: item)
             }
-            guard let seasons = result.seasons else {
-                continue
+            if let seasons = result.seasons {
+                let item = followedMediaStore.item(id: result.item.id) ?? result.item
+                episodeScheduleStore.save(item: item, seasons: seasons)
+                refreshedMediaCount += 1
             }
-            episodeScheduleStore.save(item: result.item, seasons: seasons)
-            refreshedMediaCount += 1
+
+            if let item = followedMediaStore.item(id: result.item.id) {
+                episodeWatchStore.reconcileTrackingStatus(for: item)
+                if result.details != nil,
+                   let updatedItem = followedMediaStore.item(id: result.item.id) {
+                    followedMediaStore.recordLifecycleCheck(for: updatedItem, at: refreshDate)
+                }
+            }
         }
     }
 }

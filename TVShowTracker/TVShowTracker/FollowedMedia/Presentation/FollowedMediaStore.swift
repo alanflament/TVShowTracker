@@ -85,6 +85,13 @@ final class FollowedMediaStore {
         save(item.updating(with: details))
     }
 
+    func recordLifecycleCheck(for item: LibraryItem, at date: Date = .now) {
+        guard item.lastLifecycleCheckAt != date else {
+            return
+        }
+        save(item.updating(lastLifecycleCheckAt: date))
+    }
+
     private func save(_ item: LibraryItem) {
         do {
             try repository.save(item)

@@ -74,6 +74,7 @@ final class AppContainer {
                 showDetailsUseCase: showDetailsUseCase
             ),
             followedMediaStore: followedMediaStore,
+            episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: episodeScheduleStore
         )
     }

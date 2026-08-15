@@ -29,6 +29,11 @@ struct EpisodeScheduleRefreshTests {
         let item = makeItem(id: 1)
         let libraryStore = FollowedMediaStore(repository: LibraryRepositoryStub(items: [item]))
         let scheduleStore = EpisodeScheduleStore(repository: ScheduleRepositoryStub())
+        let episodeWatchStore = EpisodeWatchStore(
+            repository: WatchRepositoryStub(),
+            followedMediaStore: libraryStore,
+            episodeScheduleStore: scheduleStore
+        )
         let refreshStore = FollowedMediaRefreshStore(
             refreshUseCase: ScheduleRefreshUseCaseStub(result: EpisodeScheduleRefreshResult(
                 item: item,
@@ -36,12 +41,13 @@ struct EpisodeScheduleRefreshTests {
                 status: nil
             )),
             followedMediaStore: libraryStore,
+            episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: scheduleStore
         )
         let viewModel = CalendarViewModel(
             nextEpisodeUseCase: DefaultNextEpisodeUseCase(episodeScheduleStore: scheduleStore),
             followedMediaStore: libraryStore,
-            episodeWatchStore: EpisodeWatchStore(repository: WatchRepositoryStub()),
+            episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: scheduleStore,
             followedMediaRefreshStore: refreshStore
         )
@@ -51,7 +57,35 @@ struct EpisodeScheduleRefreshTests {
         #expect(viewModel.refreshMessage == "Updated 1 schedule.")
     }
 
-    private func makeItem(id: Int) -> LibraryItem {
+    @Test func refreshRestoresAnOngoingCompletedMediaToWatching() async {
+        let item = makeItem(id: 1, trackingStatus: .completed)
+        let libraryStore = FollowedMediaStore(repository: LibraryRepositoryStub(items: [item]))
+        let scheduleStore = EpisodeScheduleStore(repository: ScheduleRepositoryStub())
+        let episodeWatchStore = EpisodeWatchStore(
+            repository: WatchRepositoryStub(),
+            followedMediaStore: libraryStore,
+            episodeScheduleStore: scheduleStore
+        )
+        let refreshStore = FollowedMediaRefreshStore(
+            refreshUseCase: ScheduleRefreshUseCaseStub(result: EpisodeScheduleRefreshResult(
+                item: item,
+                seasons: [],
+                status: .airing
+            )),
+            followedMediaStore: libraryStore,
+            episodeWatchStore: episodeWatchStore,
+            episodeScheduleStore: scheduleStore
+        )
+
+        await refreshStore.refresh()
+
+        #expect(libraryStore.items.first?.trackingStatus == .watching)
+    }
+
+    private func makeItem(
+        id: Int,
+        trackingStatus: TrackingStatus = .watching
+    ) -> LibraryItem {
         LibraryItem(candidate: SearchCandidate(
             provider: .tmdb,
             providerID: id,
@@ -64,7 +98,7 @@ struct EpisodeScheduleRefreshTests {
             status: .airing,
             nextEpisodeNumber: nil,
             nextEpisodeAirDate: nil
-        ))
+        ), trackingStatus: trackingStatus)
     }
 }
 

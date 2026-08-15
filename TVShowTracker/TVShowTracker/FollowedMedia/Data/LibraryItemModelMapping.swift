@@ -24,7 +24,8 @@ extension LibraryItemModel {
             nextEpisodeAirDate: item.nextEpisodeAirDate,
             animeInstallmentsData: encoder.encode(item.animeInstallments),
             addedAt: item.addedAt,
-            trackingStatusRawValue: item.trackingStatus.rawValue
+            trackingStatusRawValue: item.trackingStatus.rawValue,
+            lastLifecycleCheckAt: item.lastLifecycleCheckAt
         )
     }
 
@@ -42,6 +43,7 @@ extension LibraryItemModel {
         nextEpisodeAirDate = item.nextEpisodeAirDate
         animeInstallmentsData = try encoder.encode(item.animeInstallments)
         trackingStatusRawValue = item.trackingStatus.rawValue
+        lastLifecycleCheckAt = item.lastLifecycleCheckAt
     }
 
     func asDomain(decoder: JSONDecoder = JSONDecoder()) throws -> LibraryItem {
@@ -72,7 +74,8 @@ extension LibraryItemModel {
             nextEpisodeAirDate: nextEpisodeAirDate,
             animeInstallments: installments,
             addedAt: addedAt,
-            trackingStatus: trackingStatusRawValue.flatMap(TrackingStatus.init(rawValue:)) ?? .watching
+            trackingStatus: trackingStatusRawValue.flatMap(TrackingStatus.init(rawValue:)) ?? .watching,
+            lastLifecycleCheckAt: lastLifecycleCheckAt
         )
     }
 }

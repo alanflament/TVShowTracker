@@ -118,6 +118,20 @@ final class EpisodeWatchStore {
             return
         }
 
+        followedMediaStore.updateTrackingStatus(resolvedTrackingStatus(for: item), for: item)
+    }
+
+    func reconcileTrackingStatus(for item: LibraryItem) {
+        guard let followedMediaStore,
+              item.trackingStatus == .watching || item.trackingStatus == .completed
+        else {
+            return
+        }
+
+        followedMediaStore.updateTrackingStatus(resolvedTrackingStatus(for: item), for: item)
+    }
+
+    private func resolvedTrackingStatus(for item: LibraryItem) -> TrackingStatus {
         let releasedEpisodes = episodeScheduleStore?
             .schedule(for: item)?
             .seasons
@@ -125,12 +139,12 @@ final class EpisodeWatchStore {
             .flatMap(\.episodes)
             .filter(\.isReleased) ?? []
 
-        let trackingStatus: TrackingStatus
-        if !releasedEpisodes.isEmpty, releasedEpisodes.allSatisfy(isWatched) {
-            trackingStatus = .completed
-        } else {
-            trackingStatus = .watching
+        guard item.status?.isTerminal == true,
+              !releasedEpisodes.isEmpty,
+              releasedEpisodes.allSatisfy(isWatched)
+        else {
+            return .watching
         }
-        followedMediaStore.updateTrackingStatus(trackingStatus, for: item)
+        return .completed
     }
 }

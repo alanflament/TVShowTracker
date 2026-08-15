@@ -13,11 +13,15 @@ enum SearchMediaStatus: String, Codable, Hashable, Sendable {
     case hiatus
 
     var requiresEpisodeScheduleRefresh: Bool {
+        !isTerminal
+    }
+
+    var isTerminal: Bool {
         switch self {
         case .finished, .cancelled:
-            false
-        case .airing, .upcoming, .hiatus:
             true
+        case .airing, .upcoming, .hiatus:
+            false
         }
     }
 }
