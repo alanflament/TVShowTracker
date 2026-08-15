@@ -13,6 +13,15 @@ final class LibraryViewModel {
     private let followedMediaStore: FollowedMediaStore
 
     var query = ""
+    var category: LibraryCategory = .all {
+        didSet {
+            guard category != oldValue else {
+                return
+            }
+            filter = .all
+        }
+    }
+
     var filter: LibraryFilter = .all
 
     init(followedMediaStore: FollowedMediaStore) {
@@ -22,6 +31,7 @@ final class LibraryViewModel {
     var items: [LibraryItem] {
         followedMediaStore.items
             .filter(matchesQuery)
+            .filter(category.matches)
             .filter(filter.matches)
             .sorted(by: isAlphabeticallyOrdered)
     }
@@ -35,7 +45,13 @@ final class LibraryViewModel {
     }
 
     func count(for filter: LibraryFilter) -> Int {
-        followedMediaStore.items.count(where: filter.matches)
+        followedMediaStore.items
+            .filter(category.matches)
+            .count(where: filter.matches)
+    }
+
+    func count(for category: LibraryCategory) -> Int {
+        followedMediaStore.items.count(where: category.matches)
     }
 
     func remove(_ item: LibraryItem) {
@@ -44,6 +60,7 @@ final class LibraryViewModel {
 
     func resetFilters() {
         query = ""
+        category = .all
         filter = .all
     }
 

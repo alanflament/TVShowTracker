@@ -50,18 +50,39 @@ struct LibraryViewModelTests {
         store.addIfMissing(candidate(id: 3, title: "Finished", status: .finished), trackingStatus: .completed)
         let viewModel = LibraryViewModel(followedMediaStore: store)
 
+        viewModel.category = .active
         viewModel.filter = .watching
         #expect(viewModel.items.map(\.title) == ["Airing"])
 
-        viewModel.filter = .planToWatch
+        viewModel.category = .planned
         #expect(viewModel.items.map(\.title) == ["Upcoming"])
 
+        viewModel.category = .history
         viewModel.filter = .completed
         #expect(viewModel.items.map(\.title) == ["Finished"])
 
-        #expect(viewModel.count(for: .all) == 3)
-        #expect(viewModel.count(for: .watching) == 1)
-        #expect(viewModel.count(for: .paused) == 0)
+        #expect(viewModel.count(for: LibraryCategory.all) == 3)
+        #expect(viewModel.count(for: .history) == 1)
+        #expect(viewModel.count(for: LibraryFilter.completed) == 1)
+        #expect(viewModel.count(for: LibraryFilter.dropped) == 0)
+    }
+
+    @Test func changingPrimaryCategoryResetsSecondaryFilter() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let store = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let viewModel = LibraryViewModel(followedMediaStore: store)
+        viewModel.category = .active
+        viewModel.filter = .paused
+
+        viewModel.category = .history
+
+        #expect(viewModel.filter == .all)
     }
 
     @Test func resetsSearchAndTrackingStatusFilters() throws {
@@ -76,11 +97,13 @@ struct LibraryViewModelTests {
         store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
         let viewModel = LibraryViewModel(followedMediaStore: store)
         viewModel.query = "missing"
+        viewModel.category = .history
         viewModel.filter = .completed
 
         viewModel.resetFilters()
 
         #expect(viewModel.query.isEmpty)
+        #expect(viewModel.category == .all)
         #expect(viewModel.filter == .all)
         #expect(viewModel.items.map(\.title) == ["The Bear"])
     }
