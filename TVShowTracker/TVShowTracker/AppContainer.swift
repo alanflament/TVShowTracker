@@ -31,7 +31,7 @@ final class AppContainer {
         episodeDetailsStore = .init(
             repository: SwiftDataEpisodeDetailsRepository(modelContext: modelContainer.mainContext)
         )
-        Self.seedDemoDataIfNeeded(into: followedMediaStore)
+        Self.seedDemoStateIfNeeded(followedMediaStore, episodeScheduleStore, episodeWatchStore)
 
         let aniListHTTPClient = Self.makeAniListHTTPClient()
         let animeSearchRepository = Self.makeAnimeSearchRepository(aniListHTTPClient: aniListHTTPClient)
@@ -217,50 +217,5 @@ final class AppContainer {
 
         let token = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return token.isEmpty ? nil : token
-    }
-
-    private static var usesDemoData: Bool {
-        #if DEBUG
-            ProcessInfo.processInfo.arguments.contains("--demo-data")
-        #else
-            false
-        #endif
-    }
-
-    private static func seedDemoDataIfNeeded(into store: FollowedMediaStore) {
-        guard usesDemoData else {
-            return
-        }
-
-        let samples: [(SearchCandidate, TrackingStatus)] = [
-            (demoCandidate(id: 95396, title: "Severance", status: .airing), .watching),
-            (demoCandidate(id: 1396, title: "Breaking Bad", status: .finished), .planToWatch),
-            (demoCandidate(id: 136_315, title: "The Bear", status: .airing), .paused),
-            (demoCandidate(id: 70523, title: "Dark", status: .finished), .completed),
-            (demoCandidate(id: 63247, title: "Westworld", status: .cancelled), .dropped)
-        ]
-        for sample in samples {
-            store.addIfMissing(sample.0, trackingStatus: sample.1)
-        }
-    }
-
-    private static func demoCandidate(
-        id: Int,
-        title: String,
-        status: SearchMediaStatus
-    ) -> SearchCandidate {
-        SearchCandidate(
-            provider: .tmdb,
-            providerID: id,
-            kind: .tvShow,
-            title: title,
-            alternateTitle: nil,
-            posterURL: nil,
-            releaseYear: 2022,
-            totalEpisodeCount: 10,
-            status: status,
-            nextEpisodeNumber: nil,
-            nextEpisodeAirDate: nil
-        )
     }
 }

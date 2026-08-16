@@ -64,13 +64,39 @@ final class CalendarViewModel {
     }
 
     func refresh() async {
+        await reload(showsLoadingState: isInitialLoad)
+    }
+
+    func markEpisodeWatched(_ episode: CalendarEpisode) async {
+        episodeWatchStore.markWatched(episode.episode, watchedAt: nil)
+        await reload(showsLoadingState: false)
+    }
+
+    func refreshFromServer() async {
+        await followedMediaRefreshStore.refresh(force: true)
+        await reload(showsLoadingState: false)
+    }
+}
+
+private extension CalendarViewModel {
+    var isInitialLoad: Bool {
+        if case .idle = state {
+            true
+        } else {
+            false
+        }
+    }
+
+    func reload(showsLoadingState: Bool) async {
         let items = followedMediaStore.items
         guard !items.isEmpty else {
             state = .loaded([], availableEpisodeCount: 0, undatedMedia: [])
             return
         }
 
-        state = .loading
+        if showsLoadingState {
+            state = .loading
+        }
         let result = await nextEpisodeUseCase.findNextEpisode(
             in: items,
             watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs,
@@ -81,15 +107,5 @@ final class CalendarViewModel {
             availableEpisodeCount: result.availableEpisodeCount,
             undatedMedia: result.undatedMedia
         )
-    }
-
-    func markEpisodeWatched(_ episode: CalendarEpisode) async {
-        episodeWatchStore.markWatched(episode.episode, watchedAt: nil)
-        await refresh()
-    }
-
-    func refreshFromServer() async {
-        await followedMediaRefreshStore.refresh(force: true)
-        await refresh()
     }
 }

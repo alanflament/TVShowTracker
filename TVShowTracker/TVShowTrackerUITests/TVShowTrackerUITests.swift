@@ -22,14 +22,34 @@ final class TVShowTrackerUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() {
-        // UI tests must launch the application that they test.
+    func testUpNextWatchedFeedbackAndCardTransitions() {
         let app = XCUIApplication()
+        app.launchArguments = ["--demo-data"]
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        let markWatchedButtons = app.buttons.matching(identifier: "Mark as watched")
+        let breakingBadTitle = app.buttons["BREAKING BAD"]
+        XCTAssertTrue(markWatchedButtons.firstMatch.waitForExistence(timeout: 3))
+        XCTAssertTrue(breakingBadTitle.exists)
+        captureScreenshot(named: "Up Next - Before", app: app)
+
+        markWatchedButtons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Watched"].waitForExistence(timeout: 0.3))
+        captureScreenshot(named: "Up Next - Remove feedback", app: app)
+        XCTAssertTrue(breakingBadTitle.waitForNonExistence(timeout: 2))
+
+        markWatchedButtons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Watched"].waitForExistence(timeout: 0.3))
+        captureScreenshot(named: "Up Next - Replace feedback", app: app)
+        XCTAssertTrue(app.buttons["Goodbye, Mrs. Selvig"].waitForExistence(timeout: 2))
+        captureScreenshot(named: "Up Next - Next episode", app: app)
+    }
+
+    private func captureScreenshot(named name: String, app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor
