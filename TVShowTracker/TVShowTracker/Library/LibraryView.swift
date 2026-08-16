@@ -6,11 +6,11 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct LibraryView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Namespace private var categorySelectionNamespace
+    @State private var pendingSelection: LibrarySelection?
+    @State private var scrollPosition = ScrollPosition(edge: .top)
 
     let viewModel: LibraryViewModel
     let makeDetailsView: (SearchCandidate) -> ShowDetailsView
@@ -67,55 +67,108 @@ struct LibraryView: View {
                                 .padding(.horizontal)
                                 .padding(.top, 8)
                                 .padding(.bottom, 20)
-                                .background(Color(.systemBackground))
                         }
                     }
                 }
+                .scrollPosition($scrollPosition)
             }
         }
         .navigationTitle("My Shows")
         .searchable(text: $viewModel.query, prompt: "Search your library")
-        .background(OpaqueNavigationBarAppearance(colorScheme: colorScheme))
     }
 
     private func filterTabs(_ viewModel: LibraryViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 4) {
-                ForEach(LibraryCategory.allCases) { category in
-                    LibraryCategoryTab(
-                        category: category,
-                        count: viewModel.count(for: category),
-                        isSelected: viewModel.category == category,
-                        selectionNamespace: categorySelectionNamespace
-                    ) {
-                        withAnimation(.snappy(duration: 0.28, extraBounce: 0.05)) {
-                            viewModel.category = category
+        GlassEffectContainer(spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 4) {
+                    ForEach(LibraryCategory.allCases) { category in
+                        LibraryCategoryTab(
+                            category: category,
+                            count: viewModel.count(for: category),
+                            isSelected: viewModel.category == category,
+                            selectionNamespace: categorySelectionNamespace
+                        ) {
+                            select(category, in: viewModel)
                         }
                     }
                 }
-            }
-            .padding(4)
-            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 14))
+                .padding(4)
+                .glassEffect(.regular, in: .rect(cornerRadius: 14))
 
-            if !viewModel.category.secondaryFilters.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(viewModel.category.secondaryFilters) { filter in
-                            LibraryStatusTab(
-                                filter: filter,
-                                count: viewModel.count(for: filter),
-                                isSelected: viewModel.filter == filter
-                            ) {
-                                withAnimation(.snappy(duration: 0.2)) {
-                                    viewModel.filter = filter
+                if !viewModel.category.secondaryFilters.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 8) {
+                            ForEach(viewModel.category.secondaryFilters) { filter in
+                                LibraryStatusTab(
+                                    filter: filter,
+                                    count: viewModel.count(for: filter),
+                                    isSelected: viewModel.filter == filter
+                                ) {
+                                    select(filter, in: viewModel)
                                 }
                             }
                         }
                     }
+                    .scrollIndicators(.hidden)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .scrollIndicators(.hidden)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+        }
+    }
+
+    private func select(
+        _ category: LibraryCategory,
+        in viewModel: LibraryViewModel
+    ) {
+        guard category != viewModel.category else {
+            pendingSelection = nil
+            return
+        }
+
+        let selection = LibrarySelection.category(category)
+        pendingSelection = selection
+
+        scrollToTop {
+            guard pendingSelection == selection else {
+                return
+            }
+
+            pendingSelection = nil
+            withAnimation(.snappy(duration: 0.28, extraBounce: 0.05)) {
+                viewModel.category = category
+            }
+        }
+    }
+
+    private func select(
+        _ filter: LibraryFilter,
+        in viewModel: LibraryViewModel
+    ) {
+        guard filter != viewModel.filter else {
+            pendingSelection = nil
+            return
+        }
+
+        let selection = LibrarySelection.filter(filter)
+        pendingSelection = selection
+
+        scrollToTop {
+            guard pendingSelection == selection else {
+                return
+            }
+
+            pendingSelection = nil
+            withAnimation(.snappy(duration: 0.2)) {
+                viewModel.filter = filter
+            }
+        }
+    }
+
+    private func scrollToTop(completion: @escaping () -> Void) {
+        withAnimation(.smooth(duration: 0.32)) {
+            scrollPosition.scrollTo(edge: .top)
+        } completion: {
+            completion()
         }
     }
 
@@ -134,6 +187,11 @@ struct LibraryView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
+
+private enum LibrarySelection: Equatable {
+    case category(LibraryCategory)
+    case filter(LibraryFilter)
 }
 
 private struct LibraryCategoryTab: View {
@@ -186,121 +244,24 @@ private struct LibraryStatusTab: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Text(filter.title)
+                    .foregroundStyle(.primary)
                 Text(count, format: .number)
                     .monospacedDigit()
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
             }
             .font(.subheadline.weight(.semibold))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .foregroundStyle(isSelected ? .primary : .secondary)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.16) : Color.primary.opacity(0.06),
+            .glassEffect(
+                .regular
+                    .tint(isSelected ? Color.accentColor.opacity(0.14) : nil)
+                    .interactive(),
                 in: Capsule()
             )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(filter.title), \(count) \(count == 1 ? "show" : "shows")")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-}
-
-private struct OpaqueNavigationBarAppearance: UIViewControllerRepresentable {
-    let colorScheme: ColorScheme
-
-    func makeUIViewController(context _: Context) -> NavigationBarAppearanceController {
-        NavigationBarAppearanceController(colorScheme: colorScheme)
-    }
-
-    func updateUIViewController(
-        _ uiViewController: NavigationBarAppearanceController,
-        context _: Context
-    ) {
-        uiViewController.colorScheme = colorScheme
-        uiViewController.applyAppearanceIfVisible()
-    }
-
-    final class NavigationBarAppearanceController: UIViewController {
-        var colorScheme: ColorScheme
-
-        private var originalStandardAppearance: UINavigationBarAppearance?
-        private var originalScrollEdgeAppearance: UINavigationBarAppearance?
-        private var originalCompactAppearance: UINavigationBarAppearance?
-        private var originalBarStyle: UIBarStyle?
-        private var hasCapturedOriginalAppearance = false
-
-        init(colorScheme: ColorScheme) {
-            self.colorScheme = colorScheme
-            super.init(nibName: nil, bundle: nil)
-        }
-
-        @available(*, unavailable)
-        required init?(coder _: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            applyAppearance()
-        }
-
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-            restoreAppearance()
-        }
-
-        func applyAppearanceIfVisible() {
-            guard viewIfLoaded?.window != nil else {
-                return
-            }
-            applyAppearance()
-        }
-
-        private func applyAppearance() {
-            guard let navigationBar = navigationController?.navigationBar else {
-                return
-            }
-
-            if !hasCapturedOriginalAppearance {
-                originalStandardAppearance = navigationBar.standardAppearance.copy()
-                originalScrollEdgeAppearance = navigationBar.scrollEdgeAppearance?.copy()
-                originalCompactAppearance = navigationBar.compactAppearance?.copy()
-                originalBarStyle = navigationBar.barStyle
-                hasCapturedOriginalAppearance = true
-            }
-
-            navigationBar.barStyle = colorScheme == .dark ? .black : .default
-            makeOpaque(navigationBar.standardAppearance)
-            if let scrollEdgeAppearance = navigationBar.scrollEdgeAppearance {
-                makeOpaque(scrollEdgeAppearance)
-            }
-            if let compactAppearance = navigationBar.compactAppearance {
-                makeOpaque(compactAppearance)
-            }
-        }
-
-        private func makeOpaque(_ appearance: UINavigationBarAppearance) {
-            appearance.backgroundEffect = nil
-            appearance.backgroundColor = .systemBackground
-            appearance.titleTextAttributes[.foregroundColor] = UIColor.label
-            appearance.largeTitleTextAttributes[.foregroundColor] = UIColor.label
-        }
-
-        private func restoreAppearance() {
-            guard hasCapturedOriginalAppearance,
-                  let navigationBar = navigationController?.navigationBar,
-                  let originalStandardAppearance
-            else {
-                return
-            }
-
-            navigationBar.standardAppearance = originalStandardAppearance
-            navigationBar.scrollEdgeAppearance = originalScrollEdgeAppearance
-            navigationBar.compactAppearance = originalCompactAppearance
-            if let originalBarStyle {
-                navigationBar.barStyle = originalBarStyle
-            }
-        }
     }
 }
 
