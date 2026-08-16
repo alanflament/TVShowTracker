@@ -26,11 +26,12 @@ final class AppCoordinator {
     }
 
     var followedMediaRefreshMessage: String {
+        let processed = followedMediaRefreshStore.processedMediaCount
         let total = followedMediaRefreshStore.totalMediaCount
         if total == 0 {
-            return "Refreshing your library…"
+            return "Checking your saved shows for new episodes…"
         }
-        return "Refreshing \(total) followed \(total == 1 ? "show" : "shows")…"
+        return "Checking \(processed) of \(total) \(total == 1 ? "show" : "shows") for new episodes…"
     }
 
     func refreshFollowedMedia() async {

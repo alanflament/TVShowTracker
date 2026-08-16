@@ -13,7 +13,10 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
         self.showDetailsUseCase = showDetailsUseCase
     }
 
-    func refreshSchedules(for items: [LibraryItem]) async -> [EpisodeScheduleRefreshResult] {
+    func refreshSchedules(
+        for items: [LibraryItem],
+        onResult: @escaping @Sendable (EpisodeScheduleRefreshResult) async -> Void
+    ) async -> [EpisodeScheduleRefreshResult] {
         await withTaskGroup(of: EpisodeScheduleRefreshResult.self) { group in
             var pendingItems = items.makeIterator()
 
@@ -35,6 +38,8 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
                         await refreshSchedule(for: item)
                     }
                 }
+
+                await onResult(result)
             }
             return results
         }

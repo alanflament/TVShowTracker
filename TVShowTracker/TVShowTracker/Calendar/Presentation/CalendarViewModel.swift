@@ -27,7 +27,6 @@ final class CalendarViewModel {
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     private(set) var state: State = .idle
-    private(set) var refreshMessage: String?
 
     init(
         nextEpisodeUseCase: any NextEpisodeUseCase,
@@ -92,16 +91,5 @@ final class CalendarViewModel {
     func refreshFromServer() async {
         await followedMediaRefreshStore.refresh(force: true)
         await refresh()
-
-        let refreshedCount = followedMediaRefreshStore.refreshedMediaCount
-        let totalCount = followedMediaRefreshStore.totalMediaCount
-
-        if totalCount == 0 {
-            refreshMessage = "Your saved schedules are already up to date."
-        } else if refreshedCount == totalCount {
-            refreshMessage = "Updated \(refreshedCount) \(refreshedCount == 1 ? "schedule" : "schedules")."
-        } else {
-            refreshMessage = "Updated \(refreshedCount) of \(totalCount) schedules. Saved dates are still shown below."
-        }
     }
 }

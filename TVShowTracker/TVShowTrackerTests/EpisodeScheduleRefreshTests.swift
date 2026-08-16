@@ -25,36 +25,39 @@ struct EpisodeScheduleRefreshTests {
         #expect(peakConcurrentRequests <= 4)
     }
 
-    @Test func calendarReportsTheOutcomeOfAManualScheduleRefresh() async {
-        let item = makeItem(id: 1)
-        let libraryStore = FollowedMediaStore(repository: LibraryRepositoryStub(items: [item]))
+    @Test func refreshPublishesProgressAndStopsRefreshingWhenComplete() async {
+        let items = [makeItem(id: 1), makeItem(id: 2)]
+        let libraryStore = FollowedMediaStore(repository: LibraryRepositoryStub(items: items))
         let scheduleStore = EpisodeScheduleStore(repository: ScheduleRepositoryStub())
         let episodeWatchStore = EpisodeWatchStore(
             repository: WatchRepositoryStub(),
             followedMediaStore: libraryStore,
             episodeScheduleStore: scheduleStore
         )
+        let progressGate = RefreshProgressGate()
         let refreshStore = FollowedMediaRefreshStore(
-            refreshUseCase: ScheduleRefreshUseCaseStub(result: EpisodeScheduleRefreshResult(
-                item: item,
-                seasons: [],
-                status: nil
-            )),
+            refreshUseCase: ProgressiveScheduleRefreshUseCaseStub(gate: progressGate),
             followedMediaStore: libraryStore,
             episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: scheduleStore
         )
-        let viewModel = CalendarViewModel(
-            nextEpisodeUseCase: DefaultNextEpisodeUseCase(episodeScheduleStore: scheduleStore),
-            followedMediaStore: libraryStore,
-            episodeWatchStore: episodeWatchStore,
-            episodeScheduleStore: scheduleStore,
-            followedMediaRefreshStore: refreshStore
-        )
 
-        await viewModel.refreshFromServer()
+        let refreshTask = Task {
+            await refreshStore.refresh()
+        }
+        for _ in 0 ..< 100 where refreshStore.processedMediaCount == 0 {
+            await Task.yield()
+        }
 
-        #expect(viewModel.refreshMessage == "Updated 1 schedule.")
+        #expect(refreshStore.isRefreshing)
+        #expect(refreshStore.processedMediaCount == 1)
+        #expect(refreshStore.totalMediaCount == 2)
+
+        await progressGate.release()
+        await refreshTask.value
+
+        #expect(!refreshStore.isRefreshing)
+        #expect(refreshStore.processedMediaCount == 2)
     }
 
     @Test func refreshRestoresAnOngoingCompletedMediaToWatching() async {
@@ -120,6 +123,27 @@ private actor RefreshConcurrencyProbe {
     }
 }
 
+private actor RefreshProgressGate {
+    private var isReleased = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func waitForRelease() async {
+        guard !isReleased else {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func release() {
+        isReleased = true
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
 private struct ConcurrentDetailsUseCase: ShowDetailsUseCase {
     let probe: RefreshConcurrencyProbe
 
@@ -152,8 +176,35 @@ private struct ConcurrentDetailsUseCase: ShowDetailsUseCase {
 private struct ScheduleRefreshUseCaseStub: EpisodeScheduleRefreshUseCase {
     let result: EpisodeScheduleRefreshResult
 
-    func refreshSchedules(for _: [LibraryItem]) async -> [EpisodeScheduleRefreshResult] {
-        [result]
+    func refreshSchedules(
+        for _: [LibraryItem],
+        onResult: @escaping @Sendable (EpisodeScheduleRefreshResult) async -> Void
+    ) async -> [EpisodeScheduleRefreshResult] {
+        await onResult(result)
+        return [result]
+    }
+}
+
+private struct ProgressiveScheduleRefreshUseCaseStub: EpisodeScheduleRefreshUseCase {
+    let gate: RefreshProgressGate
+
+    func refreshSchedules(
+        for items: [LibraryItem],
+        onResult: @escaping @Sendable (EpisodeScheduleRefreshResult) async -> Void
+    ) async -> [EpisodeScheduleRefreshResult] {
+        var results = [EpisodeScheduleRefreshResult]()
+
+        for (index, item) in items.enumerated() {
+            let result = EpisodeScheduleRefreshResult(item: item, seasons: [], status: nil)
+            results.append(result)
+            await onResult(result)
+
+            if index == 0 {
+                await gate.waitForRelease()
+            }
+        }
+
+        return results
     }
 }
 

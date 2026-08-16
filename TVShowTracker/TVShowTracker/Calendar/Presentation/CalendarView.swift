@@ -62,16 +62,6 @@ struct CalendarView: View {
                         undatedMediaCount: undatedMedia.count
                     )
 
-                    if let refreshMessage = viewModel.refreshMessage {
-                        Label(refreshMessage, systemImage: "arrow.clockwise.circle.fill")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 12))
-                            .accessibilityElement(children: .combine)
-                    }
-
                     if !availableEpisodes.isEmpty {
                         episodeSection(
                             title: "Available now",

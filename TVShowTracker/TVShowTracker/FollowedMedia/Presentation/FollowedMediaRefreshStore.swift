@@ -16,7 +16,7 @@ final class FollowedMediaRefreshStore {
     private let episodeScheduleStore: EpisodeScheduleStore
 
     private(set) var isRefreshing = false
-    private(set) var refreshedMediaCount = 0
+    private(set) var processedMediaCount = 0
     private(set) var totalMediaCount = 0
 
     init(
@@ -40,33 +40,41 @@ final class FollowedMediaRefreshStore {
         let refreshDate = Date.now
         let items = allItems.filter { $0.requiresProviderRefresh(at: refreshDate, force: force) }
         totalMediaCount = items.count
-        refreshedMediaCount = 0
+        processedMediaCount = 0
         isRefreshing = true
         defer { isRefreshing = false }
 
         episodeScheduleStore.removeSchedules(excluding: Set(allItems.map(\.id)))
-        let results = await refreshUseCase.refreshSchedules(for: items)
-        for result in results {
-            if let details = result.details {
-                followedMediaStore.update(with: details, for: result.item.candidate)
-            }
-            if let status = result.status {
-                let item = followedMediaStore.item(id: result.item.id) ?? result.item
-                followedMediaStore.updateStatus(status, for: item)
-            }
-            if let seasons = result.seasons {
-                let item = followedMediaStore.item(id: result.item.id) ?? result.item
-                episodeScheduleStore.save(item: item, seasons: seasons)
-                refreshedMediaCount += 1
+        _ = await refreshUseCase.refreshSchedules(for: items) { [weak self] result in
+            guard let self else {
+                return
             }
 
-            if let item = followedMediaStore.item(id: result.item.id) {
-                episodeWatchStore.reconcileTrackingStatus(for: item)
-                if result.details != nil,
-                   let updatedItem = followedMediaStore.item(id: result.item.id) {
-                    followedMediaStore.recordLifecycleCheck(for: updatedItem, at: refreshDate)
-                }
+            await apply(result, refreshDate: refreshDate)
+        }
+    }
+
+    private func apply(_ result: EpisodeScheduleRefreshResult, refreshDate: Date) {
+        if let details = result.details {
+            followedMediaStore.update(with: details, for: result.item.candidate)
+        }
+        if let status = result.status {
+            let item = followedMediaStore.item(id: result.item.id) ?? result.item
+            followedMediaStore.updateStatus(status, for: item)
+        }
+        if let seasons = result.seasons {
+            let item = followedMediaStore.item(id: result.item.id) ?? result.item
+            episodeScheduleStore.save(item: item, seasons: seasons)
+        }
+
+        if let item = followedMediaStore.item(id: result.item.id) {
+            episodeWatchStore.reconcileTrackingStatus(for: item)
+            if result.details != nil,
+               let updatedItem = followedMediaStore.item(id: result.item.id) {
+                followedMediaStore.recordLifecycleCheck(for: updatedItem, at: refreshDate)
             }
         }
+
+        processedMediaCount += 1
     }
 }

@@ -6,5 +6,14 @@
 //
 
 protocol EpisodeScheduleRefreshUseCase: Sendable {
-    func refreshSchedules(for items: [LibraryItem]) async -> [EpisodeScheduleRefreshResult]
+    func refreshSchedules(
+        for items: [LibraryItem],
+        onResult: @escaping @Sendable (EpisodeScheduleRefreshResult) async -> Void
+    ) async -> [EpisodeScheduleRefreshResult]
+}
+
+extension EpisodeScheduleRefreshUseCase {
+    func refreshSchedules(for items: [LibraryItem]) async -> [EpisodeScheduleRefreshResult] {
+        await refreshSchedules(for: items) { _ in }
+    }
 }
