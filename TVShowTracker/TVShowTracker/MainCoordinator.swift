@@ -14,16 +14,24 @@ final class MainCoordinator {
         case calendar
         case search
         case settings
+
+        static func initial(isLibraryEmpty: Bool, hasUpNextEpisodes: Bool) -> Self {
+            if isLibraryEmpty {
+                return .search
+            }
+            return hasUpNextEpisodes ? .calendar : .library
+        }
     }
 
-    var selectedTab: Tab = .library
+    var selectedTab: Tab
 
     let libraryCoordinator: LibraryCoordinator
     let calendarCoordinator: CalendarCoordinator
     let searchCoordinator: SearchCoordinator
     let settingsCoordinator: SettingsCoordinator
 
-    init(container: AppContainer) {
+    init(container: AppContainer, initialTab: Tab) {
+        selectedTab = initialTab
         libraryCoordinator = container.makeLibraryCoordinator()
         calendarCoordinator = container.makeCalendarCoordinator()
         searchCoordinator = container.makeSearchCoordinator()

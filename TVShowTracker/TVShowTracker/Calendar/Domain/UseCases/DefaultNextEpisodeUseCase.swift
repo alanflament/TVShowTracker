@@ -15,6 +15,18 @@ struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
         self.episodeScheduleStore = episodeScheduleStore
     }
 
+    func hasNextEpisode(
+        in items: [LibraryItem],
+        watchedEpisodeIDs: Set<String>,
+        now: Date
+    ) -> Bool {
+        items
+            .filter { $0.trackingStatus.appearsInUpNext }
+            .contains { item in
+                nextEpisode(for: item, watchedEpisodeIDs: watchedEpisodeIDs, now: now) != nil
+            }
+    }
+
     func findNextEpisode(
         in items: [LibraryItem],
         watchedEpisodeIDs: Set<String>,

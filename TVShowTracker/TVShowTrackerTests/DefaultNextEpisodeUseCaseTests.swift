@@ -197,6 +197,30 @@ struct DefaultNextEpisodeUseCaseTests {
         #expect(result.episodes.map(\.candidate.id) == [watchingItem.id])
         #expect(result.availableEpisodeCount == 1)
     }
+
+    @Test func detectsWhetherPersistedStateContainsAnUpNextEpisode() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let watchedEpisode = makeEpisode(showID: 1, number: 1, airDate: now.addingTimeInterval(-3600))
+        let nextEpisode = makeEpisode(showID: 1, number: 2, airDate: now.addingTimeInterval(3600))
+        let item = makeItem(id: 1, title: "The Bear")
+        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+            EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
+                provider: .tmdb,
+                showID: 1,
+                number: 1,
+                name: "Season 1",
+                episodes: [watchedEpisode, nextEpisode]
+            )])
+        ]))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+
+        #expect(useCase.hasNextEpisode(in: [item], watchedEpisodeIDs: [watchedEpisode.id], now: now))
+        #expect(!useCase.hasNextEpisode(
+            in: [item],
+            watchedEpisodeIDs: [watchedEpisode.id, nextEpisode.id],
+            now: now
+        ))
+    }
 }
 
 private extension DefaultNextEpisodeUseCaseTests {

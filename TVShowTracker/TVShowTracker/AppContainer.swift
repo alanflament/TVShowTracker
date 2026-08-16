@@ -108,7 +108,24 @@ final class AppContainer {
     func makeAppCoordinator() -> AppCoordinator {
         AppCoordinator(
             container: self,
-            followedMediaRefreshStore: followedMediaRefreshStore
+            followedMediaRefreshStore: followedMediaRefreshStore,
+            initialTab: initialMainTab
+        )
+    }
+
+    private var initialMainTab: MainCoordinator.Tab {
+        let items = followedMediaStore.items
+        let nextEpisodeUseCase = DefaultNextEpisodeUseCase(
+            episodeScheduleStore: episodeScheduleStore
+        )
+        let hasUpNextEpisodes = nextEpisodeUseCase.hasNextEpisode(
+            in: items,
+            watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs,
+            now: .now
+        )
+        return MainCoordinator.Tab.initial(
+            isLibraryEmpty: items.isEmpty,
+            hasUpNextEpisodes: hasUpNextEpisodes
         )
     }
 

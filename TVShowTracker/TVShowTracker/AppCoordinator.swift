@@ -12,8 +12,12 @@ final class AppCoordinator {
     let mainCoordinator: MainCoordinator
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
-    init(container: AppContainer, followedMediaRefreshStore: FollowedMediaRefreshStore) {
-        mainCoordinator = MainCoordinator(container: container)
+    init(
+        container: AppContainer,
+        followedMediaRefreshStore: FollowedMediaRefreshStore,
+        initialTab: MainCoordinator.Tab
+    ) {
+        mainCoordinator = MainCoordinator(container: container, initialTab: initialTab)
         self.followedMediaRefreshStore = followedMediaRefreshStore
     }
 
