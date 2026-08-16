@@ -24,7 +24,7 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
                 guard let item = pendingItems.next() else {
                     break
                 }
-                group.addTask {
+                group.addTask(priority: .background) {
                     await refreshSchedule(for: item)
                 }
             }
@@ -34,7 +34,7 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
                 results.append(result)
 
                 if let item = pendingItems.next() {
-                    group.addTask {
+                    group.addTask(priority: .background) {
                         await refreshSchedule(for: item)
                     }
                 }
@@ -48,33 +48,20 @@ struct DefaultEpisodeScheduleRefreshUseCase: EpisodeScheduleRefreshUseCase {
 
 private extension DefaultEpisodeScheduleRefreshUseCase {
     func refreshSchedule(for item: LibraryItem) async -> EpisodeScheduleRefreshResult {
-        guard let details = try? await showDetailsUseCase.fetchDetails(for: item.candidate) else {
+        guard let snapshot = try? await showDetailsUseCase.fetchRefreshSnapshot(for: item.candidate) else {
             return EpisodeScheduleRefreshResult(
                 item: item,
-                seasons: item.status?.isTerminal == true
-                    ? nil
-                    : try? await showDetailsUseCase.fetchEpisodes(for: item.candidate),
+                seasons: nil,
                 status: nil,
                 details: nil
             )
         }
 
-        guard details.status?.isTerminal != true else {
-            return EpisodeScheduleRefreshResult(
-                item: item,
-                seasons: nil,
-                status: details.status,
-                details: details
-            )
-        }
-
         return EpisodeScheduleRefreshResult(
             item: item,
-            seasons: try? await showDetailsUseCase.fetchEpisodes(
-                for: item.updating(with: details).candidate
-            ),
-            status: details.status,
-            details: details
+            seasons: snapshot.seasons,
+            status: snapshot.details.status,
+            details: snapshot.details
         )
     }
 }

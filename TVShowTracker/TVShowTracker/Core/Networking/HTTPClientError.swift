@@ -17,7 +17,11 @@ enum HTTPClientError: LocalizedError, Sendable {
         case .nonHTTPResponse:
             "The server returned an invalid response."
         case let .unacceptableStatusCode(statusCode):
-            "The server returned HTTP status \(statusCode)."
+            if statusCode == 429 {
+                "The provider rate limit was reached. Try again later."
+            } else {
+                "The server returned HTTP status \(statusCode)."
+            }
         case .invalidRequest:
             "The request could not be created."
         }

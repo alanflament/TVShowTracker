@@ -8,6 +8,7 @@
 protocol TVShowDetailsRepository: Sendable {
     func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails
     func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason]
+    func fetchRefreshSnapshot(for candidate: SearchCandidate) async throws -> ShowRefreshSnapshot
     func fetchEpisodeDetails(
         for candidate: SearchCandidate,
         episode: ShowEpisode
@@ -15,6 +16,17 @@ protocol TVShowDetailsRepository: Sendable {
 }
 
 extension TVShowDetailsRepository {
+    func fetchRefreshSnapshot(for candidate: SearchCandidate) async throws -> ShowRefreshSnapshot {
+        let details = try await fetchDetails(for: candidate)
+        let seasons: [ShowSeason]?
+        if details.status?.isTerminal == true {
+            seasons = nil
+        } else {
+            seasons = try? await fetchEpisodes(for: candidate.updating(with: details))
+        }
+        return ShowRefreshSnapshot(details: details, seasons: seasons)
+    }
+
     func fetchEpisodeDetails(
         for candidate: SearchCandidate,
         episode: ShowEpisode

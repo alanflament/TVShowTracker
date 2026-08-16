@@ -70,6 +70,7 @@ struct TVShowTrackerTests {
               },
               "description": "A ninja story.",
               "coverImage": { "large": null, "medium": null },
+              "format": "TV",
               "status": "FINISHED",
               "episodes": 220,
               "startDate": { "year": 2002 },

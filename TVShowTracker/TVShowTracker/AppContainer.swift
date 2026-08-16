@@ -33,6 +33,8 @@ final class AppContainer {
         )
         Self.seedDemoDataIfNeeded(into: followedMediaStore)
 
+        let aniListHTTPClient = Self.makeAniListHTTPClient()
+        let animeSearchRepository = Self.makeAnimeSearchRepository(aniListHTTPClient: aniListHTTPClient)
         let tvShowRepository: any TVShowSearchRepository
 
         if let tmdbAccessToken = Self.tmdbAccessToken {
@@ -43,11 +45,6 @@ final class AppContainer {
         } else {
             tvShowRepository = UnconfiguredTVShowSearchRepository()
         }
-
-        let animeSearchRepository = FallbackAnimeSearchRepository(
-            primary: AniListAnimeSearchRepository(),
-            fallback: JikanAnimeSearchRepository()
-        )
 
         searchCatalogUseCase = DefaultSearchCatalogUseCase(
             tvShowRepository: tvShowRepository,
@@ -67,7 +64,7 @@ final class AppContainer {
 
         showDetailsUseCase = DefaultShowDetailsUseCase(
             tvShowRepository: detailsTVRepository,
-            animeRepository: AniListAnimeDetailsRepository()
+            animeRepository: AniListAnimeDetailsRepository(httpClient: aniListHTTPClient)
         )
         followedMediaRefreshStore = FollowedMediaRefreshStore(
             refreshUseCase: DefaultEpisodeScheduleRefreshUseCase(
@@ -76,6 +73,23 @@ final class AppContainer {
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: episodeScheduleStore
+        )
+    }
+
+    private static func makeAniListHTTPClient() -> any HTTPClient {
+        RateLimitedHTTPClient(client: URLSessionHTTPClient(), minimumInterval: 2.1)
+    }
+
+    private static func makeAnimeSearchRepository(
+        aniListHTTPClient: any HTTPClient
+    ) -> any AnimeSearchRepository {
+        let jikanHTTPClient = RateLimitedHTTPClient(
+            client: URLSessionHTTPClient(),
+            minimumInterval: 1.05
+        )
+        return FallbackAnimeSearchRepository(
+            primary: AniListAnimeSearchRepository(httpClient: aniListHTTPClient),
+            fallback: JikanAnimeSearchRepository(httpClient: jikanHTTPClient)
         )
     }
 

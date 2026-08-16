@@ -110,14 +110,33 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
         status?.requiresEpisodeScheduleRefresh ?? true
     }
 
-    func requiresProviderRefresh(at date: Date, force: Bool) -> Bool {
-        guard !force, status?.isTerminal == true else {
+    func requiresProviderRefresh(
+        at date: Date,
+        force: Bool,
+        scheduleRefreshedAt: Date?
+    ) -> Bool {
+        if force {
             return true
         }
-        guard let lastLifecycleCheckAt else {
+
+        if status?.isTerminal == true {
+            guard trackingStatus == .watching || trackingStatus == .completed else {
+                return false
+            }
+            guard let lastLifecycleCheckAt else {
+                return true
+            }
+            return date.timeIntervalSince(lastLifecycleCheckAt) >= Self.terminalRefreshInterval
+        }
+
+        guard trackingStatus.appearsInUpNext else {
+            return false
+        }
+
+        guard let scheduleRefreshedAt else {
             return true
         }
-        return date.timeIntervalSince(lastLifecycleCheckAt) >= 30 * 24 * 60 * 60
+        return date.timeIntervalSince(scheduleRefreshedAt) >= scheduleRefreshInterval
     }
 
     func contains(_ episode: ShowEpisode) -> Bool {
@@ -206,5 +225,15 @@ struct LibraryItem: Identifiable, Hashable, Sendable {
             trackingStatus: trackingStatus,
             lastLifecycleCheckAt: lastLifecycleCheckAt
         )
+    }
+}
+
+private extension LibraryItem {
+    static let terminalRefreshInterval: TimeInterval = 30 * 24 * 60 * 60
+    static let dailyRefreshInterval: TimeInterval = 24 * 60 * 60
+    static let hiatusRefreshInterval: TimeInterval = 7 * 24 * 60 * 60
+
+    var scheduleRefreshInterval: TimeInterval {
+        status == .hiatus ? Self.hiatusRefreshInterval : Self.dailyRefreshInterval
     }
 }

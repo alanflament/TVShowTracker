@@ -37,6 +37,15 @@ struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
         }
     }
 
+    func fetchRefreshSnapshot(for candidate: SearchCandidate) async throws -> ShowRefreshSnapshot {
+        switch candidate.kind {
+        case .tvShow:
+            try await tvShowRepository.fetchRefreshSnapshot(for: candidate)
+        case .anime:
+            try await animeRepository.fetchRefreshSnapshot(for: candidate)
+        }
+    }
+
     func fetchEpisodeDetails(
         for candidate: SearchCandidate,
         episode: ShowEpisode

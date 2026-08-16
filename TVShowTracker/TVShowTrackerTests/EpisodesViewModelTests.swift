@@ -2,8 +2,6 @@
 //  EpisodesViewModelTests.swift
 //  TVShowTrackerTests
 //
-//  Created by Codex on 13/08/2026.
-//
 //  Created by Alan Flament on 13/08/2026.
 //
 

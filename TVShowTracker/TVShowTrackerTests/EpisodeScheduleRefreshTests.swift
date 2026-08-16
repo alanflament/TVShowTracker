@@ -80,7 +80,7 @@ struct EpisodeScheduleRefreshTests {
             episodeScheduleStore: scheduleStore
         )
 
-        await refreshStore.refresh()
+        await refreshStore.refresh(force: true)
 
         #expect(libraryStore.items.first?.trackingStatus == .watching)
     }

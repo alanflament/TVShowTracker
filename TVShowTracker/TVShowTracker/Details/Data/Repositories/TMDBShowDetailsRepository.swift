@@ -8,6 +8,7 @@
 import Foundation
 
 struct TMDBShowDetailsRepository: TVShowDetailsRepository {
+    private static let maximumConcurrentSeasonRequests = 3
     private let accessToken: String
     private let language: String
     private let httpClient: any HTTPClient
@@ -29,26 +30,57 @@ struct TMDBShowDetailsRepository: TVShowDetailsRepository {
 
     func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason] {
         let details: TMDBShowDetails = try await request(path: "/3/tv/\(candidate.providerID)")
+        return try await fetchSeasons(from: details, candidate: candidate)
+    }
+
+    func fetchRefreshSnapshot(for candidate: SearchCandidate) async throws -> ShowRefreshSnapshot {
+        let details: TMDBShowDetails = try await request(path: "/3/tv/\(candidate.providerID)")
+        let domainDetails = details.asDomain
+        let seasons: [ShowSeason]?
+        if domainDetails.status?.isTerminal == true {
+            seasons = nil
+        } else {
+            seasons = try? await fetchSeasons(from: details, candidate: candidate)
+        }
+        return ShowRefreshSnapshot(details: domainDetails, seasons: seasons)
+    }
+
+    private func fetchSeasons(
+        from details: TMDBShowDetails,
+        candidate: SearchCandidate
+    ) async throws -> [ShowSeason] {
+        let summaries = details.seasons.filter { $0.seasonNumber >= 0 }
 
         return try await withThrowingTaskGroup(of: ShowSeason.self, returning: [ShowSeason].self) { group in
-            for season in details.seasons where season.seasonNumber >= 0 {
+            var pendingSeasons = summaries.makeIterator()
+
+            for _ in 0 ..< min(Self.maximumConcurrentSeasonRequests, summaries.count) {
+                guard let season = pendingSeasons.next() else {
+                    break
+                }
                 group.addTask {
-                    let seasonDetails: TMDBSeasonDetails = try await request(
-                        path: "/3/tv/\(candidate.providerID)/season/\(season.seasonNumber)"
-                    )
-                    return seasonDetails.asDomain(
-                        provider: .tmdb,
-                        showID: candidate.providerID
-                    )
+                    try await fetchSeason(season.seasonNumber, for: candidate)
                 }
             }
 
             var seasons = [ShowSeason]()
             for try await season in group {
                 seasons.append(season)
+                if let pendingSeason = pendingSeasons.next() {
+                    group.addTask {
+                        try await fetchSeason(pendingSeason.seasonNumber, for: candidate)
+                    }
+                }
             }
             return seasons.sorted { $0.number < $1.number }
         }
+    }
+
+    private func fetchSeason(_ number: Int, for candidate: SearchCandidate) async throws -> ShowSeason {
+        let seasonDetails: TMDBSeasonDetails = try await request(
+            path: "/3/tv/\(candidate.providerID)/season/\(number)"
+        )
+        return seasonDetails.asDomain(provider: .tmdb, showID: candidate.providerID)
     }
 
     func fetchEpisodeDetails(

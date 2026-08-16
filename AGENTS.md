@@ -70,10 +70,15 @@ Details features:
 - `FollowedMediaRefreshStore` refreshes followed-media episode schedules in the
   background at app start. Its progress must be non-blocking; Calendar resolves
   the next episode only from the persisted schedule cache.
-- Skip launch schedule refreshes only for terminal `finished` or `cancelled`
-  media. `airing`, `upcoming`, `hiatus`, and unknown statuses remain eligible;
-  TMDB search initially has an unknown status, which the first refresh resolves
-  and persists from TV details.
+- Automatic launch schedule refreshes only include `watching` titles. Missing
+  schedules refresh immediately; `airing`, `upcoming`, and unknown statuses use
+  the persisted schedule's 24-hour freshness window, while `hiatus` uses seven
+  days. Terminal `finished` or `cancelled` titles that are `watching` or
+  `completed` retain a 30-day lifecycle check so a renewal can restore them to
+  `watching`; planned, paused, and dropped titles are skipped. Pull-to-refresh
+  explicitly forces all followed titles regardless of tracking status or
+  freshness. TMDB search initially has an unknown status, which the first
+  eligible refresh resolves and persists from TV details.
 - `Library` is the presentation feature that renders followed content through
   `LibraryViewModel`.
 
@@ -154,6 +159,10 @@ Reject malformed or unsupported schema versions before writing data.
   be published.
 - Keep networking behind `HTTPClient` so repositories can be tested with a
   deterministic fake.
+- Share rate-limited provider clients between Search and Details. AniList and
+  Jikan requests must honor their configured request spacing and defer future
+  calls when a `429` response supplies `Retry-After`. Keep nested provider
+  fan-out bounded as well as the outer followed-media worker pool.
 - Search presents details with a sheet. `DetailsSheetView` owns that modal
   `NavigationStack`; `ShowDetailsView` is reusable inside the Library's
   navigation stack, and episode lists push in either context.

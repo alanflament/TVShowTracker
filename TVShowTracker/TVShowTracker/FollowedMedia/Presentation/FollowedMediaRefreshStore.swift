@@ -38,13 +38,24 @@ final class FollowedMediaRefreshStore {
 
         let allItems = followedMediaStore.items
         let refreshDate = Date.now
-        let items = allItems.filter { $0.requiresProviderRefresh(at: refreshDate, force: force) }
+        let items = allItems.filter {
+            $0.requiresProviderRefresh(
+                at: refreshDate,
+                force: force,
+                scheduleRefreshedAt: episodeScheduleStore.schedule(for: $0)?.refreshedAt
+            )
+        }
         totalMediaCount = items.count
         processedMediaCount = 0
+        episodeScheduleStore.removeSchedules(excluding: Set(allItems.map(\.id)))
+
+        guard !items.isEmpty else {
+            return
+        }
+
         isRefreshing = true
         defer { isRefreshing = false }
 
-        episodeScheduleStore.removeSchedules(excluding: Set(allItems.map(\.id)))
         _ = await refreshUseCase.refreshSchedules(for: items) { [weak self] result in
             guard let self else {
                 return
