@@ -90,6 +90,57 @@ struct EpisodesViewModelTests {
         #expect(episodes.allSatisfy { !viewModel.isWatched($0) })
     }
 
+    @Test func watchingAnEpisodeAddsAnUnfollowedMediaAsWatching() async throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
+            configurations: configuration
+        )
+        let followedMediaStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let episodeScheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
+        let episodeWatchStore = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore
+        )
+        let watchedEpisode = episode(number: 1)
+        let season = ShowSeason(
+            provider: .tmdb,
+            showID: 42,
+            number: 1,
+            name: "Season 1",
+            episodes: [watchedEpisode, episode(number: 2)]
+        )
+        let viewModel = EpisodesViewModel(
+            candidate: candidate,
+            useCase: EpisodesUseCaseStub(seasons: [season]),
+            followedMediaStore: followedMediaStore,
+            episodeScheduleStore: episodeScheduleStore,
+            episodeWatchStore: episodeWatchStore
+        )
+        let detailsViewModel = ShowDetailsViewModel(
+            candidate: candidate,
+            useCase: EmptyEpisodesUseCaseStub(),
+            followedMediaStore: followedMediaStore
+        )
+
+        await viewModel.load()
+        #expect(detailsViewModel.trackingStatus == nil)
+        viewModel.toggleWatched(watchedEpisode)
+
+        let item = try #require(followedMediaStore.item(id: candidate.id))
+        #expect(item.trackingStatus == .watching)
+        #expect(episodeWatchStore.isWatched(watchedEpisode))
+        #expect(episodeScheduleStore.schedule(for: item)?.seasons == [season])
+        #expect(detailsViewModel.trackingStatus == .watching)
+    }
+
     private var candidate: SearchCandidate {
         SearchCandidate(
             provider: .tmdb,
@@ -128,5 +179,17 @@ private struct EmptyEpisodesUseCaseStub: ShowDetailsUseCase {
 
     func fetchEpisodes(for _: SearchCandidate) async throws -> [ShowSeason] {
         []
+    }
+}
+
+private struct EpisodesUseCaseStub: ShowDetailsUseCase {
+    let seasons: [ShowSeason]
+
+    func fetchDetails(for _: SearchCandidate) async throws -> ShowDetails {
+        throw EpisodeDetailsError.notFound
+    }
+
+    func fetchEpisodes(for _: SearchCandidate) async throws -> [ShowSeason] {
+        seasons
     }
 }

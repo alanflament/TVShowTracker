@@ -62,6 +62,9 @@ final class EpisodesViewModel {
         guard episode.isReleased else {
             return
         }
+        if !isWatched(episode) {
+            addToWatchingIfNeeded()
+        }
         episodeWatchStore.toggle(episode)
     }
 
@@ -90,6 +93,25 @@ final class EpisodesViewModel {
     }
 
     private func markWatched(_ episodes: [ShowEpisode]) {
-        episodeWatchStore.markWatched(episodes.filter(\.isReleased))
+        let releasedEpisodes = episodes.filter(\.isReleased)
+        guard !releasedEpisodes.isEmpty else {
+            return
+        }
+        addToWatchingIfNeeded()
+        episodeWatchStore.markWatched(releasedEpisodes)
+    }
+
+    private func addToWatchingIfNeeded() {
+        guard followedMediaStore.item(id: candidate.id) == nil else {
+            return
+        }
+
+        followedMediaStore.addIfMissing(candidate, trackingStatus: .watching)
+        guard let item = followedMediaStore.item(id: candidate.id),
+              case let .loaded(seasons) = state
+        else {
+            return
+        }
+        episodeScheduleStore.save(item: item, seasons: seasons)
     }
 }
