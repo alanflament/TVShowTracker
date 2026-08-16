@@ -119,6 +119,7 @@ struct SearchView: View {
             }
         }
         .listStyle(.plain)
+        .searchResultsLoadingIndicator(isVisible: viewModel.isRefreshingResults)
     }
 
     private func unavailableProviderMessage(for catalog: SearchCatalog) -> String {
@@ -131,6 +132,46 @@ struct SearchView: View {
             .sorted()
 
         return failures.joined(separator: "\n")
+    }
+}
+
+private extension View {
+    func searchResultsLoadingIndicator(isVisible: Bool) -> some View {
+        modifier(SearchResultsLoadingIndicatorModifier(isVisible: isVisible))
+    }
+}
+
+private struct SearchResultsLoadingIndicatorModifier: ViewModifier {
+    let isVisible: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if isVisible {
+                    SearchResultsLoadingIndicator()
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: isVisible)
+    }
+}
+
+private struct SearchResultsLoadingIndicator: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+
+            Text("Updating results…")
+                .font(.footnote.weight(.medium))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(.regularMaterial, in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Updating search results")
+        .allowsHitTesting(false)
     }
 }
 

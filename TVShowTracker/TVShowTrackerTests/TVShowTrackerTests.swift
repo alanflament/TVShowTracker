@@ -12,7 +12,7 @@ import Testing
 
 @MainActor
 struct TVShowTrackerTests {
-    @Test func searchSortsEachProviderSectionAlphabetically() async {
+    @Test func searchPreservesEachProviderRelevanceOrder() async {
         let useCase = DefaultSearchCatalogUseCase(
             tvShowRepository: TVShowRepositoryStub(candidates: [
                 .tvShow(id: 2, title: "The Bear"),
@@ -26,8 +26,8 @@ struct TVShowTrackerTests {
 
         let catalog = await useCase.search(matching: "a")
 
-        #expect(catalog.tvShows.map(\.title) == ["Abbott Elementary", "The Bear"])
-        #expect(catalog.anime.map(\.title) == ["Attack on Titan", "Zom 100"])
+        #expect(catalog.tvShows.map(\.title) == ["The Bear", "Abbott Elementary"])
+        #expect(catalog.anime.map(\.title) == ["Zom 100", "Attack on Titan"])
         #expect(catalog.unavailableProviders.isEmpty)
     }
 

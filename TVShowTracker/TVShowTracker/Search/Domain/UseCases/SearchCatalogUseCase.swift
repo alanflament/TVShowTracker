@@ -27,8 +27,8 @@ struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
         let animeResult = await anime
 
         return SearchCatalog(
-            tvShows: tvShowResult.candidates.sorted(by: isAlphabeticallyOrdered),
-            anime: animeResult.candidates.sorted(by: isAlphabeticallyOrdered),
+            tvShows: tvShowResult.candidates,
+            anime: animeResult.candidates,
             unavailableProviders: tvShowResult.unavailableProviders.union(animeResult.unavailableProviders),
             providerErrors: tvShowResult.providerErrors.merging(animeResult.providerErrors) { _, latest in latest }
         )
@@ -59,10 +59,6 @@ struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
                 providerErrors: [.aniList: error.searchFailureMessage]
             )
         }
-    }
-
-    private func isAlphabeticallyOrdered(_ lhs: SearchCandidate, _ rhs: SearchCandidate) -> Bool {
-        lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
     }
 }
 

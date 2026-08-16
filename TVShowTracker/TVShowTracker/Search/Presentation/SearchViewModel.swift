@@ -9,6 +9,8 @@ import SwiftUI
 
 @MainActor @Observable
 final class SearchViewModel {
+    static let searchDebounceDuration = Duration.milliseconds(300)
+
     enum State {
         case idle
         case loading
@@ -17,16 +19,30 @@ final class SearchViewModel {
 
     var query = ""
     private(set) var state: State = .idle
+    private(set) var isSearching = false
+
+    var isRefreshingResults: Bool {
+        guard isSearching, case let .loaded(catalog) = state else {
+            return false
+        }
+        return !catalog.isEmpty
+    }
 
     private let searchCatalogUseCase: any SearchCatalogUseCase
     private let followedMediaStore: FollowedMediaStore
+    private let debounce: @Sendable (Duration) async throws -> Void
+    private var activeSearchID: UUID?
 
     init(
         searchCatalogUseCase: any SearchCatalogUseCase,
-        followedMediaStore: FollowedMediaStore
+        followedMediaStore: FollowedMediaStore,
+        debounce: @escaping @Sendable (Duration) async throws -> Void = { duration in
+            try await Task.sleep(for: duration)
+        }
     ) {
         self.searchCatalogUseCase = searchCatalogUseCase
         self.followedMediaStore = followedMediaStore
+        self.debounce = debounce
     }
 
     func trackingStatus(for candidate: SearchCandidate) -> TrackingStatus? {
@@ -60,28 +76,59 @@ final class SearchViewModel {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard trimmedQuery.count >= 2 else {
+            activeSearchID = nil
+            isSearching = false
             state = .idle
             return
         }
 
-        state = .loading
+        let searchID = UUID()
+        activeSearchID = searchID
+        isSearching = true
+
+        if !isDisplayingResults {
+            state = .loading
+        }
 
         do {
-            try await Task.sleep(nanoseconds: 300_000_000)
+            try await debounce(Self.searchDebounceDuration)
         } catch {
+            finishSearch(id: searchID)
             return
         }
 
-        guard !Task.isCancelled else {
+        guard !Task.isCancelled, normalizedQuery == trimmedQuery else {
+            finishSearch(id: searchID)
             return
         }
 
         let catalog = await searchCatalogUseCase.search(matching: trimmedQuery)
 
-        guard !Task.isCancelled else {
+        guard !Task.isCancelled, normalizedQuery == trimmedQuery else {
+            finishSearch(id: searchID)
             return
         }
 
         state = .loaded(catalog)
+        finishSearch(id: searchID)
+    }
+
+    private var normalizedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isDisplayingResults: Bool {
+        guard case let .loaded(catalog) = state else {
+            return false
+        }
+        return !catalog.isEmpty
+    }
+
+    private func finishSearch(id: UUID) {
+        guard activeSearchID == id else {
+            return
+        }
+        activeSearchID = nil
+        isSearching = false
     }
 }
