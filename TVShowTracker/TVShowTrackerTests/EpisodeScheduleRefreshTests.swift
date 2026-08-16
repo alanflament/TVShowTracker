@@ -188,4 +188,5 @@ private struct WatchRepositoryStub: EpisodeWatchRepository {
     func save(_: WatchedEpisode) throws {}
     func save(_: [WatchedEpisode]) throws {}
     func delete(id _: String) throws {}
+    func delete(ids _: [String]) throws {}
 }

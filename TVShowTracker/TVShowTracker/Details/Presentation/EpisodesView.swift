@@ -143,8 +143,8 @@ struct EpisodesView: View {
                 onToggleExpanded: {
                     toggleExpansion(for: season)
                 },
-                onMarkWatched: {
-                    viewModel.markSeasonWatched(season)
+                onToggleWatched: {
+                    viewModel.toggleSeasonWatched(season)
                     watchActionID += 1
                 }
             )
@@ -206,10 +206,12 @@ private struct SeasonHeader: View {
     let watchedEpisodeCount: Int
     let unwatchedReleasedEpisodeCount: Int
     let onToggleExpanded: () -> Void
-    let onMarkWatched: () -> Void
+    let onToggleWatched: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
+            seasonWatchControl
+
             Button(action: onToggleExpanded) {
                 VStack(alignment: .leading, spacing: 7) {
                     Text(season.displayName)
@@ -238,20 +240,7 @@ private struct SeasonHeader: View {
             .accessibilityValue(expansionAccessibilityValue)
             .accessibilityHint(season.episodes.isEmpty ? "" : "Shows or hides the episode list")
 
-            if season.episodes.isEmpty {
-                Image(systemName: "calendar")
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("Episode schedule to be announced")
-            } else {
-                Button(action: onMarkWatched) {
-                    Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
-                        .foregroundStyle(isFullyWatched ? .green : .secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(unwatchedReleasedEpisodeCount == 0)
-                .accessibilityLabel("Mark all released episodes in \(season.displayName) as watched")
-                .accessibilityValue(isFullyWatched ? "Complete" : "\(unwatchedReleasedEpisodeCount) available")
-
+            if !season.episodes.isEmpty {
                 Button(action: onToggleExpanded) {
                     Image(systemName: "chevron.right")
                         .font(.subheadline.weight(.semibold))
@@ -266,6 +255,36 @@ private struct SeasonHeader: View {
         .padding(.vertical, 8)
         .textCase(nil)
         .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private var seasonWatchControl: some View {
+        if season.episodes.isEmpty {
+            Image(systemName: "calendar")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .frame(width: 44, height: 44)
+                .accessibilityLabel("Episode schedule to be announced")
+        } else {
+            Button(action: onToggleWatched) {
+                Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                    .font(.title2)
+                    .foregroundStyle(isFullyWatched ? .green : .secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(unwatchedReleasedEpisodeCount == 0 && !isFullyWatched)
+            .accessibilityLabel(seasonWatchAccessibilityLabel)
+            .accessibilityValue(isFullyWatched ? "Complete" : "\(unwatchedReleasedEpisodeCount) available")
+        }
+    }
+
+    private var seasonWatchAccessibilityLabel: String {
+        if isFullyWatched {
+            return "Mark all episodes in \(season.displayName) as unwatched"
+        }
+        return "Mark all released episodes in \(season.displayName) as watched"
     }
 
     private var progress: Double {

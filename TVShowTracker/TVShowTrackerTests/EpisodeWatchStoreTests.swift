@@ -31,6 +31,23 @@ struct EpisodeWatchStoreTests {
         #expect(try repository.loadWatchedEpisodes().map(\WatchedEpisode.id).sorted() == episodes.map(\.id).sorted())
     }
 
+    @Test func marksEpisodesUnwatchedInBatch() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: WatchedEpisodeModel.self,
+            configurations: configuration
+        )
+        let repository = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+        let store = EpisodeWatchStore(repository: repository)
+        let episodes = [makeEpisode(number: 1), makeEpisode(number: 2)]
+        store.markWatched(episodes)
+
+        store.markUnwatched(episodes)
+
+        #expect(episodes.allSatisfy { !store.isWatched($0) })
+        #expect(try repository.loadWatchedEpisodes().isEmpty)
+    }
+
     @Test func keepsAnOngoingMediaWatchingWhenCaughtUp() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(

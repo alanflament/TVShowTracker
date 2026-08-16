@@ -65,8 +65,12 @@ final class EpisodesViewModel {
         episodeWatchStore.toggle(episode)
     }
 
-    func markSeasonWatched(_ season: ShowSeason) {
-        markWatched(season.episodes)
+    func toggleSeasonWatched(_ season: ShowSeason) {
+        if areAllWatched(in: season.episodes) {
+            episodeWatchStore.markUnwatched(season.episodes)
+        } else {
+            markWatched(season.episodes)
+        }
     }
 
     func markAllWatched(_ seasons: [ShowSeason]) {

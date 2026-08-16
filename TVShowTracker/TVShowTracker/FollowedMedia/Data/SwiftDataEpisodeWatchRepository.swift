@@ -68,4 +68,21 @@ final class SwiftDataEpisodeWatchRepository: EpisodeWatchRepository {
             try modelContext.save()
         }
     }
+
+    func delete(ids: [String]) throws {
+        let uniqueIDs = Set(ids)
+        guard !uniqueIDs.isEmpty else {
+            return
+        }
+
+        let descriptor = FetchDescriptor<WatchedEpisodeModel>()
+        let episodes = try modelContext.fetch(descriptor)
+            .filter { uniqueIDs.contains($0.id) }
+        guard !episodes.isEmpty else {
+            return
+        }
+
+        episodes.forEach(modelContext.delete)
+        try modelContext.save()
+    }
 }

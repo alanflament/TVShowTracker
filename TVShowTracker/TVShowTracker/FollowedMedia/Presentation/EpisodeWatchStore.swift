@@ -81,6 +81,22 @@ final class EpisodeWatchStore {
         }
     }
 
+    func markUnwatched(_ episodes: [ShowEpisode]) {
+        let episodesToUnmark = episodes.filter(isWatched)
+        guard !episodesToUnmark.isEmpty else {
+            return
+        }
+
+        do {
+            try repository.delete(ids: episodesToUnmark.map(\.id))
+            watchedEpisodeIDs.subtract(episodesToUnmark.map(\.id))
+            errorMessage = nil
+            episodesToUnmark.forEach(synchronizeTrackingStatus)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func markWatched(_ episode: ShowEpisode) {
         if saveWatchedEpisode(WatchedEpisode(episode: episode)) {
             synchronizeTrackingStatus(for: episode)
