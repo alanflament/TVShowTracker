@@ -12,11 +12,14 @@ struct MainCoordinatorView: View {
 
     var body: some View {
         TabView(selection: $coordinator.selectedTab) {
-            LibraryCoordinatorView(coordinator: coordinator.libraryCoordinator)
-                .tabItem {
-                    Label("My Shows", systemImage: "rectangle.stack")
-                }
-                .tag(MainCoordinator.Tab.library)
+            LibraryCoordinatorView(
+                coordinator: coordinator.libraryCoordinator,
+                searchDiscover: coordinator.searchDiscover(for:)
+            )
+            .tabItem {
+                Label("My Shows", systemImage: "rectangle.stack")
+            }
+            .tag(MainCoordinator.Tab.library)
 
             CalendarCoordinatorView(coordinator: coordinator.calendarCoordinator)
                 .tabItem {

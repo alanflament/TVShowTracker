@@ -108,6 +108,49 @@ struct LibraryViewModelTests {
         #expect(viewModel.items.map(\.title) == ["The Bear"])
     }
 
+    @Test func preparesAFilteredSearchForDiscoverWithoutLosingItsQuery() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let store = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
+        let viewModel = LibraryViewModel(followedMediaStore: store)
+        viewModel.query = "  Severance  "
+        viewModel.category = .history
+        viewModel.filter = .completed
+
+        viewModel.prepareForDiscoverSearch()
+
+        #expect(viewModel.discoverQuery == "Severance")
+        #expect(viewModel.query == "  Severance  ")
+        #expect(viewModel.category == .all)
+        #expect(viewModel.filter == .all)
+    }
+
+    @Test func newlyFollowedSearchResultAppearsInTheStillFilteredLibrary() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            configurations: configuration
+        )
+        let store = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
+        let viewModel = LibraryViewModel(followedMediaStore: store)
+        viewModel.query = "Severance"
+
+        #expect(viewModel.items.isEmpty)
+
+        store.addIfMissing(candidate(id: 2, title: "Severance"), trackingStatus: .planToWatch)
+
+        #expect(viewModel.items.map(\.title) == ["Severance"])
+    }
+
     @Test func preservesTrackingStatusWhenProviderDetailsAreUpdated() throws {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(

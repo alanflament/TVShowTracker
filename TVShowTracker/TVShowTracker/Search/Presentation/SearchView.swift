@@ -58,7 +58,7 @@ struct SearchView: View {
             }
             .navigationTitle("Discover")
             .searchable(text: $viewModel.query, prompt: "Search TV shows and anime")
-            .task(id: viewModel.query) {
+            .task(id: viewModel.searchTaskID) {
                 await viewModel.search()
             }
             .sheet(item: $selectedCandidate) { candidate in

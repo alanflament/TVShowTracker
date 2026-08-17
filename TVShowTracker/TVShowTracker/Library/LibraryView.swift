@@ -14,6 +14,7 @@ struct LibraryView: View {
 
     let viewModel: LibraryViewModel
     let makeDetailsView: (SearchCandidate) -> ShowDetailsView
+    let searchDiscover: (String) -> Void
 
     var body: some View {
         @Bindable var viewModel = viewModel
@@ -25,7 +26,7 @@ struct LibraryView: View {
                     systemImage: "externaldrive.badge.xmark",
                     description: errorMessage
                 )
-            } else if viewModel.isLibraryEmpty {
+            } else if viewModel.isLibraryEmpty, viewModel.discoverQuery == nil {
                 TrackerEmptyState(
                     title: "Build your watchlist",
                     systemImage: "rectangle.stack.badge.plus",
@@ -174,16 +175,32 @@ struct LibraryView: View {
 
     private func noMatchesView(_ viewModel: LibraryViewModel) -> some View {
         VStack(spacing: 0) {
-            TrackerEmptyState(
-                title: "No matching shows",
-                systemImage: "magnifyingglass",
-                description: "Try a different title, or clear the current filter to see your full library."
-            )
+            if let query = viewModel.discoverQuery {
+                TrackerEmptyState(
+                    title: "Not in My Shows",
+                    systemImage: "magnifyingglass.circle.fill",
+                    description: "Nothing in your library matches “\(query)”. Search for it in Discover and add it to My Shows."
+                )
 
-            Button("Show all shows") {
-                viewModel.resetFilters()
+                Button {
+                    viewModel.prepareForDiscoverSearch()
+                    searchDiscover(query)
+                } label: {
+                    Label("Search in Discover", systemImage: "sparkles")
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                TrackerEmptyState(
+                    title: "No matching shows",
+                    systemImage: "line.3.horizontal.decrease.circle",
+                    description: "No shows match these filters. Clear them to see your full library."
+                )
+
+                Button("Show all shows") {
+                    viewModel.resetFilters()
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -9,10 +9,15 @@ import SwiftUI
 
 struct LibraryCoordinatorView: View {
     let coordinator: LibraryCoordinator
+    let searchDiscover: (String) -> Void
     @State private var viewModel: LibraryViewModel
 
-    init(coordinator: LibraryCoordinator) {
+    init(
+        coordinator: LibraryCoordinator,
+        searchDiscover: @escaping (String) -> Void
+    ) {
         self.coordinator = coordinator
+        self.searchDiscover = searchDiscover
         _viewModel = State(initialValue: coordinator.makeLibraryViewModel())
     }
 
@@ -20,7 +25,8 @@ struct LibraryCoordinatorView: View {
         NavigationStack {
             LibraryView(
                 viewModel: viewModel,
-                makeDetailsView: coordinator.makeDetailsView(for:)
+                makeDetailsView: coordinator.makeDetailsView(for:),
+                searchDiscover: searchDiscover
             )
         }
     }

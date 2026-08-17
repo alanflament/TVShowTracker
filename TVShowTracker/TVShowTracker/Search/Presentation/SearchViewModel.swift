@@ -11,6 +11,11 @@ import SwiftUI
 final class SearchViewModel {
     static let searchDebounceDuration = Duration.milliseconds(300)
 
+    struct SearchTaskID: Hashable {
+        let query: String
+        let requestRevision: Int
+    }
+
     enum State {
         case idle
         case loading
@@ -20,6 +25,12 @@ final class SearchViewModel {
     var query = ""
     private(set) var state: State = .idle
     private(set) var isSearching = false
+    private var requestRevision = 0
+    private var immediateSearchTaskID: SearchTaskID?
+
+    var searchTaskID: SearchTaskID {
+        SearchTaskID(query: query, requestRevision: requestRevision)
+    }
 
     var isRefreshingResults: Bool {
         guard isSearching, case let .loaded(catalog) = state else {
@@ -72,7 +83,19 @@ final class SearchViewModel {
         followedMediaStore.remove(item)
     }
 
+    func requestSearch(for query: String) {
+        requestRevision += 1
+        self.query = query
+        immediateSearchTaskID = searchTaskID
+    }
+
     func search() async {
+        let taskID = searchTaskID
+        let shouldDebounce = immediateSearchTaskID != taskID
+        if !shouldDebounce {
+            immediateSearchTaskID = nil
+        }
+
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard trimmedQuery.count >= 2 else {
@@ -90,11 +113,13 @@ final class SearchViewModel {
             state = .loading
         }
 
-        do {
-            try await debounce(Self.searchDebounceDuration)
-        } catch {
-            finishSearch(id: searchID)
-            return
+        if shouldDebounce {
+            do {
+                try await debounce(Self.searchDebounceDuration)
+            } catch {
+                finishSearch(id: searchID)
+                return
+            }
         }
 
         guard !Task.isCancelled, normalizedQuery == trimmedQuery else {

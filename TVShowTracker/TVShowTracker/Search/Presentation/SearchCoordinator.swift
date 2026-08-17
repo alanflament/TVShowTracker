@@ -9,8 +9,7 @@ import SwiftUI
 
 @MainActor @Observable
 final class SearchCoordinator {
-    private let searchCatalogUseCase: any SearchCatalogUseCase
-    private let followedMediaStore: FollowedMediaStore
+    private let viewModel: SearchViewModel
     private let detailsCoordinator: DetailsCoordinator
 
     init(
@@ -18,18 +17,21 @@ final class SearchCoordinator {
         followedMediaStore: FollowedMediaStore,
         detailsCoordinator: DetailsCoordinator
     ) {
-        self.searchCatalogUseCase = searchCatalogUseCase
-        self.followedMediaStore = followedMediaStore
+        viewModel = SearchViewModel(
+            searchCatalogUseCase: searchCatalogUseCase,
+            followedMediaStore: followedMediaStore
+        )
         self.detailsCoordinator = detailsCoordinator
     }
 
     func makeSearchView() -> SearchView {
         SearchView(
-            viewModel: SearchViewModel(
-                searchCatalogUseCase: searchCatalogUseCase,
-                followedMediaStore: followedMediaStore
-            ),
+            viewModel: viewModel,
             detailsCoordinator: detailsCoordinator
         )
+    }
+
+    func search(for query: String) {
+        viewModel.requestSearch(for: query)
     }
 }

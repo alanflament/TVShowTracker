@@ -40,6 +40,11 @@ final class LibraryViewModel {
         followedMediaStore.items.isEmpty
     }
 
+    var discoverQuery: String? {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedQuery.isEmpty ? nil : trimmedQuery
+    }
+
     var errorMessage: String? {
         followedMediaStore.errorMessage
     }
@@ -64,11 +69,16 @@ final class LibraryViewModel {
         filter = .all
     }
 
+    func prepareForDiscoverSearch() {
+        category = .all
+        filter = .all
+    }
+
     private func matchesQuery(_ item: LibraryItem) -> Bool {
-        let normalizedQuery = normalized(query)
-        guard !normalizedQuery.isEmpty else {
+        guard let discoverQuery else {
             return true
         }
+        let normalizedQuery = normalized(discoverQuery)
 
         return normalized(item.title).contains(normalizedQuery)
             || item.alternateTitle.map(normalized)?.contains(normalizedQuery) == true

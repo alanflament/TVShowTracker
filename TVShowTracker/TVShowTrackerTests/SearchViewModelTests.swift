@@ -63,6 +63,29 @@ struct SearchViewModelTests {
         #expect(loadedCatalog(from: viewModel) == refreshedCatalog)
     }
 
+    @Test func requestedSearchRunsImmediatelyAndCanRetriggerTheSameQuery() async {
+        let firstCatalog = catalog(title: "Friends")
+        let refreshedCatalog = catalog(title: "Friends Again")
+        let useCase = SearchCatalogUseCaseProbe(results: [firstCatalog, refreshedCatalog])
+        let debounceProbe = DebounceProbe()
+        let viewModel = makeViewModel(useCase: useCase) { duration in
+            await debounceProbe.record(duration)
+        }
+
+        viewModel.requestSearch(for: "  Friends  ")
+        let firstTaskID = viewModel.searchTaskID
+        await viewModel.search()
+
+        viewModel.requestSearch(for: "  Friends  ")
+        let secondTaskID = viewModel.searchTaskID
+        await viewModel.search()
+
+        #expect(firstTaskID != secondTaskID)
+        #expect(await debounceProbe.durations.isEmpty)
+        #expect(await useCase.requests == ["Friends", "Friends"])
+        #expect(loadedCatalog(from: viewModel) == refreshedCatalog)
+    }
+
     private func makeViewModel(
         useCase: any SearchCatalogUseCase,
         debounce: @escaping @Sendable (Duration) async throws -> Void = { _ in }
@@ -100,6 +123,14 @@ struct SearchViewModelTests {
             return nil
         }
         return catalog
+    }
+}
+
+private actor DebounceProbe {
+    private(set) var durations = [Duration]()
+
+    func record(_ duration: Duration) {
+        durations.append(duration)
     }
 }
 

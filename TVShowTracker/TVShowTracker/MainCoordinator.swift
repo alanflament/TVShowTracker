@@ -37,7 +37,9 @@ final class MainCoordinator {
         searchCoordinator = container.makeSearchCoordinator()
         settingsCoordinator = container.makeSettingsCoordinator()
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--settings-tab") {
+            if ProcessInfo.processInfo.arguments.contains("--library-tab") {
+                selectedTab = .library
+            } else if ProcessInfo.processInfo.arguments.contains("--settings-tab") {
                 selectedTab = .settings
             } else if ProcessInfo.processInfo.arguments.contains("--calendar-tab") {
                 selectedTab = .calendar
@@ -45,5 +47,10 @@ final class MainCoordinator {
                 selectedTab = .search
             }
         #endif
+    }
+
+    func searchDiscover(for query: String) {
+        searchCoordinator.search(for: query)
+        selectedTab = .search
     }
 }
