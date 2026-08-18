@@ -11,6 +11,16 @@ import Testing
 
 @MainActor
 struct TMDBShowDetailsRepositoryTests {
+    @Test func seasonMappingExcludesUndatedPlaceholderEpisodes() throws {
+        let data = Data(Self.seasonWithPlaceholderJSON.utf8)
+        let details = try JSONDecoder().decode(TMDBSeasonDetails.self, from: data)
+
+        let season = details.asDomain(provider: .tmdb, showID: 111_110)
+
+        #expect(season.episodes.map(\.number) == [1])
+        #expect(season.episodes.first?.title == "Confirmed episode")
+    }
+
     @Test func refreshSnapshotReusesDetailsAndBoundsSeasonRequests() async throws {
         let client = TMDBHTTPClientProbe()
         let repository = TMDBShowDetailsRepository(
@@ -38,6 +48,33 @@ struct TMDBShowDetailsRepositoryTests {
         #expect(await client.detailsRequestCount == 1)
         #expect(await client.peakConcurrentSeasonRequests <= 3)
     }
+
+    private static let seasonWithPlaceholderJSON = """
+    {
+      "season_number": 3,
+      "name": "Season 3",
+      "episodes": [
+        {
+          "episode_number": 1,
+          "name": "Confirmed episode",
+          "overview": "",
+          "air_date": "2026-09-01",
+          "still_path": null,
+          "runtime": null,
+          "vote_average": 0
+        },
+        {
+          "episode_number": 2,
+          "name": "Placeholder episode",
+          "overview": "",
+          "air_date": null,
+          "still_path": null,
+          "runtime": null,
+          "vote_average": 0
+        }
+      ]
+    }
+    """
 }
 
 private actor TMDBHTTPClientProbe: HTTPClient {

@@ -105,7 +105,13 @@ nonisolated struct TMDBSeasonDetails: Decodable {
             showID: showID,
             number: seasonNumber,
             name: name,
-            episodes: episodes.map { $0.asDomain(provider: provider, showID: showID, seasonNumber: seasonNumber) }
+            episodes: episodes.compactMap {
+                // TMDB can publish placeholder episode records before a schedule is confirmed.
+                guard $0.hasConfirmedAirDate else {
+                    return nil
+                }
+                return $0.asDomain(provider: provider, showID: showID, seasonNumber: seasonNumber)
+            }
         )
     }
 }
@@ -125,6 +131,10 @@ nonisolated struct TMDBEpisode: Decodable {
         case airDate = "air_date"
         case stillPath = "still_path"
         case voteAverage = "vote_average"
+    }
+
+    var hasConfirmedAirDate: Bool {
+        DateParser.parseISO8601(airDate) != nil
     }
 
     func asDomain(provider: SearchProvider, showID: Int, seasonNumber: Int) -> ShowEpisode {

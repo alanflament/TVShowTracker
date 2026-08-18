@@ -5,6 +5,7 @@
 //  Created by Alan Flament on 12/08/2026.
 //
 
+import Foundation
 import SwiftData
 import Testing
 @testable import TVShowTracker
@@ -149,7 +150,7 @@ struct EpisodeWatchStoreTests {
             number: number,
             title: "Episode \(number)",
             overview: nil,
-            airDate: nil,
+            airDate: .distantPast,
             stillURL: nil,
             runtimeMinutes: nil
         )

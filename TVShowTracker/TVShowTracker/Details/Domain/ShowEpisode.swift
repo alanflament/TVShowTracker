@@ -57,7 +57,8 @@ nonisolated struct ShowEpisode: Codable, Identifiable, Hashable, Sendable {
 
     func isReleased(at date: Date) -> Bool {
         guard let airDate else {
-            return true
+            // Anime providers synthesize known episode counts without always providing per-episode dates.
+            return provider != .tmdb
         }
         return airDate <= date
     }
