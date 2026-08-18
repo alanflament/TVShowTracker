@@ -62,6 +62,39 @@ final class TVShowTrackerUITests: XCTestCase {
         captureScreenshot(named: "Episode Details - Duration", app: app)
     }
 
+    @MainActor
+    func testAppAppearanceCanChangeImmediately() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo-data"]
+        app.launch()
+
+        app.buttons["Settings"].tap()
+
+        let appearancePicker = app.buttons["App appearance"]
+        XCTAssertTrue(appearancePicker.waitForExistence(timeout: 3))
+
+        appearancePicker.tap()
+        app.buttons["Automatic"].tap()
+        XCTAssertTrue(waitForValue("Automatic", in: appearancePicker))
+        captureScreenshot(named: "Settings - Automatic appearance", app: app)
+
+        appearancePicker.tap()
+        app.buttons["Light"].tap()
+        XCTAssertTrue(waitForValue("Light", in: appearancePicker))
+        captureScreenshot(named: "Settings - Light appearance", app: app)
+
+        appearancePicker.tap()
+        app.buttons["Dark"].tap()
+        XCTAssertTrue(waitForValue("Dark", in: appearancePicker))
+        captureScreenshot(named: "Settings - Dark appearance", app: app)
+    }
+
+    private func waitForValue(_ value: String, in element: XCUIElement) -> Bool {
+        let predicate = NSPredicate(format: "value == %@", value)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        return XCTWaiter.wait(for: [expectation], timeout: 2) == .completed
+    }
+
     private func captureScreenshot(named name: String, app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

@@ -9,6 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
+    @AppStorage(AppAppearance.storageKey) private var appAppearance = AppAppearance.automatic
     @State private var dataBackupViewModel: DataBackupViewModel
     private let makeTVTimeImportViewModel: () -> TVTimeImportViewModel
 
@@ -26,6 +27,56 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Appearance")
+                            .font(.title2.bold())
+                        Text("Choose how Showlogue looks on this device.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    TrackerCard {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 14) {
+                                Image(systemName: "circle.lefthalf.filled")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(Color.accentColor)
+                                    .frame(width: 42, height: 42)
+                                    .background(Color.accentColor.opacity(0.14), in: .rect(cornerRadius: 12))
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("App appearance")
+                                        .font(.headline)
+                                    Text("Light, dark, or match your device")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+
+                            Divider()
+
+                            HStack {
+                                Text("Style")
+                                    .font(.subheadline.weight(.medium))
+
+                                Spacer(minLength: 8)
+
+                                Picker("App appearance", selection: $appAppearance) {
+                                    ForEach(AppAppearance.allCases) { appearance in
+                                        Text(appearance.title)
+                                            .tag(appearance)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.menu)
+                                .accessibilityIdentifier("App appearance")
+                                .accessibilityValue(appAppearance.title)
+                            }
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Your data")
                             .font(.title2.bold())

@@ -10,6 +10,7 @@ import SwiftUI
 
 @main
 struct TVShowTrackerApp: App {
+    @AppStorage(AppAppearance.storageKey) private var appAppearance = AppAppearance.automatic
     @State private var coordinator: AppCoordinator
     private let modelContainer: ModelContainer
 
@@ -23,6 +24,7 @@ struct TVShowTrackerApp: App {
         WindowGroup {
             AppRootView()
                 .environment(coordinator)
+                .preferredColorScheme(appAppearance.colorScheme)
         }
         .modelContainer(modelContainer)
     }
