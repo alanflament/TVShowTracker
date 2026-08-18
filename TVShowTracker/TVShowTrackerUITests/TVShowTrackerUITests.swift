@@ -28,7 +28,7 @@ final class TVShowTrackerUITests: XCTestCase {
         app.launch()
 
         let markWatchedButtons = app.buttons.matching(identifier: "Mark as watched")
-        let breakingBadTitle = app.buttons["BREAKING BAD"]
+        let breakingBadTitle = app.buttons["Breaking Bad"]
         XCTAssertTrue(markWatchedButtons.firstMatch.waitForExistence(timeout: 3))
         XCTAssertTrue(breakingBadTitle.exists)
         captureScreenshot(named: "Up Next - Before", app: app)
@@ -51,8 +51,9 @@ final class TVShowTrackerUITests: XCTestCase {
         app.launchArguments = ["--demo-data"]
         app.launch()
 
-        let breakingBadCard = app.buttons["BREAKING BAD"]
+        let breakingBadCard = app.buttons["Breaking Bad"]
         XCTAssertTrue(breakingBadCard.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["S01E16"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["55 min"].exists)
 
         breakingBadCard.tap()

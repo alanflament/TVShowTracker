@@ -209,15 +209,14 @@ private struct CalendarEpisodeCard: View {
     @State private var isConfirmingWatched = false
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 16) {
+        HStack(alignment: .center, spacing: 16) {
             MediaPoster(url: episode.posterURL, kind: episode.candidate.kind, width: 80, height: 120)
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Text(episode.showTitle.uppercased())
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    Text(episode.showTitle)
+                        .font(.headline)
+                        .lineLimit(2)
                         .layoutPriority(1)
 
                     if episode.additionalAvailableEpisodeCount > 0 {
@@ -225,7 +224,7 @@ private struct CalendarEpisodeCard: View {
                     }
                 }
                 HStack(spacing: 7) {
-                    Text("Season \(episode.episode.seasonNumber), Episode \(episode.episode.number)")
+                    Text(String(format: "S%02dE%02d", episode.episode.seasonNumber, episode.episode.number))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -237,7 +236,8 @@ private struct CalendarEpisodeCard: View {
                     }
                 }
                 Text(episode.episode.title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
                     .lineLimit(2, reservesSpace: true)
                 calendarAction
                     .frame(height: 32, alignment: .leading)
