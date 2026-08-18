@@ -89,6 +89,29 @@ struct DefaultNextEpisodeUseCaseTests {
 
         #expect(result.episodes.count == 1)
         #expect(result.availableEpisodeCount == 2)
+        #expect(result.episodes.first?.additionalAvailableEpisodeCount == 1)
+    }
+
+    @Test func upcomingEpisodeDoesNotCountLaterUnreleasedEpisodesAsAvailable() async {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let nextEpisode = makeEpisode(showID: 1, number: 1, airDate: now.addingTimeInterval(3600))
+        let laterEpisode = makeEpisode(showID: 1, number: 2, airDate: now.addingTimeInterval(7200))
+        let item = makeItem(id: 1, title: "The Bear")
+        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+            EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
+                provider: .tmdb,
+                showID: 1,
+                number: 1,
+                name: "Season 1",
+                episodes: [nextEpisode, laterEpisode]
+            )])
+        ]))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+
+        let result = await useCase.findNextEpisode(in: [item], watchedEpisodeIDs: [], now: now)
+
+        #expect(result.episodes.first?.episode.id == nextEpisode.id)
+        #expect(result.episodes.first?.additionalAvailableEpisodeCount == 0)
     }
 
     @Test func nextReleasedEpisodeUsesExpectedEpisodeIndexWhenAirDatesAreMissing() async {

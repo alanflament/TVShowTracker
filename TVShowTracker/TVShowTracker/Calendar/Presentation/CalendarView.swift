@@ -217,9 +217,15 @@ private struct CalendarEpisodeCard: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                Text("Season \(episode.episode.seasonNumber), Episode \(episode.episode.number)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 7) {
+                    Text("Season \(episode.episode.seasonNumber), Episode \(episode.episode.number)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    if episode.additionalAvailableEpisodeCount > 0 {
+                        AdditionalEpisodesBadge(count: episode.additionalAvailableEpisodeCount)
+                    }
+                }
                 Text(episode.episode.title)
                     .font(.headline)
                     .lineLimit(2, reservesSpace: true)
@@ -286,6 +292,20 @@ private struct CalendarEpisodeCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+private struct AdditionalEpisodesBadge: View {
+    let count: Int
+
+    var body: some View {
+        Text("+\(count)")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.tint)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color.accentColor.opacity(0.14), in: .capsule)
+            .accessibilityLabel("\(count) more \(count == 1 ? "episode" : "episodes") available")
     }
 }
 

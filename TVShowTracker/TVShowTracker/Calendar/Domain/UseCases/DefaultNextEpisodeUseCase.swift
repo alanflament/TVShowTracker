@@ -77,7 +77,11 @@ private extension DefaultNextEpisodeUseCase {
 
         let releasedEpisodes = episodes.filter { $0.episode.isReleased(at: now) }
         if let nextReleasedEpisode = releasedEpisodes.min(by: expectedEpisodeOrder) {
-            return nextReleasedEpisode
+            return CalendarEpisode(
+                item: item,
+                episode: nextReleasedEpisode.episode,
+                additionalAvailableEpisodeCount: max(0, releasedEpisodes.count - 1)
+            )
         }
 
         return episodes.filter {
