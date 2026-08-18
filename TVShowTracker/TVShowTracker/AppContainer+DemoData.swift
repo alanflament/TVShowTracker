@@ -19,7 +19,8 @@ extension AppContainer {
     static func seedDemoStateIfNeeded(
         _ followedMediaStore: FollowedMediaStore,
         _ episodeScheduleStore: EpisodeScheduleStore,
-        _ episodeWatchStore: EpisodeWatchStore
+        _ episodeWatchStore: EpisodeWatchStore,
+        _ episodeDetailsStore: EpisodeDetailsStore
     ) {
         guard usesDemoData else {
             return
@@ -29,7 +30,8 @@ extension AppContainer {
         seedDemoSchedules(
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore,
-            episodeWatchStore: episodeWatchStore
+            episodeWatchStore: episodeWatchStore,
+            episodeDetailsStore: episodeDetailsStore
         )
     }
 }
@@ -55,17 +57,10 @@ private extension AppContainer {
     static func seedDemoSchedules(
         followedMediaStore: FollowedMediaStore,
         episodeScheduleStore: EpisodeScheduleStore,
-        episodeWatchStore: EpisodeWatchStore
+        episodeWatchStore: EpisodeWatchStore,
+        episodeDetailsStore: EpisodeDetailsStore
     ) {
-        let now = Date.now
-        let episodesByProviderID = [
-            1396: [demoEpisode(showID: 1396, number: 16, title: "Felina", airDate: now.addingTimeInterval(-86400))],
-            95396: [
-                demoEpisode(showID: 95396, number: 1, title: "Hello, Ms. Cobel", airDate: now.addingTimeInterval(-172_800)),
-                demoEpisode(showID: 95396, number: 2, title: "Goodbye, Mrs. Selvig", airDate: now.addingTimeInterval(-86400)),
-                demoEpisode(showID: 95396, number: 3, title: "Who Is Alive?", airDate: now.addingTimeInterval(604_800))
-            ]
-        ]
+        let episodesByProviderID = demoEpisodes(now: .now)
 
         for item in followedMediaStore.items {
             guard let episodes = episodesByProviderID[item.providerID] else {
@@ -81,14 +76,56 @@ private extension AppContainer {
                 )
             ])
             episodeWatchStore.markUnwatched(episodes)
+            for episode in episodes {
+                episodeDetailsStore.save(EpisodeDetails(
+                    episode: episode,
+                    voteAverage: 8.5
+                ))
+            }
         }
+    }
+
+    static func demoEpisodes(now: Date) -> [Int: [ShowEpisode]] {
+        [
+            1396: [demoEpisode(
+                showID: 1396,
+                number: 16,
+                title: "Felina",
+                airDate: now.addingTimeInterval(-86400),
+                runtimeMinutes: 55
+            )],
+            95396: [
+                demoEpisode(
+                    showID: 95396,
+                    number: 1,
+                    title: "Hello, Ms. Cobel",
+                    airDate: now.addingTimeInterval(-172_800),
+                    runtimeMinutes: 65
+                ),
+                demoEpisode(
+                    showID: 95396,
+                    number: 2,
+                    title: "Goodbye, Mrs. Selvig",
+                    airDate: now.addingTimeInterval(-86400),
+                    runtimeMinutes: 52
+                ),
+                demoEpisode(
+                    showID: 95396,
+                    number: 3,
+                    title: "Who Is Alive?",
+                    airDate: now.addingTimeInterval(604_800),
+                    runtimeMinutes: 60
+                )
+            ]
+        ]
     }
 
     static func demoEpisode(
         showID: Int,
         number: Int,
         title: String,
-        airDate: Date
+        airDate: Date,
+        runtimeMinutes: Int? = nil
     ) -> ShowEpisode {
         ShowEpisode(
             provider: .tmdb,
@@ -99,7 +136,7 @@ private extension AppContainer {
             overview: nil,
             airDate: airDate,
             stillURL: nil,
-            runtimeMinutes: nil
+            runtimeMinutes: runtimeMinutes
         )
     }
 

@@ -41,7 +41,13 @@ struct JikanAnimeDetailsRepository: AnimeDetailsRepository {
 
         let episodes = allEpisodes
             .sorted { $0.number < $1.number }
-            .map { $0.asDomain(provider: .jikan, showID: anime.id) }
+            .map {
+                $0.asDomain(
+                    provider: .jikan,
+                    showID: anime.id,
+                    runtimeMinutes: anime.episodeDurationMinutes
+                )
+            }
 
         guard !episodes.isEmpty else {
             return []

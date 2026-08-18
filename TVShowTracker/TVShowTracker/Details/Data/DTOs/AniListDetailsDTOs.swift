@@ -32,6 +32,7 @@ struct AniListDetailsAnime: Decodable {
     let coverImage: AniListCoverImage
     let status: String?
     let episodes: Int?
+    let duration: Int?
     let startDate: AniListFuzzyDate
     let genres: [String]
     let airingSchedule: AniListAiringSchedule?

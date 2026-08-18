@@ -45,6 +45,23 @@ final class TVShowTrackerUITests: XCTestCase {
         captureScreenshot(named: "Up Next - Next episode", app: app)
     }
 
+    @MainActor
+    func testEpisodeDurationAppearsInUpNextAndDetails() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo-data"]
+        app.launch()
+
+        let breakingBadCard = app.buttons["BREAKING BAD"]
+        XCTAssertTrue(breakingBadCard.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["55 min"].exists)
+
+        breakingBadCard.tap()
+
+        XCTAssertTrue(app.navigationBars["Felina"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.descendants(matching: .any)["55 min"].waitForExistence(timeout: 2))
+        captureScreenshot(named: "Episode Details - Duration", app: app)
+    }
+
     private func captureScreenshot(named name: String, app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

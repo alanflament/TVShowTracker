@@ -35,6 +35,7 @@ struct JikanDetailsAnime: Decodable {
     let synopsis: String?
     let images: JikanImages
     let episodes: Int?
+    let duration: String?
     let status: String?
     let aired: JikanAired
     let genres: [JikanNamedResource]
@@ -44,7 +45,7 @@ struct JikanDetailsAnime: Decodable {
         case title
         case titleEnglish = "title_english"
         case titleJapanese = "title_japanese"
-        case synopsis, images, episodes, status, aired, genres
+        case synopsis, images, episodes, duration, status, aired, genres
     }
 
     var asDomain: ShowDetails {
@@ -72,6 +73,36 @@ struct JikanDetailsAnime: Decodable {
                 )]
             } ?? []
         )
+    }
+
+    var episodeDurationMinutes: Int? {
+        guard let duration else {
+            return nil
+        }
+
+        let components = duration
+            .lowercased()
+            .replacingOccurrences(of: ".", with: "")
+            .split(separator: " ")
+        var totalMinutes = 0
+        var foundDuration = false
+
+        for index in components.indices {
+            guard let value = Int(components[index]), components.indices.contains(index + 1) else {
+                continue
+            }
+
+            let unit = components[index + 1]
+            if unit.hasPrefix("hr") {
+                totalMinutes += value * 60
+                foundDuration = true
+            } else if unit.hasPrefix("min") {
+                totalMinutes += value
+                foundDuration = true
+            }
+        }
+
+        return foundDuration && totalMinutes > 0 ? totalMinutes : nil
     }
 }
 
@@ -102,7 +133,11 @@ struct JikanEpisode: Decodable {
         case title, aired
     }
 
-    func asDomain(provider: SearchProvider, showID: Int) -> ShowEpisode {
+    func asDomain(
+        provider: SearchProvider,
+        showID: Int,
+        runtimeMinutes: Int? = nil
+    ) -> ShowEpisode {
         ShowEpisode(
             provider: provider,
             showID: showID,
@@ -112,7 +147,7 @@ struct JikanEpisode: Decodable {
             overview: nil,
             airDate: DateParser.parseISO8601(aired),
             stillURL: nil,
-            runtimeMinutes: nil
+            runtimeMinutes: runtimeMinutes
         )
     }
 }

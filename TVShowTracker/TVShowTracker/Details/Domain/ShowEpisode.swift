@@ -51,6 +51,10 @@ nonisolated struct ShowEpisode: Codable, Identifiable, Hashable, Sendable {
         isReleased(at: .now)
     }
 
+    var formattedDuration: String? {
+        runtimeMinutes.flatMap { EpisodeDurationFormatter.format(minutes: $0) }
+    }
+
     func isReleased(at date: Date) -> Bool {
         guard let airDate else {
             return true

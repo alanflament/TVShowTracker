@@ -31,7 +31,7 @@ final class AppContainer {
         episodeDetailsStore = .init(
             repository: SwiftDataEpisodeDetailsRepository(modelContext: modelContainer.mainContext)
         )
-        Self.seedDemoStateIfNeeded(followedMediaStore, episodeScheduleStore, episodeWatchStore)
+        Self.seedDemoStateIfNeeded(followedMediaStore, episodeScheduleStore, episodeWatchStore, episodeDetailsStore)
 
         let aniListHTTPClient = Self.makeAniListHTTPClient()
         let animeSearchRepository = Self.makeAnimeSearchRepository(aniListHTTPClient: aniListHTTPClient)

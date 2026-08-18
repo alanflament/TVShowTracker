@@ -97,7 +97,7 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
                 airDate: airingDates[number],
                 releaseDatePrecision: airingDates[number] == nil ? .day : .time,
                 stillURL: nil,
-                runtimeMinutes: nil
+                runtimeMinutes: anime.duration
             )
         }
 
@@ -205,6 +205,7 @@ private extension AniListAnimeDetailsRepository {
         coverImage { large medium }
         status
         episodes
+        duration
         startDate { year }
         genres
         format
@@ -259,6 +260,7 @@ private extension AniListAnimeDetailsRepository {
         coverImage { large medium }
         status
         episodes
+        duration
         startDate { year }
         genres
         airingSchedule(perPage: 100) {

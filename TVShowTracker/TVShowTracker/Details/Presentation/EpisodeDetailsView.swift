@@ -126,8 +126,8 @@ struct EpisodeDetailsView: View {
                     systemImage: "calendar"
                 )
             }
-            if let runtimeMinutes = details.episode.runtimeMinutes {
-                Label("\(runtimeMinutes) min", systemImage: "clock")
+            if let runtime = details.episode.formattedDuration {
+                Label(runtime, systemImage: "clock")
             }
             if let voteAverage = details.voteAverage, voteAverage > 0 {
                 Label(String(format: "%.1f", voteAverage), systemImage: "star.fill")

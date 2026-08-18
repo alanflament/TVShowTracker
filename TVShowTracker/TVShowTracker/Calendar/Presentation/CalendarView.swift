@@ -213,17 +213,27 @@ private struct CalendarEpisodeCard: View {
             MediaPoster(url: episode.posterURL, kind: episode.candidate.kind, width: 80, height: 120)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(episode.showTitle.uppercased())
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 8) {
+                    Text(episode.showTitle.uppercased())
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+
+                    if episode.additionalAvailableEpisodeCount > 0 {
+                        AdditionalEpisodesBadge(count: episode.additionalAvailableEpisodeCount)
+                    }
+                }
                 HStack(spacing: 7) {
                     Text("Season \(episode.episode.seasonNumber), Episode \(episode.episode.number)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    if episode.additionalAvailableEpisodeCount > 0 {
-                        AdditionalEpisodesBadge(count: episode.additionalAvailableEpisodeCount)
+                    if let duration = episode.episode.formattedDuration {
+                        Label(duration, systemImage: "clock")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .fixedSize()
                     }
                 }
                 Text(episode.episode.title)
