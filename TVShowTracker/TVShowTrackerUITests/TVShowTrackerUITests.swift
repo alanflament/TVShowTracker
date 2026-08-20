@@ -65,6 +65,34 @@ final class TVShowTrackerUITests: XCTestCase {
     }
 
     @MainActor
+    func testEpisodeListPlacesMarkAllActionAfterSeasons() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo-data"]
+        app.launch()
+
+        app.buttons["My Shows"].tap()
+
+        let breakingBadCard = app.buttons["Breaking Bad, Watching"]
+        XCTAssertTrue(breakingBadCard.waitForExistence(timeout: 3))
+        breakingBadCard.tap()
+
+        let episodesButton = app.buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Episodes,"))
+            .firstMatch
+        XCTAssertTrue(episodesButton.waitForExistence(timeout: 3))
+        episodesButton.tap()
+
+        let seasonHeader = app.buttons["Season 1"]
+        let markAllButton = app.buttons["Mark all available episodes as watched"]
+        XCTAssertTrue(seasonHeader.waitForExistence(timeout: 3))
+        XCTAssertTrue(markAllButton.waitForExistence(timeout: 3))
+        XCTAssertGreaterThan(markAllButton.frame.minY, seasonHeader.frame.maxY)
+
+        app.scrollViews.firstMatch.swipeUp()
+        captureScreenshot(named: "Episodes - Mark all after seasons", app: app)
+    }
+
+    @MainActor
     func testAppAppearanceCanChangeImmediately() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo-data"]

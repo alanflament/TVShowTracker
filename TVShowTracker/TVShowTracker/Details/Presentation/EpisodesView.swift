@@ -63,8 +63,6 @@ struct EpisodesView: View {
                     progressSummary(seasons)
                         .padding(.top, 12)
 
-                    markAllAvailableSection(seasons)
-
                     Divider()
 
                     ForEach(seasons) { season in
@@ -74,6 +72,8 @@ struct EpisodesView: View {
                             Divider()
                         }
                     }
+
+                    markAllAvailableSection(seasons)
                 }
             }
             .padding(.horizontal, 16)
@@ -110,21 +110,22 @@ struct EpisodesView: View {
     @ViewBuilder
     private func markAllAvailableSection(_ seasons: [ShowSeason]) -> some View {
         if viewModel.releasedUnwatchedEpisodeCount(in: seasons.flatMap(\.episodes)) > 0 {
-            Button {
-                viewModel.markAllWatched(seasons)
-                watchActionID += 1
-            } label: {
-                Label(
-                    "Mark all available episodes as watched",
-                    systemImage: "checkmark.circle.fill"
-                )
-                .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                Divider()
+
+                Button {
+                    viewModel.markAllWatched(seasons)
+                    watchActionID += 1
+                } label: {
+                    Label(
+                        "Mark all available episodes as watched",
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
-            .padding(.vertical, 14)
-        } else {
-            Color.clear
-                .frame(height: 14)
         }
     }
 
