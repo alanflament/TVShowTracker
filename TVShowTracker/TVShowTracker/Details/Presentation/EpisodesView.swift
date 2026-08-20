@@ -335,33 +335,36 @@ private struct EpisodeRow: View {
     let onToggleWatched: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("E\(episode.number)")
-                .font(.caption.bold())
-                .foregroundStyle(isWatched ? .green : .secondary)
-                .frame(width: 38, height: 28)
-                .background(Color.primary.opacity(0.08), in: Capsule())
+        HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Text("E\(episode.number)")
+                    .font(.caption.bold())
+                    .foregroundStyle(isWatched ? .green : .secondary)
+                    .frame(width: 38, height: 28)
+                    .background(Color.primary.opacity(0.08), in: Capsule())
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(episode.title)
-                    .font(.headline)
-                if let overview = episode.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(episode.title)
+                        .font(.headline)
+                    if let overview = episode.overview, !overview.isEmpty {
+                        Text(overview)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                    Text(releaseLabel)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(episode.isReleased ? .green : .orange)
                 }
-                Text(releaseLabel)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(episode.isReleased ? .green : .orange)
             }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Button(action: onToggleWatched) {
                 Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(.title)
                     .foregroundStyle(isWatched ? .green : .secondary)
+                    .frame(width: 52, height: 52)
+                    .contentShape(.rect)
             }
             .buttonStyle(.plain)
             .disabled(!episode.isReleased)
