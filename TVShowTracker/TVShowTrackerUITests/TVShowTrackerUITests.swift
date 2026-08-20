@@ -37,6 +37,7 @@ final class TVShowTrackerUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Watched"].waitForExistence(timeout: 0.3))
         captureScreenshot(named: "Up Next - Remove feedback", app: app)
         XCTAssertTrue(breakingBadTitle.waitForNonExistence(timeout: 2))
+        captureScreenshot(named: "Up Next - After completed show", app: app)
 
         markWatchedButtons.firstMatch.tap()
         XCTAssertTrue(app.buttons["Watched"].waitForExistence(timeout: 0.3))

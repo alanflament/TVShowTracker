@@ -61,7 +61,6 @@ struct CalendarView: View {
                         availableEpisodeCount: availableEpisodeCount,
                         undatedMediaCount: undatedMedia.count
                     )
-                    .contentTransition(.numericText())
 
                     if !availableEpisodes.isEmpty {
                         episodeSection(
@@ -69,7 +68,6 @@ struct CalendarView: View {
                             subtitle: "Ready when you are",
                             episodes: availableEpisodes
                         )
-                        .transition(sectionTransition)
                     }
 
                     if !upcomingEpisodes.isEmpty {
@@ -78,7 +76,6 @@ struct CalendarView: View {
                             subtitle: "Your next releases",
                             episodes: upcomingEpisodes
                         )
-                        .transition(sectionTransition)
                     }
 
                     if !undatedMedia.isEmpty {
@@ -88,8 +85,6 @@ struct CalendarView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .animation(cardAnimation, value: episodes.map(\.episode.id))
-            .animation(cardAnimation, value: availableEpisodeCount)
         }
     }
 
@@ -122,6 +117,7 @@ struct CalendarView: View {
                     .transition(cardTransition)
                 }
             }
+            .animation(cardAnimation, value: episodes.map(\.episode.id))
         }
     }
 
@@ -134,10 +130,6 @@ struct CalendarView: View {
             insertion: .move(edge: .bottom).combined(with: .opacity),
             removal: .scale(scale: 0.96).combined(with: .opacity)
         )
-    }
-
-    private var sectionTransition: AnyTransition {
-        .opacity.combined(with: .move(edge: .top))
     }
 
     private func undatedMediaSection(_ media: [CalendarUndatedMedia]) -> some View {
@@ -200,125 +192,6 @@ struct CalendarView: View {
     }
 }
 
-private struct CalendarEpisodeCard: View {
-    let episode: CalendarEpisode
-    let onSelect: () -> Void
-    let onMarkWatched: () async -> Void
-
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
-    @State private var isConfirmingWatched = false
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            MediaPoster(url: episode.posterURL, kind: episode.candidate.kind, width: 80, height: 120)
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Text(episode.showTitle)
-                        .font(.headline)
-                        .lineLimit(2)
-                        .layoutPriority(1)
-
-                    if episode.additionalAvailableEpisodeCount > 0 {
-                        AdditionalEpisodesBadge(count: episode.additionalAvailableEpisodeCount)
-                    }
-                }
-                HStack(spacing: 7) {
-                    Text(String(format: "S%02dE%02d", episode.episode.seasonNumber, episode.episode.number))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    if let duration = episode.episode.formattedDuration {
-                        Label(duration, systemImage: "clock")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .fixedSize()
-                    }
-                }
-                Text(episode.episode.title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2, reservesSpace: true)
-                calendarAction
-                    .frame(height: 32, alignment: .leading)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.primary.opacity(0.08))
-        }
-        .contentShape(.rect)
-        .onTapGesture(perform: onSelect)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Opens episode details")
-    }
-
-    @ViewBuilder
-    private var calendarAction: some View {
-        if episode.episode.isReleased {
-            Button {
-                guard !isConfirmingWatched else {
-                    return
-                }
-
-                withAnimation(.snappy(duration: 0.28)) {
-                    isConfirmingWatched = true
-                }
-                Task {
-                    let feedbackDuration = accessibilityReduceMotion ? 150_000_000 : 650_000_000
-                    try? await Task.sleep(nanoseconds: UInt64(feedbackDuration))
-                    await onMarkWatched()
-                }
-            } label: {
-                ZStack(alignment: .leading) {
-                    Label("Mark as watched", systemImage: "checkmark.circle")
-                        .opacity(isConfirmingWatched ? 0 : 1)
-                    Label("Watched", systemImage: "checkmark.circle.fill")
-                        .opacity(isConfirmingWatched ? 1 : 0)
-                        .symbolEffect(.bounce, value: isConfirmingWatched)
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-            .scaleEffect(isConfirmingWatched && !accessibilityReduceMotion ? 1.04 : 1)
-            .animation(.snappy(duration: 0.28), value: isConfirmingWatched)
-            .sensoryFeedback(.success, trigger: isConfirmingWatched)
-            .accessibilityLabel(isConfirmingWatched ? "Watched" : "Mark as watched")
-        } else if let airDate = episode.episode.airDate {
-            Label(
-                ReleaseCountdown(
-                    airDate: airDate,
-                    precision: episode.episode.releaseDatePrecision
-                ).text,
-                systemImage: "clock"
-            )
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.orange)
-        } else {
-            Label("Release date unavailable", systemImage: "calendar.badge.exclamationmark")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-private struct AdditionalEpisodesBadge: View {
-    let count: Int
-
-    var body: some View {
-        Text("+\(count)")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.tint)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(Color.accentColor.opacity(0.14), in: .capsule)
-            .accessibilityLabel("\(count) more \(count == 1 ? "episode" : "episodes") available")
-    }
-}
-
 private struct UpNextSummary: View {
     let availableEpisodeCount: Int
     let undatedMediaCount: Int
@@ -378,21 +251,5 @@ private struct CalendarUndatedMediaCard: View {
         .onTapGesture(perform: onSelect)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint("Opens show details")
-    }
-}
-
-private struct ReleaseCountdown {
-    let airDate: Date
-    let precision: EpisodeReleaseDatePrecision
-
-    var text: String {
-        let interval = max(0, airDate.timeIntervalSinceNow)
-        if precision == .time, interval < 86400 {
-            let hours = max(1, Int(ceil(interval / 3600)))
-            return "Available in \(hours) \(hours == 1 ? "hour" : "hours")"
-        }
-
-        let days = Int(ceil(interval / 86400))
-        return "Available in \(days) \(days == 1 ? "day" : "days")"
     }
 }
