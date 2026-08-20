@@ -41,8 +41,11 @@ struct LibraryView: View {
                                     .padding(.top, 80)
                             } else {
                                 LazyVGrid(
-                                    columns: [GridItem(.adaptive(minimum: 152, maximum: 180), spacing: 16)],
-                                    spacing: 20
+                                    columns: Array(
+                                        repeating: GridItem(.flexible(minimum: 0), spacing: 0),
+                                        count: 3
+                                    ),
+                                    spacing: 0
                                 ) {
                                     ForEach(viewModel.items) { item in
                                         NavigationLink {
@@ -60,8 +63,6 @@ struct LibraryView: View {
                                         }
                                     }
                                 }
-                                .padding(.horizontal)
-                                .padding(.bottom)
                             }
                         } header: {
                             filterTabs(viewModel)
@@ -286,40 +287,42 @@ private struct LibraryItemCard: View {
     let item: LibraryItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            MediaPoster(url: item.posterURL, kind: item.kind, height: 252, cornerRadius: 14)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
-                    .font(.headline)
-                    .lineLimit(2, reservesSpace: true)
-
-                Label(item.trackingStatus.title, systemImage: item.trackingStatus.systemImage)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text(details.isEmpty ? " " : details)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        GeometryReader { proxy in
+            MediaPoster(
+                url: item.posterURL,
+                kind: item.kind,
+                width: proxy.size.width,
+                height: proxy.size.height,
+                cornerRadius: 0
+            )
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [.black.opacity(0.86), .black.opacity(0.22), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: min(proxy.size.height * 0.36, 68))
+                .allowsHitTesting(false)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .topLeading) {
+                Label(item.trackingStatus.title, systemImage: item.trackingStatus.systemImage)
+                    .font(.caption2.weight(.semibold))
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.9), radius: 3, y: 1)
+                    .padding(8)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .aspectRatio(2 / 3, contentMode: .fit)
+        .contentShape(.rect)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens show details")
     }
 
-    private var details: String {
-        MediaMetadata.text(
-            releaseYear: item.releaseYear,
-            totalEpisodeCount: item.totalEpisodeCount
-        )
-    }
-
     private var accessibilityLabel: String {
-        [item.title, item.trackingStatus.title, details]
-            .filter { !$0.isEmpty }
-            .joined(separator: ", ")
+        "\(item.title), \(item.trackingStatus.title)"
     }
 }
