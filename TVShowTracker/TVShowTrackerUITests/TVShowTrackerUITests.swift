@@ -93,6 +93,42 @@ final class TVShowTrackerUITests: XCTestCase {
     }
 
     @MainActor
+    func testShowPosterOpensFullScreenAndDismisses() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo-data"]
+        app.launch()
+
+        app.buttons["My Shows"].tap()
+
+        let breakingBadCard = app.buttons["Breaking Bad, Watching"]
+        XCTAssertTrue(breakingBadCard.waitForExistence(timeout: 3))
+        breakingBadCard.tap()
+
+        let posterButton = app.buttons["View Breaking Bad poster full screen"]
+        XCTAssertTrue(posterButton.waitForExistence(timeout: 3))
+        posterButton.tap()
+
+        let closeButton = app.buttons["Close poster"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 2))
+        captureScreenshot(named: "Show Details - Full-screen poster", app: app)
+
+        let fullScreenPoster = app.otherElements["Full-screen poster"]
+        XCTAssertTrue(fullScreenPoster.waitForExistence(timeout: 2))
+        fullScreenPoster.pinch(withScale: 2, velocity: 1)
+        XCTAssertEqual(fullScreenPoster.value as? String, "Zoomed")
+        captureScreenshot(named: "Show Details - Zoomed poster", app: app)
+
+        fullScreenPoster.doubleTap()
+        let fittedPoster = NSPredicate(format: "value == %@", "Fit to screen")
+        expectation(for: fittedPoster, evaluatedWith: fullScreenPoster)
+        waitForExpectations(timeout: 2)
+        closeButton.tap()
+
+        XCTAssertTrue(posterButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.navigationBars["Breaking Bad"].exists)
+    }
+
+    @MainActor
     func testAppAppearanceCanChangeImmediately() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo-data"]

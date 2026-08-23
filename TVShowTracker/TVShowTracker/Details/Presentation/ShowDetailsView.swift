@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ShowDetailsView: View {
     @State private var viewModel: ShowDetailsViewModel
+    @Namespace private var posterTransition
     private let makeEpisodesViewModel: () -> EpisodesViewModel
     private let makeEpisodeDetailsView: (ShowEpisode) -> EpisodeDetailsView
 
@@ -72,7 +73,23 @@ struct ShowDetailsView: View {
 
     private func header(_ details: ShowDetails) -> some View {
         HStack(alignment: .top, spacing: 16) {
-            MediaPoster(url: details.posterURL, kind: details.kind, width: 120, height: 180)
+            NavigationLink {
+                FullScreenMediaPosterView(
+                    title: details.title,
+                    posterURL: details.posterURL,
+                    kind: details.kind
+                )
+                .navigationTransition(
+                    .zoom(sourceID: PosterTransitionID.poster, in: posterTransition)
+                )
+            } label: {
+                MediaPoster(url: details.posterURL, kind: details.kind, width: 120, height: 180)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .matchedTransitionSource(id: PosterTransitionID.poster, in: posterTransition)
+            .accessibilityLabel("View \(details.title) poster full screen")
+            .accessibilityHint("Opens the poster. Use the close button or swipe back to dismiss.")
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(details.title)
@@ -192,4 +209,8 @@ struct ShowDetailsView: View {
         }
         return "Browse seasons and episodes"
     }
+}
+
+private enum PosterTransitionID {
+    static let poster = "show-details-poster"
 }
