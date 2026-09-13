@@ -1,6 +1,37 @@
 # TVShowTracker
 
-TVShowTracker is an iOS app allowing you to track episodes of your favorite TV shows and animes.
+TVShowTracker is an iOS app for tracking your favorite TV shows and anime.
+
+After the beloved TVShowTime app disappeared, I took the opportunity to build my own app focused on show tracking, with help from AI. This project became a hands-on way to explore Codex's capabilities.
+
+## Introduction
+
+Keep your shows and watch progress in one place:
+
+- **Discover shows:** search for TV shows and anime.
+- **Build your library:** save the titles you watch or plan to watch.
+- **Track your progress:** mark episodes as watched and keep a record of where you left off.
+- **Find your next episode:** see which released episodes you still have to watch.
+- **Follow upcoming releases:** see which episodes are coming soon and when they are scheduled to air.
+- **Back up and restore your data:** export your library and watch history as JSON, or import a backup to merge it with your existing data.
+
+**Experimental: TVShowTime import.** You can also try importing your TVShowTime (TV Time) data, but this feature is currently unreliable. Watched-episode import works poorly, and show matching is approximate: some titles may be missing or matched to the wrong show. In my experience, it imports roughly 90% of the show list correctly, which can still provide a useful starting point for a large library. This is a personal estimate, not a guaranteed success rate; expect to review the imported titles and correct your watch progress manually.
+
+## Screenshots
+
+Explore the library, upcoming releases, discovery, and episode tracking. Select a screenshot to view it at full size.
+
+| My Shows | Up Next · Available now | Up Next · Coming soon |
+| :---: | :---: | :---: |
+| <a href="Docs/Screenshots/my-shows.png"><img src="Docs/Screenshots/my-shows.png" alt="My Shows" width="250"></a> | <a href="Docs/Screenshots/up-next-to-watch.png"><img src="Docs/Screenshots/up-next-to-watch.png" alt="Up Next · Available now" width="250"></a> | <a href="Docs/Screenshots/up-next-coming-soon.png"><img src="Docs/Screenshots/up-next-coming-soon.png" alt="Up Next · Coming soon" width="250"></a> |
+
+| Discover | Settings | Media details |
+| :---: | :---: | :---: |
+| <a href="Docs/Screenshots/discover-results.png"><img src="Docs/Screenshots/discover-results.png" alt="Discover" width="250"></a> | <a href="Docs/Screenshots/settings.png"><img src="Docs/Screenshots/settings.png" alt="Settings" width="250"></a> | <a href="Docs/Screenshots/media-details.png"><img src="Docs/Screenshots/media-details.png" alt="Media details" width="250"></a> |
+
+| Season list | Episode list | Episode details |
+| :---: | :---: | :---: |
+| <a href="Docs/Screenshots/season-list.png"><img src="Docs/Screenshots/season-list.png" alt="Season list" width="250"></a> | <a href="Docs/Screenshots/episode-list.png"><img src="Docs/Screenshots/episode-list.png" alt="Episode list" width="250"></a> | <a href="Docs/Screenshots/episode-details.png"><img src="Docs/Screenshots/episode-details.png" alt="Episode details" width="250"></a> |
 
 ## Project setup
 
