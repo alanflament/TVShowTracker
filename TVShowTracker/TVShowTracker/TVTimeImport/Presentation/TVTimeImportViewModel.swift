@@ -17,13 +17,13 @@ final class TVTimeImportViewModel {
         case failed(String)
     }
 
-    private let useCase: any TVTimeImportUseCase
+    private let tvTimeImportUseCase: any TVTimeImportUseCase
     private var importTask: Task<Void, Never>?
 
     private(set) var state: State = .idle
 
-    init(useCase: any TVTimeImportUseCase) {
-        self.useCase = useCase
+    init(tvTimeImportUseCase: any TVTimeImportUseCase) {
+        self.tvTimeImportUseCase = tvTimeImportUseCase
     }
 
     func importFolder(at folderURL: URL) {
@@ -57,7 +57,7 @@ final class TVTimeImportViewModel {
         }
 
         do {
-            let report = try await useCase.importExport(at: folderURL) { [weak self] progress in
+            let report = try await tvTimeImportUseCase.importExport(at: folderURL) { [weak self] progress in
                 self?.state = .importing(progress)
             }
             state = .completed(report)

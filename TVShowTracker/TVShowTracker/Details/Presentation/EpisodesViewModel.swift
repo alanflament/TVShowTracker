@@ -19,20 +19,20 @@ final class EpisodesViewModel {
 
     let candidate: MediaCandidate
     private(set) var state: State = .idle
-    private let useCase: any ShowDetailsUseCase
+    private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeScheduleStore: EpisodeScheduleStore
     private let episodeWatchStore: EpisodeWatchStore
 
     init(
         candidate: MediaCandidate,
-        useCase: any ShowDetailsUseCase,
+        showDetailsUseCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeScheduleStore: EpisodeScheduleStore,
         episodeWatchStore: EpisodeWatchStore
     ) {
         self.candidate = candidate
-        self.useCase = useCase
+        self.showDetailsUseCase = showDetailsUseCase
         self.followedMediaStore = followedMediaStore
         self.episodeScheduleStore = episodeScheduleStore
         self.episodeWatchStore = episodeWatchStore
@@ -45,7 +45,7 @@ final class EpisodesViewModel {
 
         state = .loading
         do {
-            let seasons = try await useCase.fetchEpisodes(for: candidate)
+            let seasons = try await showDetailsUseCase.fetchEpisodes(for: candidate)
             try Task.checkCancellation()
             if let item = followedMediaStore.item(id: candidate.id) {
                 episodeScheduleStore.save(item: item, seasons: seasons)

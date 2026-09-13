@@ -27,9 +27,9 @@ struct DefaultDataImportUseCaseTests {
         let destinationContainer = try makeContainer()
         let destinationLibrary = SwiftDataLibraryRepository(modelContext: destinationContainer.mainContext)
         let destinationHistory = SwiftDataEpisodeWatchRepository(modelContext: destinationContainer.mainContext)
-        let followedMediaStore = FollowedMediaStore(repository: destinationLibrary)
+        let followedMediaStore = FollowedMediaStore(libraryRepository: destinationLibrary)
         let episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
         )
         try destinationLibrary.save(makeItem(id: 1396, title: "Breaking Bad", trackingStatus: .watching))
         try destinationHistory.save(WatchedEpisode(id: "tmdb:95396:1:1", watchedAt: .now))
@@ -71,9 +71,9 @@ struct DefaultDataImportUseCaseTests {
 
         let destinationContainer = try makeContainer()
         let destinationLibrary = SwiftDataLibraryRepository(modelContext: destinationContainer.mainContext)
-        let followedMediaStore = FollowedMediaStore(repository: destinationLibrary)
+        let followedMediaStore = FollowedMediaStore(libraryRepository: destinationLibrary)
         let episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
         )
         let posterURL = try #require(URL(string: "https://example.com/refreshed-poster.jpg"))
         let useCase = DefaultDataImportUseCase(
@@ -109,9 +109,9 @@ struct DefaultDataImportUseCaseTests {
 
         let destinationContainer = try makeContainer()
         let destinationLibrary = SwiftDataLibraryRepository(modelContext: destinationContainer.mainContext)
-        let followedMediaStore = FollowedMediaStore(repository: destinationLibrary)
+        let followedMediaStore = FollowedMediaStore(libraryRepository: destinationLibrary)
         let episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: destinationContainer.mainContext)
         )
         let useCase = DefaultDataImportUseCase(
             libraryRepository: destinationLibrary,
@@ -136,14 +136,14 @@ struct DefaultDataImportUseCaseTests {
         let container = try makeContainer()
         let library = SwiftDataLibraryRepository(modelContext: container.mainContext)
         let history = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
-        let followedMediaStore = FollowedMediaStore(repository: library)
+        let followedMediaStore = FollowedMediaStore(libraryRepository: library)
         let useCase = DefaultDataImportUseCase(
             libraryRepository: library,
             episodeWatchRepository: history,
             showDetailsUseCase: BackupImportDetailsUseCaseStub(),
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: EpisodeScheduleStore(
-                repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+                episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
             )
         )
         let data = Data("""
@@ -179,9 +179,9 @@ struct DefaultDataImportUseCaseTests {
             libraryRepository: library,
             episodeWatchRepository: history,
             showDetailsUseCase: BackupImportDetailsUseCaseStub(),
-            followedMediaStore: FollowedMediaStore(repository: library),
+            followedMediaStore: FollowedMediaStore(libraryRepository: library),
             episodeScheduleStore: EpisodeScheduleStore(
-                repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+                episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
             )
         )
 
@@ -223,52 +223,4 @@ struct DefaultDataImportUseCaseTests {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
     }
-}
-
-private struct BackupImportDetailsUseCaseStub: ShowDetailsUseCase {
-    let posterURL: URL?
-    let shouldFail: Bool
-
-    init(posterURL: URL? = nil, shouldFail: Bool = false) {
-        self.posterURL = posterURL
-        self.shouldFail = shouldFail
-    }
-
-    func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
-        if shouldFail {
-            throw BackupImportTestError.expectedFailure
-        }
-        return ShowDetails(
-            provider: candidate.provider,
-            providerID: candidate.providerID,
-            kind: candidate.kind,
-            title: candidate.title,
-            alternateTitle: candidate.alternateTitle,
-            overview: nil,
-            posterURL: posterURL,
-            backdropURL: nil,
-            releaseYear: candidate.releaseYear,
-            status: candidate.status,
-            totalEpisodeCount: candidate.totalEpisodeCount,
-            genres: [],
-            seasonSummaries: []
-        )
-    }
-
-    func fetchEpisodes(for candidate: MediaCandidate) async throws -> [ShowSeason] {
-        if shouldFail {
-            throw BackupImportTestError.expectedFailure
-        }
-        return [ShowSeason(
-            provider: candidate.provider,
-            showID: candidate.providerID,
-            number: 1,
-            name: "Season 1",
-            episodes: []
-        )]
-    }
-}
-
-private enum BackupImportTestError: Error {
-    case expectedFailure
 }

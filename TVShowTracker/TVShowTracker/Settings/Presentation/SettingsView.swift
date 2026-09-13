@@ -24,7 +24,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                TrackerCard {
+                TrackerCardView {
                     VStack(spacing: 12) {
                         HStack(spacing: 14) {
                             Image(systemName: "circle.lefthalf.filled")
@@ -77,7 +77,7 @@ struct SettingsView: View {
                 NavigationLink {
                     makeTVTimeImportView()
                 } label: {
-                    SettingsActionCard(
+                    SettingsActionCardView(
                         title: "Import TV Time data",
                         subtitle: "Bring in followed shows and watched episodes",
                         systemImage: "square.and.arrow.down"
@@ -87,7 +87,7 @@ struct SettingsView: View {
                 .disabled(viewModel.isImporting)
 
                 Button(action: viewModel.prepareExport) {
-                    SettingsActionCard(
+                    SettingsActionCardView(
                         title: "Export a backup",
                         subtitle: "Save your shows and watched history as JSON",
                         systemImage: "square.and.arrow.up",
@@ -100,7 +100,7 @@ struct SettingsView: View {
                 Button {
                     viewModel.isImporterPresented = true
                 } label: {
-                    SettingsActionCard(
+                    SettingsActionCardView(
                         title: "Import a backup",
                         subtitle: "Merge shows and watched history from JSON",
                         systemImage: "arrow.down.doc",
@@ -111,7 +111,7 @@ struct SettingsView: View {
                 .disabled(viewModel.isImporting)
 
                 if viewModel.isImporting {
-                    TrackerCard {
+                    TrackerCardView {
                         HStack(spacing: 12) {
                             ProgressView()
                             Text(viewModel.importProgressMessage)
@@ -123,7 +123,7 @@ struct SettingsView: View {
                     .accessibilityLabel(viewModel.importProgressMessage)
                 }
 
-                SettingsInfoCard(
+                SettingsInfoCardView(
                     title: "Kept on this device",
                     description: "Your followed shows, saved schedules, and watched progress are stored locally so your library remains available offline.",
                     systemImage: "lock.fill"
@@ -155,69 +155,5 @@ struct SettingsView: View {
         } message: {
             Text(viewModel.successMessage ?? "Your data was imported.")
         }
-    }
-}
-
-private struct SettingsInfoCard: View {
-    let title: String
-    let description: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 28, height: 28)
-                .background(Color.primary.opacity(0.07), in: .circle)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(description)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct SettingsActionCard: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-    var showsDisclosureIndicator = true
-
-    var body: some View {
-        TrackerCard {
-            HStack(spacing: 14) {
-                Image(systemName: systemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 42, height: 42)
-                    .background(Color.accentColor.opacity(0.14), in: .rect(cornerRadius: 12))
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.headline)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-                if showsDisclosureIndicator {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 }

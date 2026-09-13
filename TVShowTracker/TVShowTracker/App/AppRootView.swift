@@ -11,14 +11,16 @@ struct AppRootView: View {
     let coordinator: AppCoordinator
 
     var body: some View {
+        let viewModel = coordinator.viewModel
+
         MainCoordinatorView(
             coordinator: coordinator.mainCoordinator
         )
         .safeAreaInset(edge: .top, spacing: 0) {
-            if coordinator.isRefreshingFollowedMedia {
+            if viewModel.isRefreshingFollowedMedia {
                 HStack(spacing: 8) {
                     ProgressView()
-                    Text(coordinator.followedMediaRefreshMessage)
+                    Text(viewModel.followedMediaRefreshMessage)
                         .font(.footnote.weight(.medium))
                 }
                 .frame(maxWidth: .infinity)
@@ -27,7 +29,7 @@ struct AppRootView: View {
             }
         }
         .task {
-            await coordinator.refreshFollowedMedia()
+            await viewModel.refreshFollowedMedia()
         }
     }
 }

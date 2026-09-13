@@ -17,7 +17,7 @@ The folders are organizational boundaries, not separately compiled packages.
   cases. It does not import SwiftUI or SwiftData or depend on concrete stores.
   `ShowContentRepository` owns shared detail-fetching defaults;
   the TV, anime, and details-use-case contracts preserve their distinct roles.
-- **Data** implements persistence, parsing, and provider access. DTO families
+- **Data** implements persistence, parsing, and provider access. Individual DTOs
   describe wire formats; mapping extensions translate them into domain values.
   Shared AniList/Jikan DTOs and status mappings belong to `Media/Data`.
   GraphQL query documents live beside their feature's DTOs and repositories.
@@ -34,6 +34,20 @@ The folders are organizational boundaries, not separately compiled packages.
 Use a new layer only when there is a responsibility to put in it. A small feature
 need not contain every possible directory.
 
+Each standalone type has a dedicated file, including small views, DTOs, routing
+enums, and test helpers. SwiftUI view names end with `View`. Nested types stay
+with their parent declaration; mapping and formatting extensions use
+`Type+Responsibility.swift` and concern one target type. Unit-test helpers
+remain under the feature and layer they support. SwiftLint checks filenames,
+single declarations, and view suffixes.
+
+Injected dependency properties and initializer labels consistently describe their
+contract role. Search and Details repository names include that distinction;
+use-case dependencies retain their specific operation name. Capability protocols
+use capability names at their consumers (`episodeScheduleReader`), while concrete
+shared stores retain store names. Primary/fallback dependencies use explicit role
+qualifiers. These names describe the dependency contract, not its implementation.
+
 ## Flow construction and ownership
 
 All four tabs are constructed as `FeatureCoordinatorView(coordinator:)`. Each tab
@@ -45,6 +59,18 @@ are rebuilt. Cross-tab Discover requests use the already-retained Search model.
 The App root also receives its coordinator explicitly. Only MainCoordinator has
 observable coordinator-owned state; stateless dependency holders do not need
 `@Observable`. SwiftUI still observes the observable stores/models they expose.
+
+`AppCoordinator` retains an `AppRootViewModel` alongside `MainCoordinator`.
+The root model owns the banner's presentation logic and the view-triggered
+refresh action. It derives progress directly from `FollowedMediaRefreshStore`,
+so launch refresh and refreshes started elsewhere share the same visible state.
+It has no duplicated mutable state and does not need `@Observable`; reading its
+computed properties registers observation of the underlying store.
+
+Coordinators assemble destinations and route between flows. Display text,
+loading/error state, and view-triggered workflows belong in view models. Passing
+a query from MainCoordinator through SearchCoordinator to SearchViewModel is a
+navigation handoff; the model still owns search execution and its state.
 
 Navigation stacks and flow-level sheets belong to coordinator views. Content
 views receive models, intent callbacks, and destination factories. Those factories

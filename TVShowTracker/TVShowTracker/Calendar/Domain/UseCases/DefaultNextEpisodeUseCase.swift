@@ -9,10 +9,10 @@ import Foundation
 
 @MainActor
 struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
-    private let episodeScheduleStore: any EpisodeScheduleReading
+    private let episodeScheduleReader: any EpisodeScheduleReading
 
-    init(episodeScheduleStore: any EpisodeScheduleReading) {
-        self.episodeScheduleStore = episodeScheduleStore
+    init(episodeScheduleReader: any EpisodeScheduleReading) {
+        self.episodeScheduleReader = episodeScheduleReader
     }
 
     func hasNextEpisode(
@@ -40,7 +40,7 @@ struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
         }
         let episodeMediaIDs = Set(episodes.map(\.candidate.id))
         let availableEpisodeCount = activeItems.reduce(into: 0) { count, item in
-            count += (episodeScheduleStore.schedule(for: item)?.seasons ?? [])
+            count += (episodeScheduleReader.schedule(for: item)?.seasons ?? [])
                 .filter { !$0.isSpecial }
                 .flatMap(\.episodes)
                 .count { episode in
@@ -69,7 +69,7 @@ private extension DefaultNextEpisodeUseCase {
         watchedEpisodeIDs: Set<String>,
         now: Date
     ) -> CalendarEpisode? {
-        let episodes = (episodeScheduleStore.schedule(for: item)?.seasons ?? [])
+        let episodes = (episodeScheduleReader.schedule(for: item)?.seasons ?? [])
             .filter { !$0.isSpecial }
             .flatMap(\.episodes)
             .map { CalendarEpisode(item: item, episode: $0) }

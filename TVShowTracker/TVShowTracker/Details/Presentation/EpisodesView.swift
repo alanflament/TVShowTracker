@@ -52,7 +52,7 @@ struct EpisodesView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if seasons.isEmpty {
-                    TrackerEmptyState(
+                    TrackerEmptyStateView(
                         title: "No episodes yet",
                         systemImage: "list.number",
                         description: "Episode information will appear here as soon as it is available."
@@ -133,7 +133,7 @@ struct EpisodesView: View {
         let isExpanded = expandedSeasonIDs.contains(season.id)
 
         return VStack(spacing: 0) {
-            SeasonHeader(
+            SeasonHeaderView(
                 season: season,
                 isExpanded: isExpanded,
                 isFullyWatched: viewModel.areAllWatched(in: season.episodes),
@@ -150,10 +150,10 @@ struct EpisodesView: View {
                 }
             )
 
-            CollapsibleEpisodeList(isExpanded: isExpanded) {
+            CollapsibleEpisodeListView(isExpanded: isExpanded) {
                 VStack(spacing: 10) {
                     ForEach(season.episodes) { episode in
-                        EpisodeRow(
+                        EpisodeRowView(
                             episode: episode,
                             isWatched: viewModel.isWatched(episode),
                             onSelect: {
@@ -197,197 +197,5 @@ struct EpisodesView: View {
             return 0
         }
         return Double(watched) / Double(total)
-    }
-}
-
-private struct SeasonHeader: View {
-    let season: ShowSeason
-    let isExpanded: Bool
-    let isFullyWatched: Bool
-    let watchedEpisodeCount: Int
-    let unwatchedReleasedEpisodeCount: Int
-    let onToggleExpanded: () -> Void
-    let onToggleWatched: () -> Void
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            seasonWatchControl
-
-            Button(action: onToggleExpanded) {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(season.displayName)
-                        .font(.headline)
-
-                    if season.episodes.isEmpty {
-                        Text("To be announced")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        HStack(spacing: 8) {
-                            ProgressView(value: progress)
-                                .tint(isFullyWatched ? .green : .accentColor)
-                            Text("\(watchedEpisodeCount) of \(season.episodes.count) watched")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .disabled(season.episodes.isEmpty)
-            .accessibilityLabel(season.displayName)
-            .accessibilityValue(expansionAccessibilityValue)
-            .accessibilityHint(season.episodes.isEmpty ? "" : "Shows or hides the episode list")
-
-            if !season.episodes.isEmpty {
-                Button(action: onToggleExpanded) {
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                        .frame(width: 20, height: 28)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(isExpanded ? "Collapse \(season.displayName)" : "Expand \(season.displayName)")
-            }
-        }
-        .padding(.vertical, 8)
-        .textCase(nil)
-        .accessibilityElement(children: .contain)
-    }
-
-    @ViewBuilder
-    private var seasonWatchControl: some View {
-        if season.episodes.isEmpty {
-            Image(systemName: "calendar")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("Episode schedule to be announced")
-        } else {
-            Button(action: onToggleWatched) {
-                Image(systemName: isFullyWatched ? "checkmark.circle.fill" : "checkmark.circle")
-                    .font(.title2)
-                    .foregroundStyle(isFullyWatched ? .green : .secondary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .disabled(unwatchedReleasedEpisodeCount == 0 && !isFullyWatched)
-            .accessibilityLabel(seasonWatchAccessibilityLabel)
-            .accessibilityValue(isFullyWatched ? "Complete" : "\(unwatchedReleasedEpisodeCount) available")
-        }
-    }
-
-    private var seasonWatchAccessibilityLabel: String {
-        if isFullyWatched {
-            return "Mark all episodes in \(season.displayName) as unwatched"
-        }
-        return "Mark all released episodes in \(season.displayName) as watched"
-    }
-
-    private var progress: Double {
-        guard !season.episodes.isEmpty else {
-            return 0
-        }
-        return Double(watchedEpisodeCount) / Double(season.episodes.count)
-    }
-
-    private var expansionAccessibilityValue: String {
-        guard !season.episodes.isEmpty else {
-            return "To be announced"
-        }
-        return isExpanded ? "Expanded" : "Collapsed"
-    }
-}
-
-private struct CollapsibleEpisodeList<Content: View>: View {
-    let isExpanded: Bool
-    let content: Content
-    @State private var contentHeight: CGFloat = 0
-
-    init(isExpanded: Bool, @ViewBuilder content: () -> Content) {
-        self.isExpanded = isExpanded
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .fixedSize(horizontal: false, vertical: true)
-            .onGeometryChange(for: CGFloat.self) { geometry in
-                geometry.size.height
-            } action: { newHeight in
-                contentHeight = newHeight
-            }
-            .offset(y: isExpanded ? 0 : -14)
-            .frame(height: isExpanded ? contentHeight : 0, alignment: .top)
-            .clipped()
-            .allowsHitTesting(isExpanded)
-            .accessibilityHidden(!isExpanded)
-    }
-}
-
-private struct EpisodeRow: View {
-    let episode: ShowEpisode
-    let isWatched: Bool
-    let onSelect: () -> Void
-    let onToggleWatched: () -> Void
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Text("E\(episode.number)")
-                    .font(.caption.bold())
-                    .foregroundStyle(isWatched ? .green : .secondary)
-                    .frame(width: 38, height: 28)
-                    .background(Color.primary.opacity(0.08), in: Capsule())
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(episode.title)
-                        .font(.headline)
-                    if let overview = episode.overview, !overview.isEmpty {
-                        Text(overview)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                    Text(releaseLabel)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(episode.isReleased ? .green : .orange)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button(action: onToggleWatched) {
-                Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
-                    .font(.title)
-                    .foregroundStyle(isWatched ? .green : .secondary)
-                    .frame(width: 52, height: 52)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .disabled(!episode.isReleased)
-            .accessibilityLabel(isWatched ? "Mark as unwatched" : "Mark as watched")
-            .accessibilityValue(isWatched ? "Watched" : "Unwatched")
-            .accessibilityHint(episode.isReleased ? "" : "This episode has not been released yet.")
-        }
-        .opacity(episode.isReleased ? 1 : 0.6)
-        .padding(14)
-        .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 14))
-        .contentShape(.rect)
-        .onTapGesture(perform: onSelect)
-        .accessibilityElement(children: .contain)
-    }
-
-    private var releaseLabel: String {
-        guard !episode.isReleased else {
-            return "Available now"
-        }
-        guard let airDate = episode.airDate else {
-            return "Release date to be announced"
-        }
-        return "Airs \(airDate.formatted(date: .abbreviated, time: .omitted))"
     }
 }

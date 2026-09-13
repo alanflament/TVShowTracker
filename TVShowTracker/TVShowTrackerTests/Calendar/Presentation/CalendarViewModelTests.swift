@@ -40,16 +40,16 @@ struct CalendarViewModelTests {
 
     @Test func replacedSchedulesAndExternalWatchActionsInvalidateCalendarData() {
         let item = makeItem()
-        let library = FollowedMediaStore(repository: CalendarLibraryRepositoryStub(items: [item]))
-        let schedules = EpisodeScheduleStore(repository: CalendarScheduleRepositoryStub())
-        let watches = EpisodeWatchStore(repository: CalendarWatchRepositoryStub())
+        let library = FollowedMediaStore(libraryRepository: CalendarLibraryRepositoryStub(items: [item]))
+        let schedules = EpisodeScheduleStore(episodeScheduleRepository: CalendarScheduleRepositoryStub())
+        let watches = EpisodeWatchStore(episodeWatchRepository: CalendarWatchRepositoryStub())
         let viewModel = CalendarViewModel(
-            nextEpisodeUseCase: DefaultNextEpisodeUseCase(episodeScheduleStore: schedules),
+            nextEpisodeUseCase: DefaultNextEpisodeUseCase(episodeScheduleReader: schedules),
             followedMediaStore: library,
             episodeWatchStore: watches,
             episodeScheduleStore: schedules,
             followedMediaRefreshStore: FollowedMediaRefreshStore(
-                refreshUseCase: CalendarRefreshUseCaseStub(),
+                episodeScheduleRefreshUseCase: CalendarRefreshUseCaseStub(),
                 followedMediaStore: library, episodeWatchStore: watches, episodeScheduleStore: schedules
             )
         )
@@ -93,15 +93,15 @@ private extension CalendarViewModelTests {
         item: LibraryItem,
         nextEpisodeUseCase: any NextEpisodeUseCase
     ) -> CalendarViewModel {
-        let followedMediaStore = FollowedMediaStore(repository: CalendarLibraryRepositoryStub(items: [item]))
-        let episodeScheduleStore = EpisodeScheduleStore(repository: CalendarScheduleRepositoryStub())
+        let followedMediaStore = FollowedMediaStore(libraryRepository: CalendarLibraryRepositoryStub(items: [item]))
+        let episodeScheduleStore = EpisodeScheduleStore(episodeScheduleRepository: CalendarScheduleRepositoryStub())
         let episodeWatchStore = EpisodeWatchStore(
-            repository: CalendarWatchRepositoryStub(),
+            episodeWatchRepository: CalendarWatchRepositoryStub(),
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore
         )
         let refreshStore = FollowedMediaRefreshStore(
-            refreshUseCase: CalendarRefreshUseCaseStub(),
+            episodeScheduleRefreshUseCase: CalendarRefreshUseCaseStub(),
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: episodeScheduleStore
@@ -151,89 +151,4 @@ private extension CalendarViewModelTests {
         }
         return episodes
     }
-}
-
-@MainActor
-private final class GatedNextEpisodeUseCase: NextEpisodeUseCase {
-    private var results: [NextEpisodeResult]
-    private var shouldSuspend = false
-    private var continuation: CheckedContinuation<Void, Never>?
-    private(set) var isSuspended = false
-
-    init(results: [NextEpisodeResult]) {
-        self.results = results
-    }
-
-    func suspendNextRequest() {
-        shouldSuspend = true
-    }
-
-    func resume() {
-        continuation?.resume()
-        continuation = nil
-    }
-
-    func findNextEpisode(
-        in _: [LibraryItem],
-        watchedEpisodeIDs _: Set<String>,
-        now _: Date
-    ) async -> NextEpisodeResult {
-        let result = results.removeFirst()
-        if shouldSuspend {
-            shouldSuspend = false
-            isSuspended = true
-            await withCheckedContinuation { continuation in
-                self.continuation = continuation
-            }
-            isSuspended = false
-        }
-        return result
-    }
-}
-
-@MainActor
-private struct CalendarLibraryRepositoryStub: LibraryRepository {
-    let items: [LibraryItem]
-
-    func loadItems() throws -> [LibraryItem] {
-        items
-    }
-
-    func save(_: LibraryItem) throws {}
-    func delete(id _: String) throws {}
-}
-
-@MainActor
-private struct CalendarScheduleRepositoryStub: EpisodeScheduleRepository {
-    func loadSchedules() throws -> [EpisodeSchedule] {
-        []
-    }
-
-    func save(_: EpisodeSchedule) throws {}
-    func delete(id _: String) throws {}
-}
-
-@MainActor
-private struct CalendarWatchRepositoryStub: EpisodeWatchRepository {
-    func loadWatchedEpisodes() throws -> [WatchedEpisode] {
-        []
-    }
-
-    func save(_: WatchedEpisode) throws {}
-    func save(_: [WatchedEpisode]) throws {}
-    func delete(id _: String) throws {}
-    func delete(ids _: [String]) throws {}
-}
-
-private struct CalendarRefreshUseCaseStub: EpisodeScheduleRefreshUseCase {
-    func refreshSchedules(
-        for _: [LibraryItem],
-        onResult _: @escaping @Sendable (EpisodeScheduleRefreshResult) async -> Void
-    ) async -> [EpisodeScheduleRefreshResult] {
-        []
-    }
-}
-
-private enum CalendarViewModelTestError: Error {
-    case expectedLoadedState
 }

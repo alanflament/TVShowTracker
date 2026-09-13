@@ -19,7 +19,7 @@ struct EpisodeWatchStoreTests {
             configurations: configuration
         )
         let repository = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
-        let store = EpisodeWatchStore(repository: repository)
+        let store = EpisodeWatchStore(episodeWatchRepository: repository)
         let episodes = [
             makeEpisode(number: 1),
             makeEpisode(number: 2)
@@ -39,7 +39,7 @@ struct EpisodeWatchStoreTests {
             configurations: configuration
         )
         let repository = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
-        let store = EpisodeWatchStore(repository: repository)
+        let store = EpisodeWatchStore(episodeWatchRepository: repository)
         let episodes = [makeEpisode(number: 1), makeEpisode(number: 2)]
         store.markWatched(episodes)
 
@@ -58,10 +58,10 @@ struct EpisodeWatchStoreTests {
             configurations: configuration
         )
         let libraryStore = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let scheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
         )
         let candidate = MediaCandidate(
             provider: .tmdb,
@@ -83,7 +83,7 @@ struct EpisodeWatchStoreTests {
             ShowSeason(provider: .tmdb, showID: 42, number: 1, name: "Season 1", episodes: episodes)
         ])
         let store = EpisodeWatchStore(
-            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
             followedMediaStore: libraryStore,
             episodeScheduleStore: scheduleStore
         )
@@ -107,10 +107,10 @@ struct EpisodeWatchStoreTests {
             configurations: configuration
         )
         let libraryStore = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let scheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
         )
         let candidate = MediaCandidate(
             provider: .tmdb,
@@ -132,7 +132,7 @@ struct EpisodeWatchStoreTests {
             ShowSeason(provider: .tmdb, showID: 42, number: 1, name: "Season 1", episodes: episodes)
         ])
         let store = EpisodeWatchStore(
-            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
             followedMediaStore: libraryStore,
             episodeScheduleStore: scheduleStore
         )

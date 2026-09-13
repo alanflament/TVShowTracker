@@ -20,6 +20,12 @@ final class CalendarViewModel {
         )
     }
 
+    struct DataID: Equatable {
+        let items: [LibraryItem]
+        let schedules: [String: EpisodeSchedule]
+        let watchedEpisodeIDs: Set<String>
+    }
+
     private let nextEpisodeUseCase: any NextEpisodeUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
@@ -51,12 +57,6 @@ final class CalendarViewModel {
         followedMediaStore.items
             .filter { $0.trackingStatus.appearsInUpNext }
             .map(\.id)
-    }
-
-    struct DataID: Equatable {
-        let items: [LibraryItem]
-        let schedules: [String: EpisodeSchedule]
-        let watchedEpisodeIDs: Set<String>
     }
 
     var calendarDataID: DataID {

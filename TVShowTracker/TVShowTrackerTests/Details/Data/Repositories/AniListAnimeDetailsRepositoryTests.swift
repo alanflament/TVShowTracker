@@ -85,25 +85,3 @@ struct AniListAnimeDetailsRepositoryTests {
         #expect(seasons.first?.episodes.map(\.runtimeMinutes) == [24, 24])
     }
 }
-
-private struct EpisodeDurationHTTPClientStub: HTTPClient {
-    let data: Data
-
-    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        guard let url = request.url,
-              let response = HTTPURLResponse(
-                  url: url,
-                  statusCode: 200,
-                  httpVersion: nil,
-                  headerFields: nil
-              )
-        else {
-            throw EpisodeDurationTestError.invalidRequest
-        }
-        return (data, response)
-    }
-}
-
-private enum EpisodeDurationTestError: Error {
-    case invalidRequest
-}

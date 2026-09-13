@@ -27,11 +27,3 @@ enum HTTPClientError: LocalizedError, Sendable {
         }
     }
 }
-
-extension HTTPURLResponse {
-    func validateSuccessfulStatusCode() throws {
-        guard (200 ... 299).contains(statusCode) else {
-            throw HTTPClientError.unacceptableStatusCode(statusCode)
-        }
-    }
-}

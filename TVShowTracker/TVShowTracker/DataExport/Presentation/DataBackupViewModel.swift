@@ -10,8 +10,8 @@ import Observation
 
 @MainActor @Observable
 final class DataBackupViewModel {
-    private let exportUseCase: any DataExportUseCase
-    private let importUseCase: any DataImportUseCase
+    private let dataExportUseCase: any DataExportUseCase
+    private let dataImportUseCase: any DataImportUseCase
 
     private(set) var document: TVShowTrackerBackupDocument?
     private(set) var errorMessage: String?
@@ -24,11 +24,11 @@ final class DataBackupViewModel {
     var isSuccessPresented = false
 
     init(
-        exportUseCase: any DataExportUseCase,
-        importUseCase: any DataImportUseCase
+        dataExportUseCase: any DataExportUseCase,
+        dataImportUseCase: any DataImportUseCase
     ) {
-        self.exportUseCase = exportUseCase
-        self.importUseCase = importUseCase
+        self.dataExportUseCase = dataExportUseCase
+        self.dataImportUseCase = dataImportUseCase
     }
 
     var defaultFilename: String {
@@ -38,7 +38,7 @@ final class DataBackupViewModel {
 
     func prepareExport() {
         do {
-            document = try TVShowTrackerBackupDocument(data: exportUseCase.export(at: .now))
+            document = try TVShowTrackerBackupDocument(data: dataExportUseCase.export(at: .now))
             errorMessage = nil
             isExporterPresented = true
         } catch {
@@ -80,7 +80,7 @@ final class DataBackupViewModel {
         defer { isImporting = false }
 
         do {
-            let report = try await importUseCase.importBackup(data) { [weak self] progress in
+            let report = try await dataImportUseCase.importBackup(data) { [weak self] progress in
                 self?.updateImportProgress(progress)
             }
             successMessage = successMessage(for: report)

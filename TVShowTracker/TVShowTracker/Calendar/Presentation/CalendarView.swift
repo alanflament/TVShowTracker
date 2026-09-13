@@ -57,7 +57,7 @@ struct CalendarView: View {
                 if episodes.isEmpty, undatedMedia.isEmpty {
                     emptyContent()
                 } else {
-                    UpNextSummary(
+                    UpNextSummaryView(
                         availableEpisodeCount: availableEpisodeCount,
                         undatedMediaCount: undatedMedia.count
                     )
@@ -104,7 +104,7 @@ struct CalendarView: View {
 
             LazyVStack(spacing: 14) {
                 ForEach(episodes, id: \.candidate.id) { episode in
-                    CalendarEpisodeCard(
+                    CalendarEpisodeCardView(
                         episode: episode,
                         onSelect: {
                             onSelectEpisode(episode)
@@ -144,7 +144,7 @@ struct CalendarView: View {
 
             LazyVStack(spacing: 14) {
                 ForEach(media, id: \.candidate.id) { item in
-                    CalendarUndatedMediaCard(item: item) {
+                    CalendarUndatedMediaCardView(item: item) {
                         onSelectMedia(item.candidate)
                     }
                 }
@@ -155,21 +155,21 @@ struct CalendarView: View {
     @ViewBuilder
     private func emptyContent() -> some View {
         if viewModel.followedMediaIDs.isEmpty {
-            TrackerEmptyState(
+            TrackerEmptyStateView(
                 title: "Your next episode starts here",
                 systemImage: "play.circle.fill",
                 description: "Follow TV shows and anime in Discover to build your personal queue."
             )
             .frame(maxWidth: .infinity, minHeight: 320)
         } else if viewModel.watchingMediaIDs.isEmpty {
-            TrackerEmptyState(
+            TrackerEmptyStateView(
                 title: "Nothing in Up Next",
                 systemImage: "pause.circle.fill",
                 description: "Set a show to Watching from its details to include its episodes here."
             )
             .frame(maxWidth: .infinity, minHeight: 320)
         } else {
-            TrackerEmptyState(
+            TrackerEmptyStateView(
                 title: "You’re all caught up",
                 systemImage: "checkmark.circle.fill",
                 description: "There are no unwatched episodes in your saved schedules right now. Pull down to check for new releases."
@@ -189,67 +189,5 @@ struct CalendarView: View {
         default:
             return false
         }
-    }
-}
-
-private struct UpNextSummary: View {
-    let availableEpisodeCount: Int
-    let undatedMediaCount: Int
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(summaryTitle)
-                .font(.title.bold())
-            Text(summaryDescription)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var summaryTitle: String {
-        switch availableEpisodeCount {
-        case 0:
-            "Your upcoming episodes"
-        case 1:
-            "One episode is ready"
-        default:
-            "\(availableEpisodeCount) episodes are ready"
-        }
-    }
-
-    private var summaryDescription: String {
-        if availableEpisodeCount > 0 {
-            return "Pick up where you left off."
-        }
-        if undatedMediaCount > 0 {
-            return "Some of your shows have not announced their next episode yet."
-        }
-        return "Keep an eye on what is coming next."
-    }
-}
-
-private struct CalendarUndatedMediaCard: View {
-    let item: CalendarUndatedMedia
-    let onSelect: () -> Void
-
-    var body: some View {
-        HStack(spacing: 14) {
-            MediaPoster(url: item.posterURL, kind: item.candidate.kind, width: 56, height: 84)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.showTitle)
-                    .font(.headline)
-                Label("Next episode to be announced", systemImage: "calendar.badge.exclamationmark")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 16))
-        .contentShape(.rect)
-        .onTapGesture(perform: onSelect)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Opens show details")
     }
 }

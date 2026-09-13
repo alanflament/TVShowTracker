@@ -8,26 +8,26 @@
 import Foundation
 
 struct FallbackAnimeSearchRepository: AnimeSearchRepository {
-    private let primary: any AnimeSearchRepository
-    private let fallback: any AnimeSearchRepository
+    private let primaryRepository: any AnimeSearchRepository
+    private let fallbackRepository: any AnimeSearchRepository
 
     init(
-        primary: any AnimeSearchRepository,
-        fallback: any AnimeSearchRepository
+        primaryRepository: any AnimeSearchRepository,
+        fallbackRepository: any AnimeSearchRepository
     ) {
-        self.primary = primary
-        self.fallback = fallback
+        self.primaryRepository = primaryRepository
+        self.fallbackRepository = fallbackRepository
     }
 
     func searchAnime(matching query: String) async throws -> [MediaCandidate] {
         do {
-            return try await primary.searchAnime(matching: query)
+            return try await primaryRepository.searchAnime(matching: query)
         } catch {
             try error.rethrowIfCancellation()
             let primaryError = error.searchFailureMessage
 
             do {
-                return try await fallback.searchAnime(matching: query)
+                return try await fallbackRepository.searchAnime(matching: query)
             } catch {
                 try error.rethrowIfCancellation()
                 throw AnimeSearchError(
@@ -38,11 +38,5 @@ struct FallbackAnimeSearchRepository: AnimeSearchRepository {
                 )
             }
         }
-    }
-}
-
-private extension Error {
-    var searchFailureMessage: String {
-        (self as? LocalizedError)?.errorDescription ?? "This source could not be reached."
     }
 }

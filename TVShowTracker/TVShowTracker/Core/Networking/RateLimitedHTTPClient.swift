@@ -8,18 +8,18 @@
 import Foundation
 
 actor RateLimitedHTTPClient: HTTPClient {
-    private let client: any HTTPClient
+    private let httpClient: any HTTPClient
     private let minimumInterval: TimeInterval
     private var nextRequestDate = Date.distantPast
 
-    init(client: any HTTPClient, minimumInterval: TimeInterval) {
-        self.client = client
+    init(httpClient: any HTTPClient, minimumInterval: TimeInterval) {
+        self.httpClient = httpClient
         self.minimumInterval = minimumInterval
     }
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         try await waitForRequestTurn()
-        let result = try await client.data(for: request)
+        let result = try await httpClient.data(for: request)
         if result.1.statusCode == 429 {
             deferRequests(using: result.1)
         }

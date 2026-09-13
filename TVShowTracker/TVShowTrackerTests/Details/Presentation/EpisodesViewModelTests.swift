@@ -21,10 +21,10 @@ struct EpisodesViewModelTests {
             configurations: configuration
         )
         let followedMediaStore = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
         )
         let viewModel = EpisodesViewModel(
             candidate: MediaCandidate(
@@ -40,11 +40,11 @@ struct EpisodesViewModelTests {
                 nextEpisodeNumber: nil,
                 nextEpisodeAirDate: nil
             ),
-            useCase: EmptyEpisodesUseCaseStub(),
+            showDetailsUseCase: EmptyEpisodesUseCaseStub(),
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore,
             episodeWatchStore: EpisodeWatchStore(
-                repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+                episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
             )
         )
 
@@ -60,17 +60,17 @@ struct EpisodesViewModelTests {
             configurations: configuration
         )
         let followedMediaStore = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
         )
         let episodeWatchStore = EpisodeWatchStore(
-            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+            episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
         )
         let viewModel = EpisodesViewModel(
             candidate: candidate,
-            useCase: EmptyEpisodesUseCaseStub(),
+            showDetailsUseCase: EmptyEpisodesUseCaseStub(),
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore,
             episodeWatchStore: episodeWatchStore
@@ -100,13 +100,13 @@ struct EpisodesViewModelTests {
             configurations: configuration
         )
         let followedMediaStore = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
         )
         let episodeWatchStore = EpisodeWatchStore(
-            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            episodeWatchRepository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore
         )
@@ -120,14 +120,14 @@ struct EpisodesViewModelTests {
         )
         let viewModel = EpisodesViewModel(
             candidate: candidate,
-            useCase: EpisodesUseCaseStub(seasons: [season]),
+            showDetailsUseCase: EpisodesUseCaseStub(seasons: [season]),
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore,
             episodeWatchStore: episodeWatchStore
         )
         let detailsViewModel = ShowDetailsViewModel(
             candidate: candidate,
-            useCase: EmptyEpisodesUseCaseStub(),
+            showDetailsUseCase: EmptyEpisodesUseCaseStub(),
             followedMediaStore: followedMediaStore
         )
 
@@ -170,27 +170,5 @@ struct EpisodesViewModelTests {
             stillURL: nil,
             runtimeMinutes: nil
         )
-    }
-}
-
-private struct EmptyEpisodesUseCaseStub: ShowDetailsUseCase {
-    func fetchDetails(for _: MediaCandidate) async throws -> ShowDetails {
-        throw EpisodeDetailsError.notFound
-    }
-
-    func fetchEpisodes(for _: MediaCandidate) async throws -> [ShowSeason] {
-        []
-    }
-}
-
-private struct EpisodesUseCaseStub: ShowDetailsUseCase {
-    let seasons: [ShowSeason]
-
-    func fetchDetails(for _: MediaCandidate) async throws -> ShowDetails {
-        throw EpisodeDetailsError.notFound
-    }
-
-    func fetchEpisodes(for _: MediaCandidate) async throws -> [ShowSeason] {
-        seasons
     }
 }

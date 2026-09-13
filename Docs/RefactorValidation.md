@@ -78,3 +78,35 @@ Evidence:
 - Release log: `/private/tmp/TVShowTracker-consistency-release.log`
 - Strict lint log: `/private/tmp/TVShowTracker-consistency-lint.log`
 - Inspected UI attachments: `/private/tmp/TVShowTracker-consistency-screenshots/`
+
+## Dedicated declarations and view naming
+
+The project contains 331 explicitly declared types across 335 Swift files.
+Standalone types have dedicated files; 32 nested state, coding-key, and helper
+types stay with their parents, preserving their original implementations and
+access modifiers. All 34 SwiftUI views end in `View`; 18 types were renamed.
+Test fixtures remain under their existing feature and layer paths.
+
+Mapping and formatting extensions now concern one target type per file. The
+duplicate search-error formatter is shared in `Error+SearchFailureMessage.swift`,
+and the TMDB image URL helper belongs to `MediaImageURL`. UI strings and layout
+implementations are preserved. SwiftData model declarations are unchanged.
+
+Validation:
+
+- Strict SwiftLint: 335 files, zero violations, including new filename,
+  single-declaration, and view-suffix checks. Deliberately invalid temporary
+  fixtures confirmed that all three checks report violations.
+- Complete simulator suite before nesting was restored: 98 tests, 108 runs,
+  zero failures or skips; includes
+  theme changes, episode navigation, watched feedback, and poster interactions.
+- Build and unit suite after restoring nested types: 91 tests in 37 suites passed.
+- Declaration and header audit: at most one standalone type per file, matching
+  filenames and headers, no missing original types, and all views suffixed.
+- Final Debug build and `git diff --check`: passed.
+
+Evidence:
+
+- Complete suite: `/private/tmp/TVShowTracker-declaration-layout-verified.xcresult`
+- Final build and unit suite: `/private/tmp/TVShowTracker-nested-types.xcresult`
+- Strict lint: `/private/tmp/TVShowTracker-nested-types-lint.log`

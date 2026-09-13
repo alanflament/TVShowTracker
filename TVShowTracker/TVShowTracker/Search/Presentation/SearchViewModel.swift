@@ -10,8 +10,6 @@ import Observation
 
 @MainActor @Observable
 final class SearchViewModel {
-    static let searchDebounceDuration = Duration.milliseconds(300)
-
     struct SearchTaskID: Hashable {
         let query: String
         let requestRevision: Int
@@ -22,6 +20,8 @@ final class SearchViewModel {
         case loading
         case loaded(SearchCatalog)
     }
+
+    static let searchDebounceDuration = Duration.milliseconds(300)
 
     var query = ""
     private(set) var state: State = .idle

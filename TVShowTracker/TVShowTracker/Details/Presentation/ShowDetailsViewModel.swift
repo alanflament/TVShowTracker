@@ -19,16 +19,16 @@ final class ShowDetailsViewModel {
 
     let candidate: MediaCandidate
     private(set) var state: State = .idle
-    private let useCase: any ShowDetailsUseCase
+    private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
 
     init(
         candidate: MediaCandidate,
-        useCase: any ShowDetailsUseCase,
+        showDetailsUseCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore
     ) {
         self.candidate = candidate
-        self.useCase = useCase
+        self.showDetailsUseCase = showDetailsUseCase
         self.followedMediaStore = followedMediaStore
     }
 
@@ -69,7 +69,7 @@ final class ShowDetailsViewModel {
 
         state = .loading
         do {
-            let details = try await useCase.fetchDetails(for: candidate)
+            let details = try await showDetailsUseCase.fetchDetails(for: candidate)
             try Task.checkCancellation()
             followedMediaStore.update(with: details, for: candidate)
             state = .loaded(details)

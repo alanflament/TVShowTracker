@@ -19,7 +19,7 @@ struct EpisodeWatchStorePersistenceTests {
             configurations: configuration
         )
         let repository = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
-        let store = EpisodeWatchStore(repository: repository)
+        let store = EpisodeWatchStore(episodeWatchRepository: repository)
         let episode = ShowEpisode.tvShow(id: 42, season: 1, number: 3)
 
         #expect(!store.isWatched(episode))

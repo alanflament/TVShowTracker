@@ -10,7 +10,3 @@ struct UnconfiguredTVShowSearchRepository: TVShowSearchRepository {
         throw SearchConfigurationError.missingTMDBAccessToken
     }
 }
-
-enum SearchConfigurationError: Error, Sendable {
-    case missingTMDBAccessToken
-}

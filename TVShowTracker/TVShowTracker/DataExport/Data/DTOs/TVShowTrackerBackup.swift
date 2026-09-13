@@ -16,29 +16,6 @@ struct TVShowTrackerBackup: Codable, Equatable, Sendable {
     let watchedEpisodes: [BackupWatchedEpisode]
 }
 
-struct BackupMedia: Codable, Equatable, Sendable {
-    let id: String
-    let provider: MediaProvider
-    let providerID: Int
-    let kind: MediaKind
-    let title: String
-    let alternateTitle: String?
-    let posterURL: URL?
-    let releaseYear: Int?
-    let totalEpisodeCount: Int?
-    let providerStatus: MediaStatus?
-    let nextEpisodeNumber: Int?
-    let nextEpisodeAirDate: Date?
-    let trackingStatus: TrackingStatus
-    let addedAt: Date
-    let animeInstallments: [AnimeInstallmentReference]
-}
-
-struct BackupWatchedEpisode: Codable, Equatable, Sendable {
-    let id: String
-    let watchedAt: Date
-}
-
 extension TVShowTrackerBackup {
     init(
         exportedAt: Date,

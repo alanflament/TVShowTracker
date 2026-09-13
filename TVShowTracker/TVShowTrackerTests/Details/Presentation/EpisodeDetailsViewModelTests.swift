@@ -37,9 +37,9 @@ struct EpisodeDetailsViewModelTests {
         let viewModel = EpisodeDetailsViewModel(
             candidate: makeCandidate(),
             episode: episode,
-            useCase: EpisodeDetailsUseCaseStub(details: refreshedDetails),
-            episodeDetailsStore: EpisodeDetailsStore(repository: repository),
-            episodeWatchStore: EpisodeWatchStore(repository: EpisodeWatchRepositoryStub())
+            showDetailsUseCase: EpisodeDetailsUseCaseStub(details: refreshedDetails),
+            episodeDetailsStore: EpisodeDetailsStore(episodeDetailsRepository: repository),
+            episodeWatchStore: EpisodeWatchStore(episodeWatchRepository: EpisodeWatchRepositoryStub())
         )
 
         await viewModel.load()
@@ -56,9 +56,9 @@ struct EpisodeDetailsViewModelTests {
         let details = EpisodeDetails(episode: makeEpisode())
         let viewModel = EpisodeDetailsViewModel(
             candidate: makeCandidate(), episode: makeEpisode(),
-            useCase: EpisodeDetailsUseCaseStub(details: details),
-            episodeDetailsStore: EpisodeDetailsStore(repository: repository),
-            episodeWatchStore: EpisodeWatchStore(repository: EpisodeWatchRepositoryStub())
+            showDetailsUseCase: EpisodeDetailsUseCaseStub(details: details),
+            episodeDetailsStore: EpisodeDetailsStore(episodeDetailsRepository: repository),
+            episodeWatchStore: EpisodeWatchStore(episodeWatchRepository: EpisodeWatchRepositoryStub())
         )
         let cancelledLoad = Task {
             withUnsafeCurrentTask { $0?.cancel() }
@@ -103,35 +103,4 @@ struct EpisodeDetailsViewModelTests {
             runtimeMinutes: nil
         )
     }
-}
-
-private struct EpisodeDetailsUseCaseStub: ShowDetailsUseCase {
-    let details: EpisodeDetails
-
-    func fetchDetails(for _: MediaCandidate) async throws -> ShowDetails {
-        throw EpisodeDetailsError.notFound
-    }
-
-    func fetchEpisodes(for _: MediaCandidate) async throws -> [ShowSeason] {
-        []
-    }
-
-    func fetchEpisodeDetails(
-        for _: MediaCandidate,
-        episode _: ShowEpisode
-    ) async throws -> EpisodeDetails {
-        details
-    }
-}
-
-@MainActor
-private struct EpisodeWatchRepositoryStub: EpisodeWatchRepository {
-    func loadWatchedEpisodes() throws -> [WatchedEpisode] {
-        []
-    }
-
-    func save(_: WatchedEpisode) throws {}
-    func save(_: [WatchedEpisode]) throws {}
-    func delete(id _: String) throws {}
-    func delete(ids _: [String]) throws {}
 }

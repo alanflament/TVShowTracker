@@ -31,4 +31,8 @@ enum MediaImageURL {
             component.first == "w" && component.dropFirst().allSatisfy(\.isNumber)
         )
     }
+
+    nonisolated static func tmdb(path: String?, size: String) -> URL? {
+        path.flatMap { URL(string: "https://image.tmdb.org/t/p/\(size)\($0)") }
+    }
 }

@@ -27,17 +27,17 @@ final class AppContainer {
 
         libraryRepository = SwiftDataLibraryRepository(modelContext: modelContainer.mainContext)
         episodeWatchRepository = SwiftDataEpisodeWatchRepository(modelContext: modelContainer.mainContext)
-        followedMediaStore = FollowedMediaStore(repository: libraryRepository)
+        followedMediaStore = FollowedMediaStore(libraryRepository: libraryRepository)
         episodeScheduleStore = EpisodeScheduleStore(
-            repository: SwiftDataEpisodeScheduleRepository(modelContext: modelContainer.mainContext)
+            episodeScheduleRepository: SwiftDataEpisodeScheduleRepository(modelContext: modelContainer.mainContext)
         )
         episodeWatchStore = EpisodeWatchStore(
-            repository: episodeWatchRepository,
+            episodeWatchRepository: episodeWatchRepository,
             followedMediaStore: followedMediaStore,
             episodeScheduleStore: episodeScheduleStore
         )
         episodeDetailsStore = EpisodeDetailsStore(
-            repository: SwiftDataEpisodeDetailsRepository(modelContext: modelContainer.mainContext)
+            episodeDetailsRepository: SwiftDataEpisodeDetailsRepository(modelContext: modelContainer.mainContext)
         )
         Self.seedDemoStateIfNeeded(followedMediaStore, episodeScheduleStore, episodeWatchStore, episodeDetailsStore)
 
@@ -48,7 +48,7 @@ final class AppContainer {
         searchCatalogUseCase = services.searchCatalogUseCase
         showDetailsUseCase = services.showDetailsUseCase
         followedMediaRefreshStore = FollowedMediaRefreshStore(
-            refreshUseCase: DefaultEpisodeScheduleRefreshUseCase(
+            episodeScheduleRefreshUseCase: DefaultEpisodeScheduleRefreshUseCase(
                 showDetailsUseCase: showDetailsUseCase
             ),
             followedMediaStore: followedMediaStore,
@@ -102,7 +102,7 @@ final class AppContainer {
         #endif
         let items = followedMediaStore.items
         let nextEpisodeUseCase = DefaultNextEpisodeUseCase(
-            episodeScheduleStore: episodeScheduleStore
+            episodeScheduleReader: episodeScheduleStore
         )
         let hasUpNextEpisodes = nextEpisodeUseCase.hasNextEpisode(
             in: items,
@@ -125,7 +125,7 @@ final class AppContainer {
 
     func makeDetailsCoordinator() -> DetailsCoordinator {
         DetailsCoordinator(
-            useCase: showDetailsUseCase,
+            showDetailsUseCase: showDetailsUseCase,
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: episodeScheduleStore,
@@ -143,7 +143,7 @@ final class AppContainer {
     func makeCalendarCoordinator() -> CalendarCoordinator {
         CalendarCoordinator(
             nextEpisodeUseCase: DefaultNextEpisodeUseCase(
-                episodeScheduleStore: episodeScheduleStore
+                episodeScheduleReader: episodeScheduleStore
             ),
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
@@ -156,7 +156,7 @@ final class AppContainer {
     func makeSettingsCoordinator() -> SettingsCoordinator {
         SettingsCoordinator(
             tvTimeImportUseCase: DefaultTVTimeImportUseCase(
-                exportParser: TVTimeCSVExportParser(),
+                tvTimeExportParser: TVTimeCSVExportParser(),
                 searchCatalogUseCase: searchCatalogUseCase,
                 showDetailsUseCase: showDetailsUseCase,
                 followedMediaStore: followedMediaStore,

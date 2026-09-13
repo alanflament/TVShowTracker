@@ -29,12 +29,8 @@ actor HTTPClientStub: HTTPClient {
                   headerFields: nil
               )
         else {
-            throw TestError.expectedFailure
+            throw HTTPClientStubError.expectedFailure
         }
         return (data, response)
     }
-}
-
-private enum TestError: Error {
-    case expectedFailure
 }

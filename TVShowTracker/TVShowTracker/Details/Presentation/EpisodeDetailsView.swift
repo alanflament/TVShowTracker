@@ -46,7 +46,7 @@ struct EpisodeDetailsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if details.episode.stillURL != nil {
-                    MediaPoster(
+                    MediaPosterView(
                         url: details.episode.stillURL,
                         kind: viewModel.candidate.kind,
                         height: 220,
@@ -77,7 +77,7 @@ struct EpisodeDetailsView: View {
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    TrackerEmptyState(
+                    TrackerEmptyStateView(
                         title: "Synopsis not available",
                         systemImage: "text.alignleft",
                         description: "This provider has not published an episode synopsis yet."

@@ -19,7 +19,7 @@ struct LibraryViewModelTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let candidates = [
             candidate(id: 1, title: "Zeta"),
@@ -43,7 +43,7 @@ struct LibraryViewModelTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         store.addIfMissing(candidate(id: 1, title: "Airing", status: .airing), trackingStatus: .watching)
         store.addIfMissing(candidate(id: 2, title: "Upcoming", status: .upcoming), trackingStatus: .planToWatch)
@@ -74,7 +74,7 @@ struct LibraryViewModelTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let viewModel = LibraryViewModel(followedMediaStore: store)
         viewModel.category = .active
@@ -92,7 +92,7 @@ struct LibraryViewModelTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
         let viewModel = LibraryViewModel(followedMediaStore: store)
@@ -115,7 +115,7 @@ struct LibraryViewModelTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
         let viewModel = LibraryViewModel(followedMediaStore: store)
@@ -138,7 +138,7 @@ struct LibraryViewModelTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         store.addIfMissing(candidate(id: 1, title: "The Bear"), trackingStatus: .watching)
         let viewModel = LibraryViewModel(followedMediaStore: store)
@@ -152,23 +152,25 @@ struct LibraryViewModelTests {
     }
 }
 
-private func candidate(
-    id: Int,
-    title: String,
-    status: MediaStatus? = nil,
-    posterURL: URL? = nil
-) -> MediaCandidate {
-    MediaCandidate(
-        provider: .tmdb,
-        providerID: id,
-        kind: .tvShow,
-        title: title,
-        alternateTitle: nil,
-        posterURL: posterURL,
-        releaseYear: nil,
-        totalEpisodeCount: nil,
-        status: status,
-        nextEpisodeNumber: nil,
-        nextEpisodeAirDate: nil
-    )
+private extension LibraryViewModelTests {
+    func candidate(
+        id: Int,
+        title: String,
+        status: MediaStatus? = nil,
+        posterURL: URL? = nil
+    ) -> MediaCandidate {
+        MediaCandidate(
+            provider: .tmdb,
+            providerID: id,
+            kind: .tvShow,
+            title: title,
+            alternateTitle: nil,
+            posterURL: posterURL,
+            releaseYear: nil,
+            totalEpisodeCount: nil,
+            status: status,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil
+        )
+    }
 }

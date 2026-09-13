@@ -19,12 +19,12 @@ struct FollowedMediaIntegrationTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let searchViewModel = SearchViewModel(
             searchCatalogUseCase: DefaultSearchCatalogUseCase(
-                tvShowRepository: TVShowRepositoryStub(),
-                animeRepository: AnimeRepositoryStub()
+                tvShowSearchRepository: TVShowRepositoryStub(),
+                animeSearchRepository: AnimeRepositoryStub()
             ),
             followedMediaStore: store
         )

@@ -9,20 +9,20 @@ import Foundation
 
 @MainActor
 final class DetailsCoordinator {
-    private let useCase: any ShowDetailsUseCase
+    private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
     private let episodeScheduleStore: EpisodeScheduleStore
     private let episodeDetailsStore: EpisodeDetailsStore
 
     init(
-        useCase: any ShowDetailsUseCase,
+        showDetailsUseCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeWatchStore: EpisodeWatchStore,
         episodeScheduleStore: EpisodeScheduleStore,
         episodeDetailsStore: EpisodeDetailsStore
     ) {
-        self.useCase = useCase
+        self.showDetailsUseCase = showDetailsUseCase
         self.followedMediaStore = followedMediaStore
         self.episodeWatchStore = episodeWatchStore
         self.episodeScheduleStore = episodeScheduleStore
@@ -37,7 +37,7 @@ final class DetailsCoordinator {
         ShowDetailsView(
             viewModel: ShowDetailsViewModel(
                 candidate: candidate,
-                useCase: useCase,
+                showDetailsUseCase: showDetailsUseCase,
                 followedMediaStore: followedMediaStore
             ),
             makeEpisodesView: { self.makeEpisodesView(for: candidate) }
@@ -48,7 +48,7 @@ final class DetailsCoordinator {
         EpisodesView(
             viewModel: EpisodesViewModel(
                 candidate: candidate,
-                useCase: useCase,
+                showDetailsUseCase: showDetailsUseCase,
                 followedMediaStore: followedMediaStore,
                 episodeScheduleStore: episodeScheduleStore,
                 episodeWatchStore: episodeWatchStore
@@ -68,7 +68,7 @@ final class DetailsCoordinator {
             viewModel: EpisodeDetailsViewModel(
                 candidate: candidate,
                 episode: episode,
-                useCase: useCase,
+                showDetailsUseCase: showDetailsUseCase,
                 episodeDetailsStore: episodeDetailsStore,
                 episodeWatchStore: episodeWatchStore
             ),

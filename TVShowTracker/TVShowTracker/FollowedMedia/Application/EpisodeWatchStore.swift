@@ -10,7 +10,7 @@ import Observation
 
 @MainActor @Observable
 final class EpisodeWatchStore {
-    private let repository: any EpisodeWatchRepository
+    private let episodeWatchRepository: any EpisodeWatchRepository
     private let followedMediaStore: FollowedMediaStore?
     private let episodeScheduleStore: EpisodeScheduleStore?
 
@@ -18,11 +18,11 @@ final class EpisodeWatchStore {
     private(set) var errorMessage: String?
 
     init(
-        repository: any EpisodeWatchRepository,
+        episodeWatchRepository: any EpisodeWatchRepository,
         followedMediaStore: FollowedMediaStore? = nil,
         episodeScheduleStore: EpisodeScheduleStore? = nil
     ) {
-        self.repository = repository
+        self.episodeWatchRepository = episodeWatchRepository
         self.followedMediaStore = followedMediaStore
         self.episodeScheduleStore = episodeScheduleStore
         reload()
@@ -30,7 +30,7 @@ final class EpisodeWatchStore {
 
     func reload() {
         do {
-            watchedEpisodeIDs = try Set(repository.loadWatchedEpisodes().map(\.id))
+            watchedEpisodeIDs = try Set(episodeWatchRepository.loadWatchedEpisodes().map(\.id))
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -71,7 +71,7 @@ final class EpisodeWatchStore {
         }
 
         do {
-            try repository.save(watchedEpisodes)
+            try episodeWatchRepository.save(watchedEpisodes)
             watchedEpisodeIDs.formUnion(watchedEpisodes.map(\.id))
             errorMessage = nil
             episodesToMark.forEach(synchronizeTrackingStatus)
@@ -87,7 +87,7 @@ final class EpisodeWatchStore {
         }
 
         do {
-            try repository.delete(ids: episodesToUnmark.map(\.id))
+            try episodeWatchRepository.delete(ids: episodesToUnmark.map(\.id))
             watchedEpisodeIDs.subtract(episodesToUnmark.map(\.id))
             errorMessage = nil
             episodesToUnmark.forEach(synchronizeTrackingStatus)
@@ -105,7 +105,7 @@ final class EpisodeWatchStore {
     @discardableResult
     private func saveWatchedEpisode(_ watchedEpisode: WatchedEpisode) -> Bool {
         do {
-            try repository.save(watchedEpisode)
+            try episodeWatchRepository.save(watchedEpisode)
             watchedEpisodeIDs.insert(watchedEpisode.id)
             errorMessage = nil
             return true
@@ -117,7 +117,7 @@ final class EpisodeWatchStore {
 
     private func markUnwatched(_ episode: ShowEpisode) {
         do {
-            try repository.delete(id: episode.id)
+            try episodeWatchRepository.delete(id: episode.id)
             watchedEpisodeIDs.remove(episode.id)
             errorMessage = nil
             synchronizeTrackingStatus(for: episode)

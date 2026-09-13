@@ -8,41 +8,41 @@
 import Foundation
 
 struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
-    private let tvShowRepository: any TVShowDetailsRepository
-    private let animeRepository: any AnimeDetailsRepository
+    private let tvShowDetailsRepository: any TVShowDetailsRepository
+    private let animeDetailsRepository: any AnimeDetailsRepository
 
     init(
-        tvShowRepository: any TVShowDetailsRepository,
-        animeRepository: any AnimeDetailsRepository
+        tvShowDetailsRepository: any TVShowDetailsRepository,
+        animeDetailsRepository: any AnimeDetailsRepository
     ) {
-        self.tvShowRepository = tvShowRepository
-        self.animeRepository = animeRepository
+        self.tvShowDetailsRepository = tvShowDetailsRepository
+        self.animeDetailsRepository = animeDetailsRepository
     }
 
     func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
         switch candidate.kind {
         case .tvShow:
-            try await tvShowRepository.fetchDetails(for: candidate)
+            try await tvShowDetailsRepository.fetchDetails(for: candidate)
         case .anime:
-            try await animeRepository.fetchDetails(for: candidate)
+            try await animeDetailsRepository.fetchDetails(for: candidate)
         }
     }
 
     func fetchEpisodes(for candidate: MediaCandidate) async throws -> [ShowSeason] {
         switch candidate.kind {
         case .tvShow:
-            try await tvShowRepository.fetchEpisodes(for: candidate)
+            try await tvShowDetailsRepository.fetchEpisodes(for: candidate)
         case .anime:
-            try await animeRepository.fetchEpisodes(for: candidate)
+            try await animeDetailsRepository.fetchEpisodes(for: candidate)
         }
     }
 
     func fetchRefreshSnapshot(for candidate: MediaCandidate) async throws -> ShowRefreshSnapshot {
         switch candidate.kind {
         case .tvShow:
-            try await tvShowRepository.fetchRefreshSnapshot(for: candidate)
+            try await tvShowDetailsRepository.fetchRefreshSnapshot(for: candidate)
         case .anime:
-            try await animeRepository.fetchRefreshSnapshot(for: candidate)
+            try await animeDetailsRepository.fetchRefreshSnapshot(for: candidate)
         }
     }
 
@@ -52,9 +52,9 @@ struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
     ) async throws -> EpisodeDetails {
         switch candidate.kind {
         case .tvShow:
-            try await tvShowRepository.fetchEpisodeDetails(for: candidate, episode: episode)
+            try await tvShowDetailsRepository.fetchEpisodeDetails(for: candidate, episode: episode)
         case .anime:
-            try await animeRepository.fetchEpisodeDetails(for: candidate, episode: episode)
+            try await animeDetailsRepository.fetchEpisodeDetails(for: candidate, episode: episode)
         }
     }
 }

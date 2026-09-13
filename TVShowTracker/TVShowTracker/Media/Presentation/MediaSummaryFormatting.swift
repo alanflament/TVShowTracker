@@ -19,21 +19,3 @@ enum MediaSummaryFormatting {
         return values.joined(separator: " · ")
     }
 }
-
-extension MediaCandidate {
-    var metadata: String {
-        MediaSummaryFormatting.metadata(kind: kind, releaseYear: releaseYear, episodeCount: totalEpisodeCount)
-    }
-}
-
-extension ShowDetails {
-    var metadata: String {
-        MediaSummaryFormatting.metadata(kind: kind, releaseYear: releaseYear, episodeCount: totalEpisodeCount)
-    }
-}
-
-extension LibraryItem {
-    var metadata: String {
-        candidate.metadata
-    }
-}

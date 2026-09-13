@@ -15,7 +15,7 @@ struct AniListAPIClientTests {
         let httpClient = HTTPClientStub(data: Data(#"{"data":{"value":42}}"#.utf8), statusCode: 200)
         let client = AniListAPIClient(httpClient: httpClient)
 
-        let result: Payload = try await client.query("query Test", variables: ["id": 7])
+        let result: AniListTestPayload = try await client.query("query Test", variables: ["id": 7])
 
         #expect(result.value == 42)
         let request = try #require(await httpClient.requests.first)
@@ -24,7 +24,7 @@ struct AniListAPIClientTests {
         #expect(request.value(forHTTPHeaderField: "Accept") == "application/json")
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
         let data = try #require(request.httpBody)
-        let body = try JSONDecoder().decode(RequestBody.self, from: data)
+        let body = try JSONDecoder().decode(AniListTestRequestBody.self, from: data)
         #expect(body.query == "query Test")
         #expect(body.variables == ["id": 7])
     }
@@ -36,7 +36,7 @@ struct AniListAPIClientTests {
             statusCode: statusCode
         ))
         do {
-            let _: Payload = try await client.query("query Test", variables: ["id": 7])
+            let _: AniListTestPayload = try await client.query("query Test", variables: ["id": 7])
             Issue.record("Expected GraphQL failure")
         } catch let AniListAPIError.queryFailed(message) {
             #expect(message == "Query rejected")
@@ -48,7 +48,7 @@ struct AniListAPIClientTests {
     @Test func rejectsHTTPFailureBeforeDecodingPayload() async {
         let client = AniListAPIClient(httpClient: HTTPClientStub(data: Data(), statusCode: 503))
         do {
-            let _: Payload = try await client.query("query Test", variables: ["id": 7])
+            let _: AniListTestPayload = try await client.query("query Test", variables: ["id": 7])
             Issue.record("Expected HTTP failure")
         } catch let HTTPClientError.unacceptableStatusCode(statusCode) {
             #expect(statusCode == 503)
@@ -56,13 +56,4 @@ struct AniListAPIClientTests {
             Issue.record("Unexpected error: \(error)")
         }
     }
-}
-
-private struct Payload: Decodable {
-    let value: Int
-}
-
-private struct RequestBody: Decodable {
-    let query: String
-    let variables: [String: Int]
 }

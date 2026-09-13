@@ -32,7 +32,7 @@ struct FullScreenMediaPosterView: View {
                         dismissPoster()
                     }
 
-                MediaPoster(
+                MediaPosterView(
                     url: MediaImageURL.fullScreen(posterURL),
                     kind: kind,
                     width: displayedPosterSize.width,

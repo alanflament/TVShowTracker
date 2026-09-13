@@ -21,13 +21,13 @@ struct LibraryView: View {
 
         Group {
             if let errorMessage = viewModel.errorMessage {
-                TrackerEmptyState(
+                TrackerEmptyStateView(
                     title: "Library unavailable",
                     systemImage: "externaldrive.badge.xmark",
                     description: errorMessage
                 )
             } else if viewModel.isLibraryEmpty, viewModel.discoverQuery == nil {
-                TrackerEmptyState(
+                TrackerEmptyStateView(
                     title: "Build your watchlist",
                     systemImage: "rectangle.stack.badge.plus",
                     description: "Find TV shows and anime in Discover, then add them here to keep track of every release."
@@ -51,7 +51,7 @@ struct LibraryView: View {
                                         NavigationLink {
                                             makeDetailsView(item.candidate)
                                         } label: {
-                                            LibraryItemCard(item: item)
+                                            LibraryItemCardView(item: item)
                                         }
                                         .buttonStyle(.plain)
                                         .contextMenu {
@@ -84,7 +84,7 @@ struct LibraryView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 4) {
                     ForEach(LibraryCategory.allCases) { category in
-                        LibraryCategoryTab(
+                        LibraryCategoryTabView(
                             category: category,
                             count: viewModel.count(for: category),
                             isSelected: viewModel.category == category,
@@ -101,7 +101,7 @@ struct LibraryView: View {
                     ScrollView(.horizontal) {
                         HStack(spacing: 8) {
                             ForEach(viewModel.category.secondaryFilters) { filter in
-                                LibraryStatusTab(
+                                LibraryStatusTabView(
                                     filter: filter,
                                     count: viewModel.count(for: filter),
                                     isSelected: viewModel.filter == filter
@@ -177,7 +177,7 @@ struct LibraryView: View {
     private func noMatchesView(_ viewModel: LibraryViewModel) -> some View {
         VStack(spacing: 0) {
             if let query = viewModel.discoverQuery {
-                TrackerEmptyState(
+                TrackerEmptyStateView(
                     title: "Not in My Shows",
                     systemImage: "magnifyingglass.circle.fill",
                     description: "Nothing in your library matches “\(query)”. Search for it in Discover and add it to My Shows."
@@ -191,7 +191,7 @@ struct LibraryView: View {
                 }
                 .buttonStyle(.borderedProminent)
             } else {
-                TrackerEmptyState(
+                TrackerEmptyStateView(
                     title: "No matching shows",
                     systemImage: "line.3.horizontal.decrease.circle",
                     description: "No shows match these filters. Clear them to see your full library."
@@ -204,125 +204,5 @@ struct LibraryView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-private enum LibrarySelection: Equatable {
-    case category(LibraryCategory)
-    case filter(LibraryFilter)
-}
-
-private struct LibraryCategoryTab: View {
-    let category: LibraryCategory
-    let count: Int
-    let isSelected: Bool
-    let selectionNamespace: Namespace.ID
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Text(category.title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Text(count, format: .number)
-                    .font(.subheadline.weight(.semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 7)
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.accentColor.opacity(0.16))
-                        .matchedGeometryEffect(
-                            id: "library-category-selection",
-                            in: selectionNamespace
-                        )
-                }
-            }
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(category.title), \(count) \(count == 1 ? "show" : "shows")")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-}
-
-private struct LibraryStatusTab: View {
-    let filter: LibraryFilter
-    let count: Int
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Text(filter.title)
-                    .foregroundStyle(.primary)
-                Text(count, format: .number)
-                    .monospacedDigit()
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-            }
-            .font(.subheadline.weight(.semibold))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .glassEffect(
-                .regular
-                    .tint(isSelected ? Color.accentColor.opacity(0.14) : nil)
-                    .interactive(),
-                in: Capsule()
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(filter.title), \(count) \(count == 1 ? "show" : "shows")")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-}
-
-private struct LibraryItemCard: View {
-    let item: LibraryItem
-
-    var body: some View {
-        GeometryReader { proxy in
-            MediaPoster(
-                url: item.posterURL,
-                kind: item.kind,
-                width: proxy.size.width,
-                height: proxy.size.height,
-                cornerRadius: 0
-            )
-            .overlay(alignment: .top) {
-                LinearGradient(
-                    colors: [.black.opacity(0.86), .black.opacity(0.22), .clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: min(proxy.size.height * 0.36, 68))
-                .allowsHitTesting(false)
-            }
-            .overlay(alignment: .topLeading) {
-                Label(item.trackingStatus.title, systemImage: item.trackingStatus.systemImage)
-                    .font(.caption2.weight(.semibold))
-                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.9), radius: 3, y: 1)
-                    .padding(8)
-            }
-        }
-        .aspectRatio(2 / 3, contentMode: .fit)
-        .contentShape(.rect)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint("Opens show details")
-    }
-
-    private var accessibilityLabel: String {
-        "\(item.title), \(item.trackingStatus.title)"
     }
 }

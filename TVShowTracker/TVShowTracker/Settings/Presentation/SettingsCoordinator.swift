@@ -19,12 +19,12 @@ final class SettingsCoordinator {
     ) {
         self.tvTimeImportUseCase = tvTimeImportUseCase
         viewModel = DataBackupViewModel(
-            exportUseCase: dataExportUseCase,
-            importUseCase: dataImportUseCase
+            dataExportUseCase: dataExportUseCase,
+            dataImportUseCase: dataImportUseCase
         )
     }
 
     func makeTVTimeImportView() -> TVTimeImportView {
-        TVTimeImportView(viewModel: TVTimeImportViewModel(useCase: tvTimeImportUseCase))
+        TVTimeImportView(viewModel: TVTimeImportViewModel(tvTimeImportUseCase: tvTimeImportUseCase))
     }
 }

@@ -13,8 +13,8 @@ import Testing
 struct FallbackAnimeSearchRepositoryTests {
     @Test func animeFallbackUsesJikanWhenAniListFails() async throws {
         let repository = FallbackAnimeSearchRepository(
-            primary: FailingAnimeRepository(),
-            fallback: AnimeRepositoryStub(candidates: [.jikanAnime(id: 1, title: "Frieren")])
+            primaryRepository: FailingAnimeRepository(),
+            fallbackRepository: AnimeRepositoryStub(candidates: [.jikanAnime(id: 1, title: "Frieren")])
         )
 
         let candidates = try await repository.searchAnime(matching: "frieren")

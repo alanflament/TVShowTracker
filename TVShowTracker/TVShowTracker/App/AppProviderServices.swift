@@ -13,41 +13,41 @@ struct AppProviderServices {
     let showDetailsUseCase: any ShowDetailsUseCase
 
     init(tmdbAccessToken: String?, language: String) {
-        let aniListHTTPClient = RateLimitedHTTPClient(client: URLSessionHTTPClient(), minimumInterval: 2.1)
-        let jikanHTTPClient = RateLimitedHTTPClient(client: URLSessionHTTPClient(), minimumInterval: 1.05)
+        let aniListHTTPClient = RateLimitedHTTPClient(httpClient: URLSessionHTTPClient(), minimumInterval: 2.1)
+        let jikanHTTPClient = RateLimitedHTTPClient(httpClient: URLSessionHTTPClient(), minimumInterval: 1.05)
         let animeSearchRepository = FallbackAnimeSearchRepository(
-            primary: AniListAnimeSearchRepository(httpClient: aniListHTTPClient),
-            fallback: JikanAnimeSearchRepository(httpClient: jikanHTTPClient)
+            primaryRepository: AniListAnimeSearchRepository(httpClient: aniListHTTPClient),
+            fallbackRepository: JikanAnimeSearchRepository(httpClient: jikanHTTPClient)
         )
-        let tvShowRepository: any TVShowSearchRepository
+        let tvShowSearchRepository: any TVShowSearchRepository
 
         if let tmdbAccessToken = tmdbAccessToken {
-            tvShowRepository = TMDBTVSearchRepository(
+            tvShowSearchRepository = TMDBTVSearchRepository(
                 accessToken: tmdbAccessToken,
                 language: language
             )
         } else {
-            tvShowRepository = UnconfiguredTVShowSearchRepository()
+            tvShowSearchRepository = UnconfiguredTVShowSearchRepository()
         }
 
         searchCatalogUseCase = DefaultSearchCatalogUseCase(
-            tvShowRepository: tvShowRepository,
-            animeRepository: animeSearchRepository
+            tvShowSearchRepository: tvShowSearchRepository,
+            animeSearchRepository: animeSearchRepository
         )
 
-        let detailsTVRepository: any TVShowDetailsRepository
+        let tvShowDetailsRepository: any TVShowDetailsRepository
         if let tmdbAccessToken = tmdbAccessToken {
-            detailsTVRepository = TMDBShowDetailsRepository(
+            tvShowDetailsRepository = TMDBShowDetailsRepository(
                 accessToken: tmdbAccessToken,
                 language: language
             )
         } else {
-            detailsTVRepository = UnconfiguredTVShowDetailsRepository()
+            tvShowDetailsRepository = UnconfiguredTVShowDetailsRepository()
         }
 
         showDetailsUseCase = DefaultShowDetailsUseCase(
-            tvShowRepository: detailsTVRepository,
-            animeRepository: AniListAnimeDetailsRepository(httpClient: aniListHTTPClient)
+            tvShowDetailsRepository: tvShowDetailsRepository,
+            animeDetailsRepository: AniListAnimeDetailsRepository(httpClient: aniListHTTPClient)
         )
     }
 }

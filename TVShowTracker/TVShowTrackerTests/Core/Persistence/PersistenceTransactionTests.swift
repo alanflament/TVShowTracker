@@ -23,11 +23,11 @@ struct PersistenceTransactionTests {
         try repository.save(original)
         let stored = try #require(context.fetch(FetchDescriptor<WatchedEpisodeModel>()).first)
 
-        #expect(throws: MutationError.failed) {
+        #expect(throws: PersistenceMutationTestError.failed) {
             try context.saveChanges {
                 stored.watchedAt = Date(timeIntervalSince1970: 200)
                 context.insert(WatchedEpisodeModel(episode: WatchedEpisode(id: "tmdb:1:1:2", watchedAt: .now)))
-                throw MutationError.failed
+                throw PersistenceMutationTestError.failed
             }
         }
         try repository.save(WatchedEpisode(id: "tmdb:1:1:3", watchedAt: .now))
@@ -36,8 +36,4 @@ struct PersistenceTransactionTests {
         #expect(!records.contains { $0.id == "tmdb:1:1:2" })
         #expect(records.count == 2)
     }
-}
-
-private enum MutationError: Error {
-    case failed
 }

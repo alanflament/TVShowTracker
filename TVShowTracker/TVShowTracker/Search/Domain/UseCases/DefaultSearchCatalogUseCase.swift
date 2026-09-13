@@ -8,15 +8,15 @@
 import Foundation
 
 struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
-    private let tvShowRepository: any TVShowSearchRepository
-    private let animeRepository: any AnimeSearchRepository
+    private let tvShowSearchRepository: any TVShowSearchRepository
+    private let animeSearchRepository: any AnimeSearchRepository
 
     init(
-        tvShowRepository: any TVShowSearchRepository,
-        animeRepository: any AnimeSearchRepository
+        tvShowSearchRepository: any TVShowSearchRepository,
+        animeSearchRepository: any AnimeSearchRepository
     ) {
-        self.tvShowRepository = tvShowRepository
-        self.animeRepository = animeRepository
+        self.tvShowSearchRepository = tvShowSearchRepository
+        self.animeSearchRepository = animeSearchRepository
     }
 
     func search(matching query: String) async -> SearchCatalog {
@@ -36,7 +36,7 @@ struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
 
     private func searchTVShows(matching query: String) async -> SearchProviderResult {
         do {
-            return try SearchProviderResult(candidates: await tvShowRepository.searchTVShows(matching: query))
+            return try SearchProviderResult(candidates: await tvShowSearchRepository.searchTVShows(matching: query))
         } catch {
             return SearchProviderResult(
                 unavailableProviders: [.tmdb],
@@ -47,7 +47,7 @@ struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
 
     private func searchAnime(matching query: String) async -> SearchProviderResult {
         do {
-            return try SearchProviderResult(candidates: await animeRepository.searchAnime(matching: query))
+            return try SearchProviderResult(candidates: await animeSearchRepository.searchAnime(matching: query))
         } catch let error as AnimeSearchError {
             return SearchProviderResult(
                 unavailableProviders: Set(error.providerErrors.keys),
@@ -59,11 +59,5 @@ struct DefaultSearchCatalogUseCase: SearchCatalogUseCase {
                 providerErrors: [.aniList: error.searchFailureMessage]
             )
         }
-    }
-}
-
-private extension Error {
-    var searchFailureMessage: String {
-        (self as? LocalizedError)?.errorDescription ?? "This source could not be reached."
     }
 }

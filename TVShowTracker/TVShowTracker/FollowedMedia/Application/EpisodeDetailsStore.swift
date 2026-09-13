@@ -10,13 +10,13 @@ import Observation
 
 @MainActor @Observable
 final class EpisodeDetailsStore {
-    private let repository: any EpisodeDetailsRepository
+    private let episodeDetailsRepository: any EpisodeDetailsRepository
 
     private(set) var detailsByID = [String: EpisodeDetails]()
     private(set) var errorMessage: String?
 
-    init(repository: any EpisodeDetailsRepository) {
-        self.repository = repository
+    init(episodeDetailsRepository: any EpisodeDetailsRepository) {
+        self.episodeDetailsRepository = episodeDetailsRepository
         reload()
     }
 
@@ -26,7 +26,7 @@ final class EpisodeDetailsStore {
 
     func save(_ details: EpisodeDetails) {
         do {
-            try repository.save(details)
+            try episodeDetailsRepository.save(details)
             detailsByID[details.id] = details
             errorMessage = nil
         } catch {
@@ -37,7 +37,7 @@ final class EpisodeDetailsStore {
     private func reload() {
         do {
             detailsByID = try Dictionary(
-                uniqueKeysWithValues: repository.loadEpisodeDetails().map { ($0.id, $0) }
+                uniqueKeysWithValues: episodeDetailsRepository.loadEpisodeDetails().map { ($0.id, $0) }
             )
             errorMessage = nil
         } catch {

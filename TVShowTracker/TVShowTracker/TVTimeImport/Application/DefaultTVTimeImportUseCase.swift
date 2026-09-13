@@ -9,7 +9,7 @@ import Foundation
 
 @MainActor
 final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
-    private let exportParser: any TVTimeExportParsing
+    private let tvTimeExportParser: any TVTimeExportParsing
     private let searchCatalogUseCase: any SearchCatalogUseCase
     private let showDetailsUseCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
@@ -18,7 +18,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
     private let candidateMatcher: TVTimeSearchCandidateMatcher
 
     init(
-        exportParser: any TVTimeExportParsing,
+        tvTimeExportParser: any TVTimeExportParsing,
         searchCatalogUseCase: any SearchCatalogUseCase,
         showDetailsUseCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore,
@@ -26,7 +26,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
         episodeScheduleStore: EpisodeScheduleStore,
         candidateMatcher: TVTimeSearchCandidateMatcher
     ) {
-        self.exportParser = exportParser
+        self.tvTimeExportParser = tvTimeExportParser
         self.searchCatalogUseCase = searchCatalogUseCase
         self.showDetailsUseCase = showDetailsUseCase
         self.followedMediaStore = followedMediaStore
@@ -45,7 +45,7 @@ final class DefaultTVTimeImportUseCase: TVTimeImportUseCase {
             totalUnitCount: 1,
             currentTitle: nil
         ))
-        let export = try exportParser.parseExport(at: folderURL)
+        let export = try tvTimeExportParser.parseExport(at: folderURL)
         let resolution = try await resolveShows(in: export, onProgress: onProgress)
         try await loadEpisodeSchedules(
             for: resolution.shows,
@@ -74,6 +74,31 @@ private extension DefaultTVTimeImportUseCase {
     struct Resolution {
         let shows: [ResolvedShow]
         let report: MutableReport
+    }
+
+    struct EpisodeRestorationResult {
+        let restoredEpisodeCount: Int
+        let unresolvedEpisodeCount: Int
+    }
+
+    struct MutableReport {
+        var addedShowCount = 0
+        var existingShowCount = 0
+        let parsedWatchedEpisodeCount: Int
+        var restoredEpisodeCount = 0
+        var unresolvedShowTitles = Set<String>()
+        var unresolvedEpisodeCount = 0
+
+        var asDomain: TVTimeImportReport {
+            TVTimeImportReport(
+                addedShowCount: addedShowCount,
+                existingShowCount: existingShowCount,
+                parsedWatchedEpisodeCount: parsedWatchedEpisodeCount,
+                restoredEpisodeCount: restoredEpisodeCount,
+                unresolvedShowTitles: unresolvedShowTitles.sorted(),
+                unresolvedEpisodeCount: unresolvedEpisodeCount
+            )
+        }
     }
 
     func resolveShows(
@@ -229,30 +254,5 @@ private extension DefaultTVTimeImportUseCase {
             restoredEpisodeCount: restoredEpisodeCount,
             unresolvedEpisodeCount: unresolvedEpisodeCount
         )
-    }
-
-    struct EpisodeRestorationResult {
-        let restoredEpisodeCount: Int
-        let unresolvedEpisodeCount: Int
-    }
-
-    struct MutableReport {
-        var addedShowCount = 0
-        var existingShowCount = 0
-        let parsedWatchedEpisodeCount: Int
-        var restoredEpisodeCount = 0
-        var unresolvedShowTitles = Set<String>()
-        var unresolvedEpisodeCount = 0
-
-        var asDomain: TVTimeImportReport {
-            TVTimeImportReport(
-                addedShowCount: addedShowCount,
-                existingShowCount: existingShowCount,
-                parsedWatchedEpisodeCount: parsedWatchedEpisodeCount,
-                restoredEpisodeCount: restoredEpisodeCount,
-                unresolvedShowTitles: unresolvedShowTitles.sorted(),
-                unresolvedEpisodeCount: unresolvedEpisodeCount
-            )
-        }
     }
 }

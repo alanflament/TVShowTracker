@@ -17,7 +17,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let futureEpisode = makeEpisode(showID: 2, number: 4, airDate: now.addingTimeInterval(86400))
         let firstItem = makeItem(id: 1, title: "The Bear")
         let secondItem = makeItem(id: 2, title: "Frieren")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: firstItem.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -33,7 +33,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [futureEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(
             in: [firstItem, secondItem],
@@ -50,7 +50,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let watchedEpisode = makeEpisode(showID: 1, number: 1, airDate: now.addingTimeInterval(-7200))
         let nextEpisode = makeEpisode(showID: 1, number: 2, airDate: now.addingTimeInterval(-3600))
         let item = makeItem(id: 1, title: "The Bear")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -59,7 +59,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [watchedEpisode, nextEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(
             in: [item],
@@ -74,7 +74,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let firstEpisode = makeEpisode(showID: 1, number: 1, airDate: .distantPast)
         let secondEpisode = makeEpisode(showID: 1, number: 2, airDate: .distantPast)
         let item = makeItem(id: 1, title: "The Bear")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -83,7 +83,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [firstEpisode, secondEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(in: [item], watchedEpisodeIDs: [], now: .now)
 
@@ -97,7 +97,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let nextEpisode = makeEpisode(showID: 1, number: 1, airDate: now.addingTimeInterval(3600))
         let laterEpisode = makeEpisode(showID: 1, number: 2, airDate: now.addingTimeInterval(7200))
         let item = makeItem(id: 1, title: "The Bear")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -106,7 +106,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [nextEpisode, laterEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(in: [item], watchedEpisodeIDs: [], now: now)
 
@@ -124,7 +124,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let secondEpisode = makeEpisode(provider: .aniList, showID: 1, number: 2, airDate: nil)
         let tenthEpisode = makeEpisode(provider: .aniList, showID: 1, number: 10, airDate: nil)
         let item = makeItem(provider: .aniList, id: 1, title: "Frieren")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
                 provider: .aniList,
                 showID: 1,
@@ -133,7 +133,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [tenthEpisode, secondEpisode, firstEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(
             in: [item],
@@ -147,7 +147,7 @@ struct DefaultNextEpisodeUseCaseTests {
     @Test func undatedTMDBEpisodeIsNotTreatedAsReleased() async {
         let placeholderEpisode = makeEpisode(showID: 1, number: 1, airDate: nil)
         let item = makeItem(id: 1, title: "One Piece", status: .airing)
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -156,7 +156,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [placeholderEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(in: [item], watchedEpisodeIDs: [], now: .now)
 
@@ -169,7 +169,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let specialEpisode = makeEpisode(showID: 1, seasonNumber: 0, number: 1, airDate: .distantPast)
         let regularEpisode = makeEpisode(showID: 1, number: 1, airDate: .distantPast)
         let item = makeItem(id: 1, title: "The Bear")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [
                 ShowSeason(
                     provider: .tmdb,
@@ -187,7 +187,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 )
             ])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(
             in: [item],
@@ -201,8 +201,8 @@ struct DefaultNextEpisodeUseCaseTests {
     @Test func undatedOngoingMediaIsPresentedWithoutARefreshNotice() async {
         let airingItem = makeItem(id: 1, title: "The Bear", status: .airing)
         let finishedItem = makeItem(id: 2, title: "Dark", status: .finished)
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: []))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: []))
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(
             in: [finishedItem, airingItem],
@@ -219,7 +219,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let pausedItem = makeItem(id: 2, title: "Severance", trackingStatus: .paused)
         let watchingEpisode = makeEpisode(showID: 1, number: 1, airDate: .distantPast)
         let pausedEpisode = makeEpisode(showID: 2, number: 1, airDate: .distantPast)
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: watchingItem.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -235,7 +235,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [pausedEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         let result = await useCase.findNextEpisode(
             in: [watchingItem, pausedItem],
@@ -252,7 +252,7 @@ struct DefaultNextEpisodeUseCaseTests {
         let watchedEpisode = makeEpisode(showID: 1, number: 1, airDate: now.addingTimeInterval(-3600))
         let nextEpisode = makeEpisode(showID: 1, number: 2, airDate: now.addingTimeInterval(3600))
         let item = makeItem(id: 1, title: "The Bear")
-        let store = EpisodeScheduleStore(repository: EpisodeScheduleRepositoryStub(schedules: [
+        let store = EpisodeScheduleStore(episodeScheduleRepository: EpisodeScheduleRepositoryStub(schedules: [
             EpisodeSchedule(itemID: item.id, seasons: [ShowSeason(
                 provider: .tmdb,
                 showID: 1,
@@ -261,7 +261,7 @@ struct DefaultNextEpisodeUseCaseTests {
                 episodes: [watchedEpisode, nextEpisode]
             )])
         ]))
-        let useCase = DefaultNextEpisodeUseCase(episodeScheduleStore: store)
+        let useCase = DefaultNextEpisodeUseCase(episodeScheduleReader: store)
 
         #expect(useCase.hasNextEpisode(in: [item], watchedEpisodeIDs: [watchedEpisode.id], now: now))
         #expect(!useCase.hasNextEpisode(
@@ -314,16 +314,4 @@ private extension DefaultNextEpisodeUseCaseTests {
             runtimeMinutes: nil
         )
     }
-}
-
-private struct EpisodeScheduleRepositoryStub: EpisodeScheduleRepository {
-    let schedules: [EpisodeSchedule]
-
-    func loadSchedules() throws -> [EpisodeSchedule] {
-        schedules
-    }
-
-    func save(_: EpisodeSchedule) throws {}
-
-    func delete(id _: String) throws {}
 }

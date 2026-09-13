@@ -112,7 +112,7 @@ struct SearchViewModelTests {
     ) -> SearchViewModel {
         SearchViewModel(
             searchCatalogUseCase: useCase,
-            followedMediaStore: FollowedMediaStore(repository: EmptyLibraryRepository()),
+            followedMediaStore: FollowedMediaStore(libraryRepository: EmptyLibraryRepository()),
             debounce: debounce
         )
     }
@@ -144,78 +144,4 @@ struct SearchViewModelTests {
         }
         return catalog
     }
-}
-
-private actor DebounceProbe {
-    private(set) var durations = [Duration]()
-
-    func record(_ duration: Duration) {
-        durations.append(duration)
-    }
-}
-
-private actor DebounceGate {
-    private(set) var duration: Duration?
-    private var continuation: CheckedContinuation<Void, Never>?
-
-    var isWaiting: Bool {
-        continuation != nil
-    }
-
-    func wait(for duration: Duration) async throws {
-        self.duration = duration
-        await withCheckedContinuation { continuation in
-            self.continuation = continuation
-        }
-        try Task.checkCancellation()
-    }
-
-    func resume() {
-        continuation?.resume()
-        continuation = nil
-    }
-}
-
-private actor SearchCatalogUseCaseProbe: SearchCatalogUseCase {
-    private let results: [SearchCatalog]
-    private let suspendedRequestIndex: Int?
-    private var continuation: CheckedContinuation<Void, Never>?
-    private(set) var requests = [String]()
-
-    init(results: [SearchCatalog], suspendedRequestIndex: Int? = nil) {
-        self.results = results
-        self.suspendedRequestIndex = suspendedRequestIndex
-    }
-
-    var isSuspended: Bool {
-        continuation != nil
-    }
-
-    func search(matching query: String) async -> SearchCatalog {
-        let requestIndex = requests.count
-        requests.append(query)
-
-        if requestIndex == suspendedRequestIndex {
-            await withCheckedContinuation { continuation in
-                self.continuation = continuation
-            }
-        }
-
-        return results[requestIndex]
-    }
-
-    func resume() {
-        continuation?.resume()
-        continuation = nil
-    }
-}
-
-@MainActor
-private struct EmptyLibraryRepository: LibraryRepository {
-    func loadItems() throws -> [LibraryItem] {
-        []
-    }
-
-    func save(_: LibraryItem) throws {}
-    func delete(id _: String) throws {}
 }

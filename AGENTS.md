@@ -137,6 +137,15 @@ Reject malformed or unsupported schema versions before writing data.
   Root content views borrow it with `let`, or `@Bindable` when bindings are needed.
   Do not recreate root view models in view factories or retain a second `@State`
   reference in a borrowing view. Cross-tab commands act on that same instance.
+- Coordinators assemble screens and handle navigation. Screen state, user-facing
+  messages, and view-triggered store/use-case operations belong in view models,
+  including at the app root. `AppCoordinator` retains `AppRootViewModel`; the
+  root view invokes that model for launch refresh and renders its banner state.
+  Coordinators may pass route inputs to view models, but must not execute their
+  workflows or derive their presentation state.
+- Derive shared progress from the observable store instead of copying it into
+  a view model. A model containing only derived properties and immutable
+  dependencies does not need `@Observable`; observation tracks the store reads.
 - Coordinators use `@MainActor`; add `@Observable` only when the coordinator itself
   has mutable state observed by views, such as MainCoordinator's selected tab.
 - Inject coordinators explicitly into coordinator/root views. Content views receive
@@ -165,17 +174,32 @@ so cancellation never becomes an ordinary provider failure.
 
 ## Declaration and file rules
 
-- Give important domain entities, protocols, repositories, DTO families, and
-  mapping types explicit files and descriptive names.
-- Keep one primary declaration per file. A small, cohesive DTO family for one
-  provider endpoint may share a `*DTOs.swift` file.
+- Name injected services by their contract role, using the same name for the
+  stored property and initializer label. Reuse that name across consumers:
+  `showDetailsUseCase`, `episodeScheduleRefreshUseCase`, and `httpClient`.
+- Include the responsibility when naming repositories: `tvShowSearchRepository`
+  and `tvShowDetailsRepository` expose different contracts. Use
+  `episodeScheduleReader` for the read-only capability and `episodeScheduleStore`
+  for the concrete shared state. Use `primaryRepository` and `fallbackRepository`
+  when two dependencies implement the same contract with different fallback roles.
+- Give every standalone type its own dedicated file, including DTOs, row views,
+  routing enums, and test helpers. Name the file after the type.
+- Keep nested types with their parent type, including `Tab`, `State`, `CodingKeys`,
+  and local helper types. Do not create `Owner+NestedType.swift` files solely to
+  declare nested types in extensions.
+- Extension files must concern one target type and use `Type+Responsibility.swift`.
+  Extensions of the primary type may remain in its own file.
+- Every SwiftUI `View` type name ends with `View`; `ViewModifier` implementations
+  end with `Modifier`, and view models end with `ViewModel`.
+- Keep the SwiftLint filename, single-declaration, and view-suffix checks enabled.
+- Every Swift file has the project header with its actual filename and author
+  signature. Use the creation date for new files; retain existing creation dates
+  when renaming files.
 - Network DTOs are not domain entities. DTOs should describe the wire format;
   put domain conversion in a mapper or an explicitly named `asDomain` mapping
   extension.
 - Do not hide reusable API DTOs in `private struct` declarations inside a
   repository. Keep only genuinely local implementation details private.
-- View-only row components and test doubles may remain private and local when
-  extracting them would make navigation harder to follow.
 - Keep repository protocols independent from provider implementations.
 
 ## Unit test organization
@@ -185,8 +209,9 @@ so cancellation never becomes an ordinary provider failure.
   `TVShowTrackerTests/Search/Presentation/SearchViewModelTests.swift`.
 - Name suites after the primary type or behavior they cover. Split suites that
   cover unrelated features or layers instead of using a root-level catch-all file.
-- Keep private test doubles with their suite. Place genuinely shared fixtures and
-  doubles under their owning feature/layer in the test target.
+- Place each test fixture and double in its own file under the owning feature
+  and layer in the test target. Use descriptive names to avoid collisions.
+  Keep suite-only helper methods in the suite or an extension of that suite.
 - Do not place unit-test Swift files directly at the test target root.
 
 ## Provider boundaries
@@ -237,8 +262,8 @@ so cancellation never becomes an ordinary provider failure.
 ## Design and product language
 
 - Reuse `Core/Presentation` primitives before creating feature-local visual
-  styles: `MediaPoster`, `MediaMetadata`, `TrackerCard`, and
-  `TrackerEmptyState`.
+  styles: `MediaPosterView`, `MediaMetadata`, `TrackerCardView`, and
+  `TrackerEmptyStateView`.
 - Keep repeated content visually consistent: use the same card geometry, poster
   ratios, spacing, and metadata hierarchy unless the content has a meaningfully
   different role.
@@ -254,7 +279,7 @@ so cancellation never becomes an ordinary provider failure.
 - Preserve the established Up Next information hierarchy: one next episode per
   followed title, a separate aggregate available-now count, and an explicit
   undated-media section.
-- Reuse `TrackerEmptyState` for empty states and ensure every loading, empty,
+- Reuse `TrackerEmptyStateView` for empty states and ensure every loading, empty,
   error, and offline state explains the next useful action.
 - Before calling a UI iteration complete, inspect it in an iPhone simulator in
   both light and dark appearance, including long titles and Dynamic Type.

@@ -10,7 +10,7 @@ import Observation
 
 @MainActor @Observable
 final class FollowedMediaRefreshStore {
-    private let refreshUseCase: any EpisodeScheduleRefreshUseCase
+    private let episodeScheduleRefreshUseCase: any EpisodeScheduleRefreshUseCase
     private let followedMediaStore: FollowedMediaStore
     private let episodeWatchStore: EpisodeWatchStore
     private let episodeScheduleStore: EpisodeScheduleStore
@@ -20,12 +20,12 @@ final class FollowedMediaRefreshStore {
     private(set) var totalMediaCount = 0
 
     init(
-        refreshUseCase: any EpisodeScheduleRefreshUseCase,
+        episodeScheduleRefreshUseCase: any EpisodeScheduleRefreshUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeWatchStore: EpisodeWatchStore,
         episodeScheduleStore: EpisodeScheduleStore
     ) {
-        self.refreshUseCase = refreshUseCase
+        self.episodeScheduleRefreshUseCase = episodeScheduleRefreshUseCase
         self.followedMediaStore = followedMediaStore
         self.episodeWatchStore = episodeWatchStore
         self.episodeScheduleStore = episodeScheduleStore
@@ -56,7 +56,7 @@ final class FollowedMediaRefreshStore {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        _ = await refreshUseCase.refreshSchedules(for: items) { [weak self] result in
+        _ = await episodeScheduleRefreshUseCase.refreshSchedules(for: items) { [weak self] result in
             guard let self else {
                 return
             }

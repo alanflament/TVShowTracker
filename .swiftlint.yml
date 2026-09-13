@@ -1,3 +1,18 @@
 disabled_rules:
   - line_length
   - todo
+
+opt_in_rules:
+  - file_name
+  - one_declaration_per_file
+
+custom_rules:
+  view_type_suffix:
+    name: "View Type Suffix"
+    regex: '\b(?:struct|class|enum)\s+(?!\w*View\b)\w+\s*(?:<[^{}\n]*>)?\s*:\s*(?:SwiftUI\.)?View\b'
+    match_kinds:
+      - keyword
+      - identifier
+      - typeidentifier
+    message: "SwiftUI view type names must end with View."
+    severity: error

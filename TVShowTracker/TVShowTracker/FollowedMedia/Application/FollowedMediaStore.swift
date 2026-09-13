@@ -10,19 +10,19 @@ import Observation
 
 @MainActor @Observable
 final class FollowedMediaStore {
-    private let repository: any LibraryRepository
+    private let libraryRepository: any LibraryRepository
 
     private(set) var items: [LibraryItem] = []
     private(set) var errorMessage: String?
 
-    init(repository: any LibraryRepository) {
-        self.repository = repository
+    init(libraryRepository: any LibraryRepository) {
+        self.libraryRepository = libraryRepository
         reload()
     }
 
     func reload() {
         do {
-            items = try repository.loadItems()
+            items = try libraryRepository.loadItems()
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -93,7 +93,7 @@ final class FollowedMediaStore {
 
     private func save(_ item: LibraryItem) {
         do {
-            try repository.save(item)
+            try libraryRepository.save(item)
             items.removeAll { $0.id == item.id }
             items.insert(item, at: 0)
             errorMessage = nil
@@ -104,7 +104,7 @@ final class FollowedMediaStore {
 
     private func remove(id: String) {
         do {
-            try repository.delete(id: id)
+            try libraryRepository.delete(id: id)
             items.removeAll { $0.id == id }
             errorMessage = nil
         } catch {

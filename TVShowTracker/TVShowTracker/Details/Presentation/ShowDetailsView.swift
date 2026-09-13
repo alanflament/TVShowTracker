@@ -80,7 +80,7 @@ struct ShowDetailsView: View {
                     .zoom(sourceID: PosterTransitionID.poster, in: posterTransition)
                 )
             } label: {
-                MediaPoster(url: details.posterURL, kind: details.kind, width: 120, height: 180)
+                MediaPosterView(url: details.posterURL, kind: details.kind, width: 120, height: 180)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -150,7 +150,7 @@ struct ShowDetailsView: View {
         NavigationLink {
             makeEpisodesView()
         } label: {
-            TrackerCard {
+            TrackerCardView {
                 HStack(spacing: 14) {
                     Image(systemName: "list.number")
                         .font(.title3.weight(.semibold))
@@ -203,8 +203,4 @@ struct ShowDetailsView: View {
         }
         return "Browse seasons and episodes"
     }
-}
-
-private enum PosterTransitionID {
-    static let poster = "show-details-poster"
 }

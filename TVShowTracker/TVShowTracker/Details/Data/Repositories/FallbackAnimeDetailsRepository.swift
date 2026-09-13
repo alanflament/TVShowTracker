@@ -8,15 +8,15 @@
 import Foundation
 
 struct FallbackAnimeDetailsRepository: AnimeDetailsRepository {
-    private let primary: any AnimeDetailsRepository
-    private let fallback: any AnimeDetailsRepository
+    private let primaryRepository: any AnimeDetailsRepository
+    private let fallbackRepository: any AnimeDetailsRepository
 
     init(
-        primary: any AnimeDetailsRepository,
-        fallback: any AnimeDetailsRepository
+        primaryRepository: any AnimeDetailsRepository,
+        fallbackRepository: any AnimeDetailsRepository
     ) {
-        self.primary = primary
-        self.fallback = fallback
+        self.primaryRepository = primaryRepository
+        self.fallbackRepository = fallbackRepository
     }
 
     func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
@@ -35,8 +35,8 @@ struct FallbackAnimeDetailsRepository: AnimeDetailsRepository {
         for candidate: MediaCandidate,
         operation: (any AnimeDetailsRepository) async throws -> Result
     ) async throws -> Result {
-        let preferred = candidate.provider == .jikan ? fallback : primary
-        let alternative = candidate.provider == .jikan ? primary : fallback
+        let preferred = candidate.provider == .jikan ? fallbackRepository : primaryRepository
+        let alternative = candidate.provider == .jikan ? primaryRepository : fallbackRepository
         do {
             return try await operation(preferred)
         } catch {

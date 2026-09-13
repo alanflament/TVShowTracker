@@ -14,7 +14,7 @@ import Testing
 struct FollowedMediaStoreTests {
     @Test func failedReloadKeepsPreviouslyLoadedLibrary() {
         let repository = MutableLibraryRepository(items: [item()])
-        let store = FollowedMediaStore(repository: repository)
+        let store = FollowedMediaStore(libraryRepository: repository)
         let loaded = store.items
         repository.shouldFail = true
 
@@ -26,7 +26,7 @@ struct FollowedMediaStoreTests {
 
     @Test func updatingWithAnOldSnapshotPreservesNewerChanges() throws {
         let original = item()
-        let store = FollowedMediaStore(repository: MutableLibraryRepository(items: [original]))
+        let store = FollowedMediaStore(libraryRepository: MutableLibraryRepository(items: [original]))
         store.updateStatus(.finished, for: original)
         store.updateTrackingStatus(.paused, for: original)
         let updated = try #require(store.items.first)
@@ -58,7 +58,7 @@ struct FollowedMediaStoreTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let searchCandidate = candidate(id: 1, title: "Dark", status: .finished)
         store.addIfMissing(searchCandidate, trackingStatus: .watching)
@@ -76,7 +76,7 @@ struct FollowedMediaStoreTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let posterURL = try #require(URL(string: "https://image.tmdb.org/t/p/w342/poster.jpg"))
         store.toggle(candidate(id: 1, title: "Breaking Bad", posterURL: posterURL))
@@ -93,7 +93,7 @@ struct FollowedMediaStoreTests {
             configurations: configuration
         )
         let store = FollowedMediaStore(
-            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+            libraryRepository: SwiftDataLibraryRepository(modelContext: container.mainContext)
         )
         let searchCandidate = candidate(id: 1, title: "Mushoku Tensei")
         store.toggle(searchCandidate)
@@ -108,69 +108,43 @@ struct FollowedMediaStoreTests {
     }
 }
 
-@MainActor
-private final class MutableLibraryRepository: LibraryRepository {
-    var items: [LibraryItem]
-    var shouldFail = false
-
-    init(items: [LibraryItem]) {
-        self.items = items
+private extension FollowedMediaStoreTests {
+    func candidate(
+        id: Int,
+        title: String,
+        status: MediaStatus? = nil,
+        posterURL: URL? = nil
+    ) -> MediaCandidate {
+        MediaCandidate(
+            provider: .tmdb,
+            providerID: id,
+            kind: .tvShow,
+            title: title,
+            alternateTitle: nil,
+            posterURL: posterURL,
+            releaseYear: nil,
+            totalEpisodeCount: nil,
+            status: status,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil
+        )
     }
 
-    func loadItems() throws -> [LibraryItem] {
-        if shouldFail {
-            throw TestError.failed
-        }
-        return items
+    func details(for candidate: MediaCandidate, totalEpisodeCount: Int) -> ShowDetails {
+        ShowDetails(
+            provider: candidate.provider,
+            providerID: candidate.providerID,
+            kind: candidate.kind,
+            title: candidate.title,
+            alternateTitle: candidate.alternateTitle,
+            overview: nil,
+            posterURL: candidate.posterURL,
+            backdropURL: nil,
+            releaseYear: candidate.releaseYear,
+            status: .airing,
+            totalEpisodeCount: totalEpisodeCount,
+            genres: [],
+            seasonSummaries: []
+        )
     }
-
-    func save(_ item: LibraryItem) throws {
-        items.removeAll { $0.id == item.id }
-        items.append(item)
-    }
-
-    func delete(id: String) throws {
-        items.removeAll { $0.id == id }
-    }
-}
-
-private enum TestError: Error { case failed }
-
-private func candidate(
-    id: Int,
-    title: String,
-    status: MediaStatus? = nil,
-    posterURL: URL? = nil
-) -> MediaCandidate {
-    MediaCandidate(
-        provider: .tmdb,
-        providerID: id,
-        kind: .tvShow,
-        title: title,
-        alternateTitle: nil,
-        posterURL: posterURL,
-        releaseYear: nil,
-        totalEpisodeCount: nil,
-        status: status,
-        nextEpisodeNumber: nil,
-        nextEpisodeAirDate: nil
-    )
-}
-
-private func details(for candidate: MediaCandidate, totalEpisodeCount: Int) -> ShowDetails {
-    ShowDetails(
-        provider: candidate.provider,
-        providerID: candidate.providerID,
-        kind: candidate.kind,
-        title: candidate.title,
-        alternateTitle: candidate.alternateTitle,
-        overview: nil,
-        posterURL: candidate.posterURL,
-        backdropURL: nil,
-        releaseYear: candidate.releaseYear,
-        status: .airing,
-        totalEpisodeCount: totalEpisodeCount,
-        genres: [],
-        seasonSummaries: []
-    )
 }

@@ -13,11 +13,11 @@ import Testing
 struct DefaultSearchCatalogUseCaseTests {
     @Test func searchPreservesEachProviderRelevanceOrder() async {
         let useCase = DefaultSearchCatalogUseCase(
-            tvShowRepository: TVShowRepositoryStub(candidates: [
+            tvShowSearchRepository: TVShowRepositoryStub(candidates: [
                 .tvShow(id: 2, title: "The Bear"),
                 .tvShow(id: 1, title: "Abbott Elementary")
             ]),
-            animeRepository: AnimeRepositoryStub(candidates: [
+            animeSearchRepository: AnimeRepositoryStub(candidates: [
                 .anime(id: 2, title: "Zom 100"),
                 .anime(id: 1, title: "Attack on Titan")
             ])
@@ -32,8 +32,8 @@ struct DefaultSearchCatalogUseCaseTests {
 
     @Test func searchReturnsAvailableProviderWhenTheOtherProviderFails() async {
         let useCase = DefaultSearchCatalogUseCase(
-            tvShowRepository: FailingTVShowRepository(),
-            animeRepository: AnimeRepositoryStub(candidates: [.anime(id: 1, title: "Frieren")])
+            tvShowSearchRepository: FailingTVShowRepository(),
+            animeSearchRepository: AnimeRepositoryStub(candidates: [.anime(id: 1, title: "Frieren")])
         )
 
         let catalog = await useCase.search(matching: "frieren")
