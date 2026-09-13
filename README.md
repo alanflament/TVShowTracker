@@ -2,6 +2,8 @@
 
 TVShowTracker is an iOS app for tracking your favorite TV shows and anime.
 
+**Try the public beta:** [Join on TestFlight](https://testflight.apple.com/join/wQM5paEM).
+
 After the beloved TVShowTime app disappeared, I took the opportunity to build my own app focused on show tracking, with help from AI. This project became a hands-on way to explore Codex's capabilities.
 
 ## Introduction
