@@ -8,11 +8,11 @@
 import Foundation
 
 struct UnconfiguredTVShowDetailsRepository: TVShowDetailsRepository {
-    func fetchDetails(for _: SearchCandidate) async throws -> ShowDetails {
+    func fetchDetails(for _: MediaCandidate) async throws -> ShowDetails {
         throw SearchConfigurationError.missingTMDBAccessToken
     }
 
-    func fetchEpisodes(for _: SearchCandidate) async throws -> [ShowSeason] {
+    func fetchEpisodes(for _: MediaCandidate) async throws -> [ShowSeason] {
         throw SearchConfigurationError.missingTMDBAccessToken
     }
 }

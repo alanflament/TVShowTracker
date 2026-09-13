@@ -5,15 +5,11 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-import SwiftUI
+import Foundation
 
 @MainActor
 final class CalendarCoordinator {
-    private let nextEpisodeUseCase: any NextEpisodeUseCase
-    private let followedMediaStore: FollowedMediaStore
-    private let episodeWatchStore: EpisodeWatchStore
-    private let episodeScheduleStore: EpisodeScheduleStore
-    private let followedMediaRefreshStore: FollowedMediaRefreshStore
+    let viewModel: CalendarViewModel
     private let detailsCoordinator: DetailsCoordinator
 
     init(
@@ -24,30 +20,22 @@ final class CalendarCoordinator {
         followedMediaRefreshStore: FollowedMediaRefreshStore,
         detailsCoordinator: DetailsCoordinator
     ) {
-        self.nextEpisodeUseCase = nextEpisodeUseCase
-        self.followedMediaStore = followedMediaStore
-        self.episodeWatchStore = episodeWatchStore
-        self.episodeScheduleStore = episodeScheduleStore
-        self.followedMediaRefreshStore = followedMediaRefreshStore
-        self.detailsCoordinator = detailsCoordinator
-    }
-
-    func makeCalendarViewModel() -> CalendarViewModel {
-        CalendarViewModel(
+        viewModel = CalendarViewModel(
             nextEpisodeUseCase: nextEpisodeUseCase,
             followedMediaStore: followedMediaStore,
             episodeWatchStore: episodeWatchStore,
             episodeScheduleStore: episodeScheduleStore,
             followedMediaRefreshStore: followedMediaRefreshStore
         )
+        self.detailsCoordinator = detailsCoordinator
     }
 
-    func makeDetailsView(for candidate: SearchCandidate) -> ShowDetailsView {
+    func makeDetailsView(for candidate: MediaCandidate) -> ShowDetailsView {
         detailsCoordinator.makeDetailsView(for: candidate)
     }
 
     func makeEpisodeDetailsView(
-        for candidate: SearchCandidate,
+        for candidate: MediaCandidate,
         episode: ShowEpisode,
         onShowMediaDetails: @escaping () -> Void
     ) -> EpisodeDetailsView {

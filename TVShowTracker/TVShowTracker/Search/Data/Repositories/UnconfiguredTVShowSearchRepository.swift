@@ -6,7 +6,7 @@
 //
 
 struct UnconfiguredTVShowSearchRepository: TVShowSearchRepository {
-    func searchTVShows(matching _: String) async throws -> [SearchCandidate] {
+    func searchTVShows(matching _: String) async throws -> [MediaCandidate] {
         throw SearchConfigurationError.missingTMDBAccessToken
     }
 }

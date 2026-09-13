@@ -9,9 +9,9 @@ import Foundation
 
 @MainActor
 struct DefaultNextEpisodeUseCase: NextEpisodeUseCase {
-    private let episodeScheduleStore: EpisodeScheduleStore
+    private let episodeScheduleStore: any EpisodeScheduleReading
 
-    init(episodeScheduleStore: EpisodeScheduleStore) {
+    init(episodeScheduleStore: any EpisodeScheduleReading) {
         self.episodeScheduleStore = episodeScheduleStore
     }
 

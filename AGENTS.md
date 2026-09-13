@@ -24,6 +24,7 @@ Feature/
     Entities/
     Repositories/   # protocols only
     UseCases/       # protocols and implementations
+  Application/     # workflows and observable shared state, when needed
   Data/
     DTOs/           # provider wire models
     Mappers/        # DTO/domain transformations
@@ -43,25 +44,41 @@ Core/
 such as `Data/Repositories`, `Data/DTOs`, `Data/Mappers`, `Core/Networking`, or
 `Core/Formatting`.
 
+`App` is the composition root. Inject concrete dependencies into coordinators;
+coordinators must not receive `AppContainer` as a service locator. Use explicit
+constructor names when assembling dependencies.
+
+`Media` owns shared catalog and episode entities. Its `MediaCandidate`,
+`MediaProvider`, `MediaKind`, and `MediaStatus` types are used across features.
+Keep domain value types explicitly nonisolated and Sendable. Domain code must not
+depend on concrete application stores, SwiftUI, or SwiftData. Workflows that
+coordinate shared stores belong in `Application`; small domain read contracts
+such as `EpisodeScheduleReading` keep read-only use cases independent of stores.
+
+The dependency map and persistence contracts are documented in
+[`Docs/Architecture.md`](Docs/Architecture.md).
+
 `FollowedMedia` is a shared product-domain slice, not a Library implementation
 detail. It owns the persistence and state used by the Library, Search, and
 Details features:
 
-- `FollowedMedia/Domain/LibraryItem.swift` is the persisted domain snapshot rebuilt
-  into a `SearchCandidate` when details are opened.
+- `FollowedMedia/Domain/Entities/LibraryItem.swift` is the persisted domain snapshot rebuilt
+  into a `MediaCandidate` when details are opened.
 - `TrackingStatus` describes the user's relationship with a saved title (`planToWatch`,
   `watching`, `paused`, `completed`, or `dropped`). Keep it separate from
-  `SearchMediaStatus`, which describes the provider's release lifecycle. Only
+  `MediaStatus`, which describes the provider's release lifecycle. Only
   `watching` titles contribute to Up Next.
 - Episode watch mutations reconcile `TrackingStatus` from the persisted schedule:
   watching any released episode moves the title to `watching`, and watching every
-  released non-special episode moves it to `completed`. Unwatching an episode from
+  released non-special episode of terminal media moves it to `completed`. Ongoing
+  titles remain `watching` when caught up. Unwatching an episode from
   a completed title moves it back to `watching`.
-- `FollowedMedia/Data/LibraryItemModel.swift` is the SwiftData record. Provider IDs,
+- `FollowedMedia/Data/Models/LibraryItemModel.swift` is the SwiftData record. Provider IDs,
   kind, display metadata, and AniList installment references are stored locally.
-- `FollowedMedia/Data/SwiftDataLibraryRepository.swift` is the only SwiftData access
-  point.
-- `FollowedMedia/Presentation/FollowedMediaStore.swift` is the shared
+- `FollowedMedia/Data/Repositories/SwiftDataLibraryRepository.swift` owns saved
+  titles. Other `SwiftData*Repository` types own watch records, schedules, and
+  episode details; views and stores never access `ModelContext` directly.
+- `FollowedMedia/Application/FollowedMediaStore.swift` is the shared
   main-actor source of truth. Coordinators inject it into feature view models;
   views must not access it through `@Environment`.
 - `FollowedMedia` also owns persisted episode-watch records and episode
@@ -112,6 +129,40 @@ upsert matching exported records and add missing ones, then reload the shared
 stores; never delete local records merely because they are absent from a backup.
 Reject malformed or unsupported schema versions before writing data.
 
+## Coordinator and view ownership
+
+- Every tab uses `FeatureCoordinatorView(coordinator:)`. Each host owns its tab's
+  `NavigationStack` and flow-specific presentation state.
+- Every tab coordinator creates and retains one `let viewModel` in its initializer.
+  Root content views borrow it with `let`, or `@Bindable` when bindings are needed.
+  Do not recreate root view models in view factories or retain a second `@State`
+  reference in a borrowing view. Cross-tab commands act on that same instance.
+- Coordinators use `@MainActor`; add `@Observable` only when the coordinator itself
+  has mutable state observed by views, such as MainCoordinator's selected tab.
+- Inject coordinators explicitly into coordinator/root views. Content views receive
+  view models, intent callbacks, and assembled destination factories, not coordinators.
+- Destination factories consistently return views (`make…View`), never closures
+  that require content views to assemble another view model and its dependencies.
+  Route-scoped destination views retain their injected view models with `@State`;
+  their lifetime belongs to that destination, not the whole tab.
+- Keep feature-owned presentation in its feature: migration screens in
+  `TVTimeImport/Presentation`, backup presentation in `DataExport/Presentation`.
+- Repeated responsibilities should use the established implementation. Extract a
+  shared helper when policy would otherwise be duplicated; preserve differences
+  required by provider contracts or view lifetimes.
+
+## Shared provider requests
+
+Search and Details use `Media/Data/Clients` for each provider's request policy.
+TMDB and Jikan use `HTTPClient.get` for JSON transport. AniList uses one GraphQL
+client for request encoding and errors, including MAL-ID lookups. Repositories
+own endpoint selection and DTO-to-domain mapping. Decode single-item envelopes
+and paginated responses according to their actual wire shape. Keep the shared
+rate-limited `HTTPClient` instances supplied by the composition root.
+
+Before fallback or tolerating a partial result, use `error.rethrowIfCancellation()`
+so cancellation never becomes an ordinary provider failure.
+
 ## Declaration and file rules
 
 - Give important domain entities, protocols, repositories, DTO families, and
@@ -126,6 +177,17 @@ Reject malformed or unsupported schema versions before writing data.
 - View-only row components and test doubles may remain private and local when
   extracting them would make navigation harder to follow.
 - Keep repository protocols independent from provider implementations.
+
+## Unit test organization
+
+- Mirror the production feature and layer paths inside `TVShowTrackerTests`.
+  For example, `Search/Presentation/SearchViewModel.swift` is covered by
+  `TVShowTrackerTests/Search/Presentation/SearchViewModelTests.swift`.
+- Name suites after the primary type or behavior they cover. Split suites that
+  cover unrelated features or layers instead of using a root-level catch-all file.
+- Keep private test doubles with their suite. Place genuinely shared fixtures and
+  doubles under their owning feature/layer in the test target.
+- Do not place unit-test Swift files directly at the test target root.
 
 ## Provider boundaries
 
@@ -154,9 +216,13 @@ Reject malformed or unsupported schema versions before writing data.
 
 ## Swift and SwiftUI conventions
 
-- Preserve Swift 6 concurrency correctness. Cross-task repository values should
+- Keep all targets in Swift 6 language mode and preserve concurrency correctness. Cross-task repository values should
   be `Sendable`; re-check state after suspension points when stale results could
   be published.
+- Cancelled detail loads must remain retryable, and older requests must never
+  overwrite a newer result. A background refresh must not recreate removed media.
+- Repository writes must roll back on failure. Store reload failures preserve the
+  last known state and expose an error; they must not empty the user's live library.
 - Keep networking behind `HTTPClient` so repositories can be tested with a
   deterministic fake.
 - Share rate-limited provider clients between Search and Details. AniList and

@@ -19,7 +19,7 @@ struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
         self.animeRepository = animeRepository
     }
 
-    func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails {
+    func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
         switch candidate.kind {
         case .tvShow:
             try await tvShowRepository.fetchDetails(for: candidate)
@@ -28,7 +28,7 @@ struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
         }
     }
 
-    func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason] {
+    func fetchEpisodes(for candidate: MediaCandidate) async throws -> [ShowSeason] {
         switch candidate.kind {
         case .tvShow:
             try await tvShowRepository.fetchEpisodes(for: candidate)
@@ -37,7 +37,7 @@ struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
         }
     }
 
-    func fetchRefreshSnapshot(for candidate: SearchCandidate) async throws -> ShowRefreshSnapshot {
+    func fetchRefreshSnapshot(for candidate: MediaCandidate) async throws -> ShowRefreshSnapshot {
         switch candidate.kind {
         case .tvShow:
             try await tvShowRepository.fetchRefreshSnapshot(for: candidate)
@@ -47,7 +47,7 @@ struct DefaultShowDetailsUseCase: ShowDetailsUseCase {
     }
 
     func fetchEpisodeDetails(
-        for candidate: SearchCandidate,
+        for candidate: MediaCandidate,
         episode: ShowEpisode
     ) async throws -> EpisodeDetails {
         switch candidate.kind {

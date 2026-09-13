@@ -5,7 +5,8 @@
 //  Created by Alan Flament on 30/07/2026.
 //
 
-import SwiftUI
+import Foundation
+import Observation
 
 @MainActor @Observable
 final class SearchViewModel {
@@ -56,19 +57,19 @@ final class SearchViewModel {
         self.debounce = debounce
     }
 
-    func trackingStatus(for candidate: SearchCandidate) -> TrackingStatus? {
+    func trackingStatus(for candidate: MediaCandidate) -> TrackingStatus? {
         followedMediaStore.item(id: candidate.id)?.trackingStatus
     }
 
-    func add(_ candidate: SearchCandidate, trackingStatus: TrackingStatus) {
+    func add(_ candidate: MediaCandidate, trackingStatus: TrackingStatus) {
         followedMediaStore.addIfMissing(candidate, trackingStatus: trackingStatus)
     }
 
-    func addToPlan(_ candidate: SearchCandidate) {
+    func addToPlan(_ candidate: MediaCandidate) {
         add(candidate, trackingStatus: .planToWatch)
     }
 
-    func update(_ candidate: SearchCandidate, trackingStatus: TrackingStatus) {
+    func update(_ candidate: MediaCandidate, trackingStatus: TrackingStatus) {
         guard let item = followedMediaStore.item(id: candidate.id) else {
             add(candidate, trackingStatus: trackingStatus)
             return
@@ -76,7 +77,7 @@ final class SearchViewModel {
         followedMediaStore.updateTrackingStatus(trackingStatus, for: item)
     }
 
-    func remove(_ candidate: SearchCandidate) {
+    func remove(_ candidate: MediaCandidate) {
         guard let item = followedMediaStore.item(id: candidate.id) else {
             return
         }
@@ -122,14 +123,14 @@ final class SearchViewModel {
             }
         }
 
-        guard !Task.isCancelled, normalizedQuery == trimmedQuery else {
+        guard !Task.isCancelled, activeSearchID == searchID, searchTaskID == taskID, normalizedQuery == trimmedQuery else {
             finishSearch(id: searchID)
             return
         }
 
         let catalog = await searchCatalogUseCase.search(matching: trimmedQuery)
 
-        guard !Task.isCancelled, normalizedQuery == trimmedQuery else {
+        guard !Task.isCancelled, activeSearchID == searchID, searchTaskID == taskID, normalizedQuery == trimmedQuery else {
             finishSearch(id: searchID)
             return
         }

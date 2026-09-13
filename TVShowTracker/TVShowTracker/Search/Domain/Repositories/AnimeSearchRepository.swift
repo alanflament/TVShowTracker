@@ -6,5 +6,5 @@
 //
 
 protocol AnimeSearchRepository: Sendable {
-    func searchAnime(matching query: String) async throws -> [SearchCandidate]
+    func searchAnime(matching query: String) async throws -> [MediaCandidate]
 }

@@ -5,7 +5,7 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-import SwiftUI
+import Foundation
 
 @MainActor
 final class DetailsCoordinator {
@@ -29,26 +29,30 @@ final class DetailsCoordinator {
         self.episodeDetailsStore = episodeDetailsStore
     }
 
-    func makeDetailsSheet(for candidate: SearchCandidate) -> DetailsSheetView {
+    func makeDetailsSheet(for candidate: MediaCandidate) -> DetailsSheetView {
         DetailsSheetView(detailsView: makeDetailsView(for: candidate))
     }
 
-    func makeDetailsView(for candidate: SearchCandidate) -> ShowDetailsView {
+    func makeDetailsView(for candidate: MediaCandidate) -> ShowDetailsView {
         ShowDetailsView(
             viewModel: ShowDetailsViewModel(
                 candidate: candidate,
                 useCase: useCase,
                 followedMediaStore: followedMediaStore
             ),
-            makeEpisodesViewModel: {
-                EpisodesViewModel(
-                    candidate: candidate,
-                    useCase: self.useCase,
-                    followedMediaStore: self.followedMediaStore,
-                    episodeScheduleStore: self.episodeScheduleStore,
-                    episodeWatchStore: self.episodeWatchStore
-                )
-            },
+            makeEpisodesView: { self.makeEpisodesView(for: candidate) }
+        )
+    }
+
+    func makeEpisodesView(for candidate: MediaCandidate) -> EpisodesView {
+        EpisodesView(
+            viewModel: EpisodesViewModel(
+                candidate: candidate,
+                useCase: useCase,
+                followedMediaStore: followedMediaStore,
+                episodeScheduleStore: episodeScheduleStore,
+                episodeWatchStore: episodeWatchStore
+            ),
             makeEpisodeDetailsView: { episode in
                 self.makeEpisodeDetailsView(for: candidate, episode: episode)
             }
@@ -56,7 +60,7 @@ final class DetailsCoordinator {
     }
 
     func makeEpisodeDetailsView(
-        for candidate: SearchCandidate,
+        for candidate: MediaCandidate,
         episode: ShowEpisode,
         onShowMediaDetails: (() -> Void)? = nil
     ) -> EpisodeDetailsView {

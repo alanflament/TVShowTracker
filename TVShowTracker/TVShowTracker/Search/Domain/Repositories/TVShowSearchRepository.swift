@@ -6,5 +6,5 @@
 //
 
 protocol TVShowSearchRepository: Sendable {
-    func searchTVShows(matching query: String) async throws -> [SearchCandidate]
+    func searchTVShows(matching query: String) async throws -> [MediaCandidate]
 }

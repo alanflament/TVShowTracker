@@ -5,11 +5,11 @@
 //  Created by Alan Flament on 30/07/2026.
 //
 
-import SwiftUI
+import Foundation
 
-@MainActor @Observable
+@MainActor
 final class SearchCoordinator {
-    private let viewModel: SearchViewModel
+    let viewModel: SearchViewModel
     private let detailsCoordinator: DetailsCoordinator
 
     init(
@@ -24,11 +24,8 @@ final class SearchCoordinator {
         self.detailsCoordinator = detailsCoordinator
     }
 
-    func makeSearchView() -> SearchView {
-        SearchView(
-            viewModel: viewModel,
-            detailsCoordinator: detailsCoordinator
-        )
+    func makeDetailsSheet(for candidate: MediaCandidate) -> DetailsSheetView {
+        detailsCoordinator.makeDetailsSheet(for: candidate)
     }
 
     func search(for query: String) {

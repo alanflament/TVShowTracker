@@ -9,18 +9,12 @@ import SwiftUI
 
 struct CalendarCoordinatorView: View {
     let coordinator: CalendarCoordinator
-    @State private var viewModel: CalendarViewModel
     @State private var path = [CalendarRoute]()
-
-    init(coordinator: CalendarCoordinator) {
-        self.coordinator = coordinator
-        _viewModel = State(initialValue: coordinator.makeCalendarViewModel())
-    }
 
     var body: some View {
         NavigationStack(path: $path) {
             CalendarView(
-                viewModel: viewModel,
+                viewModel: coordinator.viewModel,
                 onSelectMedia: { candidate in
                     path.append(.media(candidate))
                 },
@@ -44,7 +38,7 @@ struct CalendarCoordinatorView: View {
 }
 
 private enum CalendarRoute: Hashable {
-    case media(SearchCandidate)
+    case media(MediaCandidate)
     case episode(CalendarEpisode)
 }
 

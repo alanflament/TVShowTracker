@@ -161,6 +161,7 @@ final class TVShowTrackerUITests: XCTestCase {
         return XCTWaiter.wait(for: [expectation], timeout: 2) == .completed
     }
 
+    @MainActor
     private func captureScreenshot(named name: String, app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

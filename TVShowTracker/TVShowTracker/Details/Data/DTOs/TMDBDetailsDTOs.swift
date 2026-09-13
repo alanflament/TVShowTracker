@@ -28,35 +28,6 @@ struct TMDBShowDetails: Decodable {
         case firstAirDate = "first_air_date"
         case numberOfEpisodes = "number_of_episodes"
     }
-
-    var asDomain: ShowDetails {
-        ShowDetails(
-            provider: .tmdb,
-            providerID: id,
-            kind: .tvShow,
-            title: name,
-            alternateTitle: originalName,
-            overview: overview,
-            posterURL: tmdbImageURL(path: posterPath, size: "w500"),
-            backdropURL: tmdbImageURL(path: backdropPath, size: "w1280"),
-            releaseYear: DateParser.parseYear(firstAirDate),
-            status: SearchMediaStatus(tmdbStatus: status),
-            totalEpisodeCount: numberOfEpisodes,
-            genres: genres.map(\.name),
-            seasonSummaries: seasons
-                .map { $0.asDomain(provider: .tmdb, showID: id) }
-                .sorted(by: seasonOrder)
-        )
-    }
-}
-
-private func seasonOrder(_ lhs: SeasonSummary, _ rhs: SeasonSummary) -> Bool {
-    let lhsIsSpecial = lhs.number == 0
-    let rhsIsSpecial = rhs.number == 0
-    if lhsIsSpecial != rhsIsSpecial {
-        return !lhsIsSpecial
-    }
-    return lhs.number < rhs.number
 }
 
 struct TMDBGenre: Decodable {
@@ -76,17 +47,6 @@ struct TMDBSeasonSummary: Decodable {
         case episodeCount = "episode_count"
         case airDate = "air_date"
     }
-
-    func asDomain(provider: SearchProvider, showID: Int) -> SeasonSummary {
-        SeasonSummary(
-            provider: provider,
-            showID: showID,
-            number: seasonNumber,
-            name: name,
-            episodeCount: episodeCount,
-            airDate: DateParser.parseISO8601(airDate)
-        )
-    }
 }
 
 nonisolated struct TMDBSeasonDetails: Decodable {
@@ -97,22 +57,6 @@ nonisolated struct TMDBSeasonDetails: Decodable {
     enum CodingKeys: String, CodingKey {
         case name, episodes
         case seasonNumber = "season_number"
-    }
-
-    nonisolated func asDomain(provider: SearchProvider, showID: Int) -> ShowSeason {
-        ShowSeason(
-            provider: provider,
-            showID: showID,
-            number: seasonNumber,
-            name: name,
-            episodes: episodes.compactMap {
-                // TMDB can publish placeholder episode records before a schedule is confirmed.
-                guard $0.hasConfirmedAirDate else {
-                    return nil
-                }
-                return $0.asDomain(provider: provider, showID: showID, seasonNumber: seasonNumber)
-            }
-        )
     }
 }
 
@@ -132,37 +76,4 @@ nonisolated struct TMDBEpisode: Decodable {
         case stillPath = "still_path"
         case voteAverage = "vote_average"
     }
-
-    var hasConfirmedAirDate: Bool {
-        DateParser.parseISO8601(airDate) != nil
-    }
-
-    func asDomain(provider: SearchProvider, showID: Int, seasonNumber: Int) -> ShowEpisode {
-        ShowEpisode(
-            provider: provider,
-            showID: showID,
-            seasonNumber: seasonNumber,
-            number: episodeNumber,
-            title: name,
-            overview: overview,
-            airDate: DateParser.parseISO8601(airDate),
-            stillURL: tmdbImageURL(path: stillPath, size: "w300"),
-            runtimeMinutes: runtime
-        )
-    }
-
-    func asEpisodeDetails(
-        provider: SearchProvider,
-        showID: Int,
-        seasonNumber: Int
-    ) -> EpisodeDetails {
-        EpisodeDetails(
-            episode: asDomain(provider: provider, showID: showID, seasonNumber: seasonNumber),
-            voteAverage: voteAverage
-        )
-    }
-}
-
-nonisolated func tmdbImageURL(path: String?, size: String) -> URL? {
-    path.flatMap { URL(string: "https://image.tmdb.org/t/p/\(size)\($0)") }
 }

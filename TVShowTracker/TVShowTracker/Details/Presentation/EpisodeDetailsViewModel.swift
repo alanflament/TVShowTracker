@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Observation
 
 @MainActor @Observable
 final class EpisodeDetailsViewModel {
@@ -16,7 +17,7 @@ final class EpisodeDetailsViewModel {
         case failed(String)
     }
 
-    let candidate: SearchCandidate
+    let candidate: MediaCandidate
     let episode: ShowEpisode
     private(set) var state: State = .idle
 
@@ -25,7 +26,7 @@ final class EpisodeDetailsViewModel {
     private let episodeWatchStore: EpisodeWatchStore
 
     init(
-        candidate: SearchCandidate,
+        candidate: MediaCandidate,
         episode: ShowEpisode,
         useCase: any ShowDetailsUseCase,
         episodeDetailsStore: EpisodeDetailsStore,
@@ -51,9 +52,18 @@ final class EpisodeDetailsViewModel {
 
         do {
             let details = try await useCase.fetchEpisodeDetails(for: candidate, episode: episode)
+            try Task.checkCancellation()
             episodeDetailsStore.save(details)
             state = .loaded(details)
         } catch {
+            if Task.isCancelled || error is CancellationError {
+                if let cachedDetails = episodeDetailsStore.details(for: episode) {
+                    state = .loaded(cachedDetails)
+                } else {
+                    state = .idle
+                }
+                return
+            }
             guard episodeDetailsStore.details(for: episode) == nil else {
                 return
             }

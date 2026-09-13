@@ -11,19 +11,22 @@ import UIKit
 struct MediaPoster: View {
     @State private var image: UIImage?
 
+    private let httpClient: any HTTPClient
     let url: URL?
-    let kind: SearchMediaKind
+    let kind: MediaKind
     let width: CGFloat?
     let height: CGFloat
     let cornerRadius: CGFloat
 
     init(
         url: URL?,
-        kind: SearchMediaKind,
+        kind: MediaKind,
         width: CGFloat? = nil,
         height: CGFloat,
-        cornerRadius: CGFloat = 12
+        cornerRadius: CGFloat = 12,
+        httpClient: any HTTPClient = URLSessionHTTPClient()
     ) {
+        self.httpClient = httpClient
         self.url = url
         self.kind = kind
         self.width = width
@@ -68,9 +71,8 @@ struct MediaPoster: View {
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+            let (data, response) = try await httpClient.data(for: URLRequest(url: url))
             guard !Task.isCancelled,
-                  let response = response as? HTTPURLResponse,
                   response.statusCode == 200,
                   let downloadedImage = UIImage(data: data)
             else {

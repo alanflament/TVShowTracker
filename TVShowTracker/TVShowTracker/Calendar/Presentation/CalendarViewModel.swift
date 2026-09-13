@@ -27,6 +27,7 @@ final class CalendarViewModel {
     private let followedMediaRefreshStore: FollowedMediaRefreshStore
 
     private(set) var state: State = .idle
+    private var reloadID = UUID()
 
     init(
         nextEpisodeUseCase: any NextEpisodeUseCase,
@@ -52,15 +53,18 @@ final class CalendarViewModel {
             .map(\.id)
     }
 
-    var scheduleCount: Int {
-        episodeScheduleStore.schedules.count
+    struct DataID: Equatable {
+        let items: [LibraryItem]
+        let schedules: [String: EpisodeSchedule]
+        let watchedEpisodeIDs: Set<String>
     }
 
-    var calendarDataID: String {
-        let libraryState = followedMediaStore.items
-            .map { "\($0.id):\($0.trackingStatus.rawValue)" }
-            .joined(separator: ",")
-        return "\(libraryState):\(scheduleCount)"
+    var calendarDataID: DataID {
+        DataID(
+            items: followedMediaStore.items,
+            schedules: episodeScheduleStore.schedules,
+            watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs
+        )
     }
 
     func refresh() async {
@@ -88,7 +92,10 @@ private extension CalendarViewModel {
     }
 
     func reload(showsLoadingState: Bool) async {
-        let items = followedMediaStore.items
+        let requestID = UUID()
+        reloadID = requestID
+        let dataID = calendarDataID
+        let items = dataID.items
         guard !items.isEmpty else {
             state = .loaded([], availableEpisodeCount: 0, undatedMedia: [])
             return
@@ -99,9 +106,12 @@ private extension CalendarViewModel {
         }
         let result = await nextEpisodeUseCase.findNextEpisode(
             in: items,
-            watchedEpisodeIDs: episodeWatchStore.watchedEpisodeIDs,
+            watchedEpisodeIDs: dataID.watchedEpisodeIDs,
             now: .now
         )
+        guard !Task.isCancelled, reloadID == requestID, calendarDataID == dataID else {
+            return
+        }
         state = .loaded(
             result.episodes,
             availableEpisodeCount: result.availableEpisodeCount,

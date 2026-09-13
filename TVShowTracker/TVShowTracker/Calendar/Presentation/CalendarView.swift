@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CalendarView: View {
     let viewModel: CalendarViewModel
-    let onSelectMedia: (SearchCandidate) -> Void
+    let onSelectMedia: (MediaCandidate) -> Void
     let onSelectEpisode: (CalendarEpisode) -> Void
 
     var body: some View {

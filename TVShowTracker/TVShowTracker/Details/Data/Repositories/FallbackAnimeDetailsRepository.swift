@@ -19,35 +19,29 @@ struct FallbackAnimeDetailsRepository: AnimeDetailsRepository {
         self.fallback = fallback
     }
 
-    func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails {
-        if candidate.provider == .jikan {
-            do {
-                return try await fallback.fetchDetails(for: candidate)
-            } catch {
-                return try await primary.fetchDetails(for: candidate)
-            }
-        }
-
-        do {
-            return try await primary.fetchDetails(for: candidate)
-        } catch {
-            return try await fallback.fetchDetails(for: candidate)
+    func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
+        try await withRepository(for: candidate) { repository in
+            try await repository.fetchDetails(for: candidate)
         }
     }
 
-    func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason] {
-        if candidate.provider == .jikan {
-            do {
-                return try await fallback.fetchEpisodes(for: candidate)
-            } catch {
-                return try await primary.fetchEpisodes(for: candidate)
-            }
+    func fetchEpisodes(for candidate: MediaCandidate) async throws -> [ShowSeason] {
+        try await withRepository(for: candidate) { repository in
+            try await repository.fetchEpisodes(for: candidate)
         }
+    }
 
+    private func withRepository<Result>(
+        for candidate: MediaCandidate,
+        operation: (any AnimeDetailsRepository) async throws -> Result
+    ) async throws -> Result {
+        let preferred = candidate.provider == .jikan ? fallback : primary
+        let alternative = candidate.provider == .jikan ? primary : fallback
         do {
-            return try await primary.fetchEpisodes(for: candidate)
+            return try await operation(preferred)
         } catch {
-            return try await fallback.fetchEpisodes(for: candidate)
+            try error.rethrowIfCancellation()
+            return try await operation(alternative)
         }
     }
 }

@@ -8,15 +8,15 @@
 import Foundation
 
 struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
-    private let httpClient: any HTTPClient
+    private let apiClient: AniListAPIClient
 
     init(httpClient: any HTTPClient = URLSessionHTTPClient()) {
-        self.httpClient = httpClient
+        apiClient = AniListAPIClient(httpClient: httpClient)
     }
 
-    func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails {
+    func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
         let id = try await aniListID(for: candidate)
-        let details = try await request(id: id, query: Self.detailsQuery)
+        let details = try await request(id: id, query: AniListDetailsQuery.detailsQuery)
         let installments = mergedInstallments(from: details, existing: candidate.animeInstallments)
         let latestInstallment = installments.last
 
@@ -30,7 +30,7 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
             posterURL: details.coverImage.large ?? details.coverImage.medium,
             backdropURL: nil,
             releaseYear: details.startDate.year,
-            status: latestInstallment?.status ?? SearchMediaStatus(anilistStatus: details.status),
+            status: latestInstallment?.status ?? MediaStatus(anilistStatus: details.status),
             totalEpisodeCount: installments.isEmpty
                 ? nil
                 : installments.compactMap(\.episodeCount).reduce(0, +),
@@ -49,7 +49,7 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
         )
     }
 
-    func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason] {
+    func fetchEpisodes(for candidate: MediaCandidate) async throws -> [ShowSeason] {
         let installments: [AnimeInstallmentReference]
         if candidate.animeInstallments.isEmpty {
             let id = try await aniListID(for: candidate)
@@ -68,7 +68,7 @@ struct AniListAnimeDetailsRepository: AnimeDetailsRepository {
 
         var seasons = [ShowSeason]()
         for (index, installment) in installments.enumerated() {
-            let anime = try await request(id: installment.providerID, query: Self.episodesQuery)
+            let anime = try await request(id: installment.providerID, query: AniListDetailsQuery.episodesQuery)
             seasons.append(makeSeason(from: anime, installment: installment, number: index + 1))
         }
         return seasons
@@ -145,23 +145,16 @@ private extension AniListAnimeDetailsRepository {
         }
     }
 
-    func aniListID(for candidate: SearchCandidate) async throws -> Int {
+    func aniListID(for candidate: MediaCandidate) async throws -> Int {
         switch candidate.provider {
         case .aniList:
             return candidate.providerID
         case .jikan:
-            let body = AniListDetailsGraphQLRequest(
-                query: Self.malIDQuery,
+            let result: AniListDetailsData = try await apiClient.query(
+                AniListDetailsQuery.malIDQuery,
                 variables: ["idMal": candidate.providerID]
             )
-            var request = URLRequest(url: URL(string: "https://graphql.anilist.co")!)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONEncoder().encode(body)
-            let (data, response) = try await httpClient.data(for: request)
-            try response.validateSuccessfulStatusCode()
-            let result = try JSONDecoder().decode(AniListDetailsResponse.self, from: data)
-            guard let id = result.data?.media?.id else {
+            guard let id = result.media?.id else {
                 throw AniListAPIError.queryFailed("Anime details were not found.")
             }
             return id
@@ -171,102 +164,10 @@ private extension AniListAnimeDetailsRepository {
     }
 
     func request(id: Int, query: String) async throws -> AniListDetailsAnime {
-        let body = AniListDetailsGraphQLRequest(
-            query: query,
-            variables: ["id": id]
-        )
-
-        var request = URLRequest(url: URL(string: "https://graphql.anilist.co")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try JSONEncoder().encode(body)
-
-        let (data, response) = try await httpClient.data(for: request)
-        if let graphQLResponse = try? JSONDecoder().decode(AniListDetailsResponse.self, from: data),
-           let message = graphQLResponse.errors?.first?.message {
-            throw AniListAPIError.queryFailed(message)
-        }
-        try response.validateSuccessfulStatusCode()
-
-        let graphQLResponse = try JSONDecoder().decode(AniListDetailsResponse.self, from: data)
-        guard let anime = graphQLResponse.data?.media else {
+        let response: AniListDetailsData = try await apiClient.query(query, variables: ["id": id])
+        guard let anime = response.media else {
             throw AniListAPIError.queryFailed("Anime details were not found.")
         }
         return anime
     }
-
-    static let detailsQuery = """
-    query AnimeDetails($id: Int!) {
-      Media(id: $id, type: ANIME) {
-        id
-        title { userPreferred english romaji native }
-        description(asHtml: false)
-        coverImage { large medium }
-        status
-        episodes
-        duration
-        startDate { year }
-        genres
-        format
-        relations {
-          edges {
-            relationType
-            node {
-              id
-              title { userPreferred english romaji native }
-              format
-              status
-              episodes
-              startDate { year month day }
-              relations {
-                edges {
-                  relationType
-                  node {
-                    id
-                    title { userPreferred english romaji native }
-                    format
-                    status
-                    episodes
-                    startDate { year month day }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    static let malIDQuery = """
-    query AnimeID($idMal: Int!) {
-      Media(idMal: $idMal, type: ANIME) {
-        id
-        title { userPreferred english romaji native }
-        coverImage { large medium }
-        startDate { year }
-        genres
-      }
-    }
-    """
-
-    static let episodesQuery = """
-    query AnimeEpisodes($id: Int!) {
-      Media(id: $id, type: ANIME) {
-        id
-        title { userPreferred english romaji native }
-        description(asHtml: false)
-        coverImage { large medium }
-        status
-        episodes
-        duration
-        startDate { year }
-        genres
-        airingSchedule(perPage: 100) {
-          nodes { episode airingAt }
-        }
-      }
-    }
-    """
 }

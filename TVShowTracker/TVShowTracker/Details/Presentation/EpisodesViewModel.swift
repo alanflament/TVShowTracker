@@ -5,7 +5,8 @@
 //  Created by Alan Flament on 11/08/2026.
 //
 
-import SwiftUI
+import Foundation
+import Observation
 
 @MainActor @Observable
 final class EpisodesViewModel {
@@ -16,7 +17,7 @@ final class EpisodesViewModel {
         case failed(String)
     }
 
-    let candidate: SearchCandidate
+    let candidate: MediaCandidate
     private(set) var state: State = .idle
     private let useCase: any ShowDetailsUseCase
     private let followedMediaStore: FollowedMediaStore
@@ -24,7 +25,7 @@ final class EpisodesViewModel {
     private let episodeWatchStore: EpisodeWatchStore
 
     init(
-        candidate: SearchCandidate,
+        candidate: MediaCandidate,
         useCase: any ShowDetailsUseCase,
         followedMediaStore: FollowedMediaStore,
         episodeScheduleStore: EpisodeScheduleStore,
@@ -45,11 +46,16 @@ final class EpisodesViewModel {
         state = .loading
         do {
             let seasons = try await useCase.fetchEpisodes(for: candidate)
+            try Task.checkCancellation()
             if let item = followedMediaStore.item(id: candidate.id) {
                 episodeScheduleStore.save(item: item, seasons: seasons)
             }
             state = .loaded(seasons)
         } catch {
+            if Task.isCancelled || error is CancellationError {
+                state = .idle
+                return
+            }
             state = .failed((error as? LocalizedError)?.errorDescription ?? "Episodes could not be loaded.")
         }
     }

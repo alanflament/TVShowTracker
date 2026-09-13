@@ -69,3 +69,11 @@ Settings can export the user's followed titles, provider identifiers, personal
 tracking statuses, and watched-episode dates as a versioned JSON backup. The
 same screen can import that file later. Import merges the backup into the local
 library and does not remove records that are only present on the device.
+
+### Architecture and contribution
+
+The project uses Swift 6 with shared media-domain models, explicit dependency
+injection, repository-owned persistence, and application stores shared across
+features. See [the architecture guide](Docs/Architecture.md) for the dependency
+map and state contracts, and [AGENTS.md](AGENTS.md) for contribution rules and
+required validation commands.

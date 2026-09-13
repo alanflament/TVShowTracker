@@ -8,106 +8,56 @@
 import SwiftUI
 
 struct SearchView: View {
-    @State private var viewModel: SearchViewModel
-    @State private var selectedCandidate: SearchCandidate?
-    private let detailsCoordinator: DetailsCoordinator
-
-    init(viewModel: SearchViewModel, detailsCoordinator: DetailsCoordinator) {
-        _viewModel = State(initialValue: viewModel)
-        self.detailsCoordinator = detailsCoordinator
-    }
+    @Bindable var viewModel: SearchViewModel
+    let onSelectMedia: (MediaCandidate) -> Void
 
     var body: some View {
-        @Bindable var viewModel = viewModel
+        Group {
+            switch viewModel.state {
+            case .idle:
+                TrackerEmptyState(
+                    title: "Find something to watch",
+                    systemImage: "magnifyingglass",
+                    description: "Search TV shows and anime, then add the ones you love to My Shows."
+                )
 
-        NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .idle:
-                    TrackerEmptyState(
-                        title: "Find something to watch",
-                        systemImage: "magnifyingglass",
-                        description: "Search TV shows and anime, then add the ones you love to My Shows."
-                    )
+            case .loading:
+                VStack(spacing: 14) {
+                    ProgressView()
+                        .controlSize(.large)
+                    Text("Searching every catalogue…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                case .loading:
-                    VStack(spacing: 14) {
-                        ProgressView()
-                            .controlSize(.large)
-                        Text("Searching every catalogue…")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                case let .loaded(catalog):
-                    if catalog.isEmpty {
-                        if catalog.unavailableProviders.isEmpty {
-                            ContentUnavailableView.search(text: viewModel.query)
-                        } else {
-                            ContentUnavailableView(
-                                "Discover unavailable",
-                                systemImage: "exclamationmark.triangle",
-                                description: Text(unavailableProviderMessage(for: catalog))
-                            )
-                        }
+            case let .loaded(catalog):
+                if catalog.isEmpty {
+                    if catalog.unavailableProviders.isEmpty {
+                        ContentUnavailableView.search(text: viewModel.query)
                     } else {
-                        searchResults(catalog)
+                        ContentUnavailableView(
+                            "Discover unavailable",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text(unavailableProviderMessage(for: catalog))
+                        )
                     }
+                } else {
+                    searchResults(catalog)
                 }
             }
-            .navigationTitle("Discover")
-            .searchable(text: $viewModel.query, prompt: "Search TV shows and anime")
-            .task(id: viewModel.searchTaskID) {
-                await viewModel.search()
-            }
-            .sheet(item: $selectedCandidate) { candidate in
-                detailsCoordinator.makeDetailsSheet(for: candidate)
-            }
+        }
+        .navigationTitle("Discover")
+        .searchable(text: $viewModel.query, prompt: "Search TV shows and anime")
+        .task(id: viewModel.searchTaskID) {
+            await viewModel.search()
         }
     }
 
     private func searchResults(_ catalog: SearchCatalog) -> some View {
         List {
-            if !catalog.tvShows.isEmpty {
-                Section("TV Shows") {
-                    ForEach(catalog.tvShows) { candidate in
-                        SearchCandidateRow(candidate: candidate) {
-                            selectedCandidate = candidate
-                        } onAddToPlan: {
-                            viewModel.addToPlan(candidate)
-                        } onSetTrackingStatus: { status in
-                            viewModel.update(candidate, trackingStatus: status)
-                        } onRemoveFromLibrary: {
-                            viewModel.remove(candidate)
-                        } trackingStatus: {
-                            viewModel.trackingStatus(for: candidate)
-                        }
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-                }
-            }
-
-            if !catalog.anime.isEmpty {
-                Section("Anime") {
-                    ForEach(catalog.anime) { candidate in
-                        SearchCandidateRow(candidate: candidate) {
-                            selectedCandidate = candidate
-                        } onAddToPlan: {
-                            viewModel.addToPlan(candidate)
-                        } onSetTrackingStatus: { status in
-                            viewModel.update(candidate, trackingStatus: status)
-                        } onRemoveFromLibrary: {
-                            viewModel.remove(candidate)
-                        } trackingStatus: {
-                            viewModel.trackingStatus(for: candidate)
-                        }
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-                }
-            }
+            catalogSection("TV Shows", candidates: catalog.tvShows)
+            catalogSection("Anime", candidates: catalog.anime)
 
             if !catalog.unavailableProviders.isEmpty {
                 Section {
@@ -120,6 +70,29 @@ struct SearchView: View {
         }
         .listStyle(.plain)
         .searchResultsLoadingIndicator(isVisible: viewModel.isRefreshingResults)
+    }
+
+    @ViewBuilder
+    private func catalogSection(_ title: String, candidates: [MediaCandidate]) -> some View {
+        if !candidates.isEmpty {
+            Section(title) {
+                ForEach(candidates) { candidate in
+                    SearchCandidateRow(candidate: candidate) {
+                        onSelectMedia(candidate)
+                    } onAddToPlan: {
+                        viewModel.addToPlan(candidate)
+                    } onSetTrackingStatus: { status in
+                        viewModel.update(candidate, trackingStatus: status)
+                    } onRemoveFromLibrary: {
+                        viewModel.remove(candidate)
+                    } trackingStatus: {
+                        viewModel.trackingStatus(for: candidate)
+                    }
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+            }
+        }
     }
 
     private func unavailableProviderMessage(for catalog: SearchCatalog) -> String {
@@ -176,7 +149,7 @@ private struct SearchResultsLoadingIndicator: View {
 }
 
 private struct SearchCandidateRow: View {
-    let candidate: SearchCandidate
+    let candidate: MediaCandidate
     let onSelect: () -> Void
     let onAddToPlan: () -> Void
     let onSetTrackingStatus: (TrackingStatus) -> Void
@@ -277,7 +250,7 @@ private struct SearchCandidateRow: View {
 
     private var trackingStatusBinding: Binding<TrackingStatus?> {
         Binding(
-            get: trackingStatus,
+            get: { trackingStatus() },
             set: { status in
                 guard let status else {
                     return

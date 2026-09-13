@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct CalendarEpisode: Hashable, Sendable {
-    let candidate: SearchCandidate
+nonisolated struct CalendarEpisode: Hashable, Sendable {
+    let candidate: MediaCandidate
     let showTitle: String
     let posterURL: URL?
     let episode: ShowEpisode

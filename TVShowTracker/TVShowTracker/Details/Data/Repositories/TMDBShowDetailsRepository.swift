@@ -9,45 +9,46 @@ import Foundation
 
 struct TMDBShowDetailsRepository: TVShowDetailsRepository {
     private static let maximumConcurrentSeasonRequests = 3
-    private let accessToken: String
-    private let language: String
-    private let httpClient: any HTTPClient
+    private let apiClient: TMDBAPIClient
 
     init(
         accessToken: String,
         language: String,
         httpClient: any HTTPClient = URLSessionHTTPClient()
     ) {
-        self.accessToken = accessToken
-        self.language = language
-        self.httpClient = httpClient
+        apiClient = TMDBAPIClient(accessToken: accessToken, language: language, httpClient: httpClient)
     }
 
-    func fetchDetails(for candidate: SearchCandidate) async throws -> ShowDetails {
-        let details: TMDBShowDetails = try await request(path: "/3/tv/\(candidate.providerID)")
+    func fetchDetails(for candidate: MediaCandidate) async throws -> ShowDetails {
+        let details: TMDBShowDetails = try await apiClient.get(path: "/3/tv/\(candidate.providerID)")
         return details.asDomain
     }
 
-    func fetchEpisodes(for candidate: SearchCandidate) async throws -> [ShowSeason] {
-        let details: TMDBShowDetails = try await request(path: "/3/tv/\(candidate.providerID)")
+    func fetchEpisodes(for candidate: MediaCandidate) async throws -> [ShowSeason] {
+        let details: TMDBShowDetails = try await apiClient.get(path: "/3/tv/\(candidate.providerID)")
         return try await fetchSeasons(from: details, candidate: candidate)
     }
 
-    func fetchRefreshSnapshot(for candidate: SearchCandidate) async throws -> ShowRefreshSnapshot {
-        let details: TMDBShowDetails = try await request(path: "/3/tv/\(candidate.providerID)")
+    func fetchRefreshSnapshot(for candidate: MediaCandidate) async throws -> ShowRefreshSnapshot {
+        let details: TMDBShowDetails = try await apiClient.get(path: "/3/tv/\(candidate.providerID)")
         let domainDetails = details.asDomain
         let seasons: [ShowSeason]?
         if domainDetails.status?.isTerminal == true {
             seasons = nil
         } else {
-            seasons = try? await fetchSeasons(from: details, candidate: candidate)
+            do {
+                seasons = try await fetchSeasons(from: details, candidate: candidate)
+            } catch {
+                try error.rethrowIfCancellation()
+                seasons = nil
+            }
         }
         return ShowRefreshSnapshot(details: domainDetails, seasons: seasons)
     }
 
     private func fetchSeasons(
         from details: TMDBShowDetails,
-        candidate: SearchCandidate
+        candidate: MediaCandidate
     ) async throws -> [ShowSeason] {
         let summaries = details.seasons.filter { $0.seasonNumber >= 0 }
 
@@ -76,18 +77,18 @@ struct TMDBShowDetailsRepository: TVShowDetailsRepository {
         }
     }
 
-    private func fetchSeason(_ number: Int, for candidate: SearchCandidate) async throws -> ShowSeason {
-        let seasonDetails: TMDBSeasonDetails = try await request(
+    private func fetchSeason(_ number: Int, for candidate: MediaCandidate) async throws -> ShowSeason {
+        let seasonDetails: TMDBSeasonDetails = try await apiClient.get(
             path: "/3/tv/\(candidate.providerID)/season/\(number)"
         )
         return seasonDetails.asDomain(provider: .tmdb, showID: candidate.providerID)
     }
 
     func fetchEpisodeDetails(
-        for candidate: SearchCandidate,
+        for candidate: MediaCandidate,
         episode: ShowEpisode
     ) async throws -> EpisodeDetails {
-        let details: TMDBEpisode = try await request(
+        let details: TMDBEpisode = try await apiClient.get(
             path: "/3/tv/\(candidate.providerID)/season/\(episode.seasonNumber)/episode/\(episode.number)"
         )
         return details.asEpisodeDetails(
@@ -95,25 +96,5 @@ struct TMDBShowDetailsRepository: TVShowDetailsRepository {
             showID: candidate.providerID,
             seasonNumber: episode.seasonNumber
         )
-    }
-}
-
-private extension TMDBShowDetailsRepository {
-    func request<Response: Decodable>(path: String) async throws -> Response {
-        var components = URLComponents(string: "https://api.themoviedb.org")
-        components?.path = path
-        components?.queryItems = [URLQueryItem(name: "language", value: language)]
-
-        guard let url = components?.url else {
-            throw HTTPClientError.invalidRequest
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let (data, response) = try await httpClient.data(for: request)
-        try response.validateSuccessfulStatusCode()
-        return try JSONDecoder().decode(Response.self, from: data)
     }
 }

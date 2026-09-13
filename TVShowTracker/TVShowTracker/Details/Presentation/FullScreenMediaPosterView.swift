@@ -17,7 +17,7 @@ struct FullScreenMediaPosterView: View {
 
     let title: String
     let posterURL: URL?
-    let kind: SearchMediaKind
+    let kind: MediaKind
 
     private let maximumScale: CGFloat = 3
 
@@ -33,7 +33,7 @@ struct FullScreenMediaPosterView: View {
                     }
 
                 MediaPoster(
-                    url: fullScreenPosterURL,
+                    url: MediaImageURL.fullScreen(posterURL),
                     kind: kind,
                     width: displayedPosterSize.width,
                     height: displayedPosterSize.height,
@@ -77,30 +77,6 @@ struct FullScreenMediaPosterView: View {
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .statusBarHidden()
-    }
-
-    private var fullScreenPosterURL: URL? {
-        guard
-            let posterURL,
-            posterURL.host() == "image.tmdb.org",
-            var components = URLComponents(url: posterURL, resolvingAgainstBaseURL: false)
-        else {
-            return posterURL
-        }
-
-        var pathComponents = components.path.split(separator: "/").map(String.init)
-        guard let sizeIndex = pathComponents.firstIndex(where: isTMDBImageSize) else {
-            return posterURL
-        }
-        pathComponents[sizeIndex] = "w780"
-        components.path = "/" + pathComponents.joined(separator: "/")
-        return components.url ?? posterURL
-    }
-
-    private func isTMDBImageSize(_ component: String) -> Bool {
-        component == "original" || (
-            component.first == "w" && component.dropFirst().allSatisfy(\.isNumber)
-        )
     }
 
     private func posterSize(in availableSize: CGSize) -> CGSize {

@@ -1,0 +1,158 @@
+//
+//  EpisodeWatchStoreTests.swift
+//  TVShowTrackerTests
+//
+//  Created by Alan Flament on 12/08/2026.
+//
+
+import Foundation
+import SwiftData
+import Testing
+@testable import TVShowTracker
+
+@MainActor
+struct EpisodeWatchStoreTests {
+    @Test func marksEpisodesInBatchWithoutDuplicatingThem() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: WatchedEpisodeModel.self,
+            configurations: configuration
+        )
+        let repository = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+        let store = EpisodeWatchStore(repository: repository)
+        let episodes = [
+            makeEpisode(number: 1),
+            makeEpisode(number: 2)
+        ]
+
+        store.markWatched(episodes)
+        store.markWatched(episodes)
+
+        #expect(episodes.allSatisfy(store.isWatched))
+        #expect(try repository.loadWatchedEpisodes().map(\WatchedEpisode.id).sorted() == episodes.map(\.id).sorted())
+    }
+
+    @Test func marksEpisodesUnwatchedInBatch() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: WatchedEpisodeModel.self,
+            configurations: configuration
+        )
+        let repository = SwiftDataEpisodeWatchRepository(modelContext: container.mainContext)
+        let store = EpisodeWatchStore(repository: repository)
+        let episodes = [makeEpisode(number: 1), makeEpisode(number: 2)]
+        store.markWatched(episodes)
+
+        store.markUnwatched(episodes)
+
+        #expect(episodes.allSatisfy { !store.isWatched($0) })
+        #expect(try repository.loadWatchedEpisodes().isEmpty)
+    }
+
+    @Test func keepsAnOngoingMediaWatchingWhenCaughtUp() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
+            configurations: configuration
+        )
+        let libraryStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let scheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
+        let candidate = MediaCandidate(
+            provider: .tmdb,
+            providerID: 42,
+            kind: .tvShow,
+            title: "A show",
+            alternateTitle: nil,
+            posterURL: nil,
+            releaseYear: nil,
+            totalEpisodeCount: 2,
+            status: .airing,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil
+        )
+        libraryStore.addIfMissing(candidate, trackingStatus: .planToWatch)
+        let item = try #require(libraryStore.items.first)
+        let episodes = [makeEpisode(number: 1), makeEpisode(number: 2)]
+        scheduleStore.save(item: item, seasons: [
+            ShowSeason(provider: .tmdb, showID: 42, number: 1, name: "Season 1", episodes: episodes)
+        ])
+        let store = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            followedMediaStore: libraryStore,
+            episodeScheduleStore: scheduleStore
+        )
+
+        store.toggle(episodes[0])
+        #expect(libraryStore.items.first?.trackingStatus == .watching)
+
+        store.toggle(episodes[1])
+        #expect(libraryStore.items.first?.trackingStatus == .watching)
+
+        store.toggle(episodes[1])
+        #expect(libraryStore.items.first?.trackingStatus == .watching)
+    }
+
+    @Test func completesFinishedMediaWhenEveryReleasedEpisodeIsWatched() throws {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: LibraryItemModel.self,
+            WatchedEpisodeModel.self,
+            EpisodeScheduleModel.self,
+            configurations: configuration
+        )
+        let libraryStore = FollowedMediaStore(
+            repository: SwiftDataLibraryRepository(modelContext: container.mainContext)
+        )
+        let scheduleStore = EpisodeScheduleStore(
+            repository: SwiftDataEpisodeScheduleRepository(modelContext: container.mainContext)
+        )
+        let candidate = MediaCandidate(
+            provider: .tmdb,
+            providerID: 42,
+            kind: .tvShow,
+            title: "A finished show",
+            alternateTitle: nil,
+            posterURL: nil,
+            releaseYear: nil,
+            totalEpisodeCount: 2,
+            status: .finished,
+            nextEpisodeNumber: nil,
+            nextEpisodeAirDate: nil
+        )
+        libraryStore.addIfMissing(candidate)
+        let item = try #require(libraryStore.items.first)
+        let episodes = [makeEpisode(number: 1), makeEpisode(number: 2)]
+        scheduleStore.save(item: item, seasons: [
+            ShowSeason(provider: .tmdb, showID: 42, number: 1, name: "Season 1", episodes: episodes)
+        ])
+        let store = EpisodeWatchStore(
+            repository: SwiftDataEpisodeWatchRepository(modelContext: container.mainContext),
+            followedMediaStore: libraryStore,
+            episodeScheduleStore: scheduleStore
+        )
+
+        store.markWatched(episodes)
+
+        #expect(libraryStore.items.first?.trackingStatus == .completed)
+    }
+
+    private func makeEpisode(number: Int) -> ShowEpisode {
+        ShowEpisode(
+            provider: .tmdb,
+            showID: 42,
+            seasonNumber: 1,
+            number: number,
+            title: "Episode \(number)",
+            overview: nil,
+            airDate: .distantPast,
+            stillURL: nil,
+            runtimeMinutes: nil
+        )
+    }
+}

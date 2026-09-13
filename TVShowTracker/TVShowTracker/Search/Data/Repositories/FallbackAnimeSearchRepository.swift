@@ -19,16 +19,18 @@ struct FallbackAnimeSearchRepository: AnimeSearchRepository {
         self.fallback = fallback
     }
 
-    func searchAnime(matching query: String) async throws -> [SearchCandidate] {
+    func searchAnime(matching query: String) async throws -> [MediaCandidate] {
         do {
             return try await primary.searchAnime(matching: query)
         } catch {
+            try error.rethrowIfCancellation()
             let primaryError = error.searchFailureMessage
 
             do {
                 return try await fallback.searchAnime(matching: query)
             } catch {
-                throw FallbackAnimeSearchError(
+                try error.rethrowIfCancellation()
+                throw AnimeSearchError(
                     providerErrors: [
                         .aniList: primaryError,
                         .jikan: error.searchFailureMessage
@@ -36,14 +38,6 @@ struct FallbackAnimeSearchRepository: AnimeSearchRepository {
                 )
             }
         }
-    }
-}
-
-struct FallbackAnimeSearchError: LocalizedError, Sendable {
-    let providerErrors: [SearchProvider: String]
-
-    var errorDescription: String? {
-        "All anime search sources are unavailable."
     }
 }
 

@@ -10,17 +10,14 @@ import SwiftUI
 struct ShowDetailsView: View {
     @State private var viewModel: ShowDetailsViewModel
     @Namespace private var posterTransition
-    private let makeEpisodesViewModel: () -> EpisodesViewModel
-    private let makeEpisodeDetailsView: (ShowEpisode) -> EpisodeDetailsView
+    private let makeEpisodesView: () -> EpisodesView
 
     init(
         viewModel: ShowDetailsViewModel,
-        makeEpisodesViewModel: @escaping () -> EpisodesViewModel,
-        makeEpisodeDetailsView: @escaping (ShowEpisode) -> EpisodeDetailsView
+        makeEpisodesView: @escaping () -> EpisodesView
     ) {
         _viewModel = State(initialValue: viewModel)
-        self.makeEpisodesViewModel = makeEpisodesViewModel
-        self.makeEpisodeDetailsView = makeEpisodeDetailsView
+        self.makeEpisodesView = makeEpisodesView
     }
 
     var body: some View {
@@ -145,16 +142,13 @@ struct ShowDetailsView: View {
     private var trackingStatusBinding: Binding<TrackingStatus> {
         Binding(
             get: { viewModel.trackingStatus ?? .watching },
-            set: viewModel.setTrackingStatus
+            set: { viewModel.setTrackingStatus($0) }
         )
     }
 
     private func episodeNavigation(_ details: ShowDetails) -> some View {
         NavigationLink {
-            EpisodesView(
-                viewModel: makeEpisodesViewModel(),
-                makeEpisodeDetailsView: makeEpisodeDetailsView
-            )
+            makeEpisodesView()
         } label: {
             TrackerCard {
                 HStack(spacing: 14) {

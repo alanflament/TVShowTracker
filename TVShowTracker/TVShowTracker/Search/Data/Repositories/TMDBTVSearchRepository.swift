@@ -8,41 +8,25 @@
 import Foundation
 
 struct TMDBTVSearchRepository: TVShowSearchRepository {
-    private let accessToken: String
-    private let language: String
-    private let httpClient: any HTTPClient
+    private let apiClient: TMDBAPIClient
 
     init(
         accessToken: String,
         language: String,
         httpClient: any HTTPClient = URLSessionHTTPClient()
     ) {
-        self.accessToken = accessToken
-        self.language = language
-        self.httpClient = httpClient
+        apiClient = TMDBAPIClient(accessToken: accessToken, language: language, httpClient: httpClient)
     }
 
-    func searchTVShows(matching query: String) async throws -> [SearchCandidate] {
-        var components = URLComponents(string: "https://api.themoviedb.org/3/search/tv")
-        components?.queryItems = [
-            URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "language", value: language),
-            URLQueryItem(name: "include_adult", value: "false")
-        ]
+    func searchTVShows(matching query: String) async throws -> [MediaCandidate] {
+        let searchResponse: TMDBTVSearchResponse = try await apiClient.get(
+            path: "/3/search/tv",
+            queryItems: [
+                URLQueryItem(name: "query", value: query),
+                URLQueryItem(name: "include_adult", value: "false")
+            ]
+        )
 
-        guard let url = components?.url else {
-            throw HTTPClientError.invalidRequest
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let (data, response) = try await httpClient.data(for: request)
-        try response.validateSuccessfulStatusCode()
-
-        let searchResponse = try JSONDecoder().decode(TMDBTVSearchResponse.self, from: data)
-
-        return searchResponse.results.map(SearchCandidate.init(_:))
+        return searchResponse.results.map(MediaCandidate.init(_:))
     }
 }
